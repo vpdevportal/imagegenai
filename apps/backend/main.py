@@ -1,9 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 import uvicorn
 import os
 from dotenv import load_dotenv
+from app.api.routes import api_router
 
 # Load environment variables
 load_dotenv()
@@ -30,47 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Health check endpoint
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "message": "ImageGenAI API is running"}
-
-# API routes
-@app.get("/api/")
-async def root():
-    """Root endpoint"""
-    return {
-        "message": "Welcome to ImageGenAI API",
-        "version": "1.0.0",
-        "docs": "/api/docs"
-    }
-
-# Image generation endpoints (placeholder)
-from pydantic import BaseModel
-
-class ImageGenerationRequest(BaseModel):
-    prompt: str
-
-@app.post("/api/generate")
-async def generate_image(request: ImageGenerationRequest):
-    """Generate image from text prompt"""
-    # TODO: Implement AI image generation
-    return {
-        "message": "Image generation endpoint",
-        "prompt": request.prompt,
-        "status": "pending",
-        "generated_image_url": None
-    }
-
-@app.get("/api/images")
-async def list_images():
-    """List all generated images"""
-    # TODO: Implement image listing
-    return {
-        "images": [],
-        "total": 0
-    }
+# Include API routes
+app.include_router(api_router)
 
 if __name__ == "__main__":
     uvicorn.run(
