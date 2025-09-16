@@ -1,0 +1,30 @@
+# Core FastAPI dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+python-multipart==0.0.6
+python-dotenv==1.0.0
+
+# Database (optional - install separately if needed)
+# sqlalchemy==2.0.23
+# alembic==1.13.0
+# psycopg2-binary==2.9.9
+
+# Redis and Task Queue (optional)
+# redis==5.0.1
+# celery==5.3.4
+
+# Image processing (optional - install separately if needed)
+# pillow==10.1.0
+# opencv-python==4.8.1.78
+# numpy==1.24.3
+
+# HTTP clients
+requests==2.31.0
+httpx==0.25.2
+
+# Development dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
+flake8==6.1.0

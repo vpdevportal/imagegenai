@@ -1,0 +1,15 @@
+{
+  "name": "@imagegenai/shared",
+  "version": "1.0.0",
+  "description": "Shared types and utilities for ImageGenAI",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist *.d.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  }
+}
