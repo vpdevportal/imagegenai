@@ -1,13 +1,11 @@
 from fastapi import APIRouter
 from .generate import router as generate_router
-from .modify import router as modify_router
 
 # Create main API router
 api_router = APIRouter(prefix="/api", tags=["api"])
 
 # Include all sub-routers
 api_router.include_router(generate_router)
-api_router.include_router(modify_router)
 
 # Health check endpoint
 @api_router.get("/health")
