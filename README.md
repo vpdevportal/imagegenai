@@ -77,19 +77,13 @@ imagegenai/
    npm install
    ```
 
-2. **Set up Python environment:**
+2. **Start development servers:**
    ```bash
-   cd apps/backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   cd ../..
-   ```
-
-3. **Start development servers:**
-   ```bash
-   # Start both backend and frontend concurrently
-   npm run dev
+   # Easy one-command start (recommended)
+   npm run start-dev
+   
+   # Or using the shell script directly
+   ./start-dev.sh
    
    # Or start individually:
    npm run backend:dev  # Backend on http://localhost:8000
