@@ -41,9 +41,6 @@ export default function Home() {
           <h2 className="text-4xl font-bold text-gray-900 mb-6">
             Transform Your Ideas Into Stunning Images
           </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Generate beautiful, unique images from simple text descriptions using cutting-edge AI technology.
-          </p>
           <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
             <div className="flex items-center">
               <PhotoIcon className="h-5 w-5 mr-1" />
