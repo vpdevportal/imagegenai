@@ -6,6 +6,10 @@ import uuid
 from datetime import datetime
 import base64
 import io
+import os
+
+from ..services.image_generator import image_generator
+from ..config import settings
 
 # Create router for generate endpoints
 router = APIRouter(prefix="/generate", tags=["image-generation"])
@@ -77,22 +81,26 @@ async def generate_image(
         # Handle reference image if provided
         if image and image.filename:
             # Validate image file
-            allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
-            if image.content_type not in allowed_types:
+            if image.content_type not in settings.allowed_image_types:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}"
+                    detail=f"Invalid file type. Allowed types: {', '.join(settings.allowed_image_types)}"
                 )
             
-            # Check file size (max 10MB)
+            # Check file size
             content = await image.read()
-            if len(content) > 10 * 1024 * 1024:  # 10MB
+            if len(content) > settings.max_file_size:
                 raise HTTPException(
                     status_code=400,
-                    detail="Reference image too large. Maximum size is 10MB"
+                    detail=f"Reference image too large. Maximum size is {settings.max_file_size // (1024*1024)}MB"
                 )
             
-            reference_image_url = f"/uploads/reference_{image_id}_{image.filename}"
+            # Reset file pointer for service
+            await image.seek(0)
+            
+            # Save reference image and get URL
+            reference_image_url = image_generator.save_reference_image(image)
+            
             parsed_metadata.update({
                 "has_reference_image": True,
                 "reference_filename": image.filename,
@@ -117,29 +125,48 @@ async def generate_image(
             "updated_at": current_time
         }
         
+        # Generate the actual image using AI
+        try:
+            if reference_image_url:
+                # Reset file pointer for generation
+                await image.seek(0)
+                generated_image_url, _ = image_generator.generate_from_image_and_text(image, prompt)
+            else:
+                generated_image_url, _ = image_generator.generate_from_text(prompt)
+            
+            # Update image data with generated image URL
+            image_data.update({
+                "status": "completed",
+                "generated_image_url": generated_image_url,
+                "updated_at": datetime.now().isoformat()
+            })
+            
+            response = ImageGenerationResponse(
+                id=image_id,
+                message="Image generated successfully",
+                prompt=prompt,
+                status="completed",
+                generated_image_url=generated_image_url,
+                reference_image_url=reference_image_url,
+                created_at=current_time,
+                estimated_completion_time=None
+            )
+            
+        except Exception as e:
+            # Update image data with error status
+            image_data.update({
+                "status": "failed",
+                "error": str(e),
+                "updated_at": datetime.now().isoformat()
+            })
+            
+            raise HTTPException(
+                status_code=500,
+                detail=f"Image generation failed: {str(e)}"
+            )
+        
         # Store in memory (replace with database in production)
         generated_images[image_id] = image_data
-        
-        # TODO: In a real implementation, you would:
-        # 1. Save the reference image to storage if provided
-        # 2. Add the request to a task queue (Celery, RQ, etc.)
-        # 3. Call AI service with prompt and optional reference image
-        # 4. Store the result in database
-        # 5. Update status to "completed" or "failed"
-        
-        # Determine completion time based on whether reference image is provided
-        completion_time = 45 if reference_image_url else 30
-        
-        response = ImageGenerationResponse(
-            id=image_id,
-            message="Image generation request received",
-            prompt=prompt,
-            status="pending",
-            generated_image_url=None,
-            reference_image_url=reference_image_url,
-            created_at=current_time,
-            estimated_completion_time=completion_time
-        )
         
         return response
         
