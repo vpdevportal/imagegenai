@@ -3,13 +3,20 @@
 import { useState } from 'react'
 import { PhotoIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import ImageGenerationForm from '@/components/ImageGenerationForm'
+import ImageModificationForm from '@/components/ImageModificationForm'
 import GeneratedImages from '@/components/GeneratedImages'
 
 export default function Home() {
   const [images, setImages] = useState<any[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isModifying, setIsModifying] = useState(false)
+  const [activeTab, setActiveTab] = useState<'generate' | 'modify'>('generate')
 
   const handleImageGenerated = (newImage: any) => {
+    setImages(prev => [newImage, ...prev])
+  }
+
+  const handleImageModified = (newImage: any) => {
     setImages(prev => [newImage, ...prev])
   }
 
@@ -65,16 +72,51 @@ export default function Home() {
       <section className="pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Image Generation Form */}
+            {/* Image Processing Forms */}
             <div className="order-2 lg:order-1">
-              <ImageGenerationForm 
-                onImageGenerated={handleImageGenerated}
-                isGenerating={isGenerating}
-                setIsGenerating={setIsGenerating}
-              />
+              {/* Tab Navigation */}
+              <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveTab('generate')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'generate'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <SparklesIcon className="h-4 w-4 inline mr-2" />
+                  Generate New
+                </button>
+                <button
+                  onClick={() => setActiveTab('modify')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'modify'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <PhotoIcon className="h-4 w-4 inline mr-2" />
+                  Modify Existing
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              {activeTab === 'generate' ? (
+                <ImageGenerationForm 
+                  onImageGenerated={handleImageGenerated}
+                  isGenerating={isGenerating}
+                  setIsGenerating={setIsGenerating}
+                />
+              ) : (
+                <ImageModificationForm 
+                  onImageModified={handleImageModified}
+                  isModifying={isModifying}
+                  setIsModifying={setIsModifying}
+                />
+              )}
             </div>
             
-            {/* Generated Images */}
+            {/* Generated/Modified Images */}
             <div className="order-1 lg:order-2">
               <GeneratedImages images={images} />
             </div>

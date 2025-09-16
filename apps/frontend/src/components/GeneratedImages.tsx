@@ -5,11 +5,14 @@ import Image from 'next/image'
 import { PhotoIcon, ArrowDownTrayIcon, HeartIcon } from '@heroicons/react/24/outline'
 
 interface ImageData {
-  id: number
+  id: string | number
   prompt: string
-  imageUrl: string
+  imageUrl?: string
+  originalImageUrl?: string
+  modifiedImageUrl?: string
   status: string
   createdAt: string
+  type?: 'generation' | 'modification'
 }
 
 interface GeneratedImagesProps {
@@ -40,10 +43,10 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
         <div className="text-center py-12">
           <PhotoIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No images generated yet
+            No images created yet
           </h3>
           <p className="text-gray-500">
-            Generate your first AI image using the form on the left
+            Generate new images or modify existing ones using the form on the left
           </p>
         </div>
       </div>
@@ -53,7 +56,7 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
   return (
     <div className="card">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Generated Images ({images.length})
+        Created Images ({images.length})
       </h3>
       
       <div className="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto">
@@ -64,7 +67,7 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
           >
             <div className="aspect-square relative">
               <Image
-                src={image.imageUrl}
+                src={image.modifiedImageUrl || image.imageUrl || '/placeholder-image.jpg'}
                 alt={image.prompt}
                 fill
                 className="object-cover"
@@ -111,7 +114,7 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-yellow-100 text-yellow-800'
                 }`}>
-                  {image.status}
+                  {image.type === 'modification' ? 'Modified' : 'Generated'}
                 </span>
               </div>
             </div>
