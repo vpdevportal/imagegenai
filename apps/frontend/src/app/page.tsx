@@ -36,11 +36,8 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <section className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            Transform Your Ideas Into Stunning Images
-          </h2>
           <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
             <div className="flex items-center">
               <PhotoIcon className="h-5 w-5 mr-1" />

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { SparklesIcon, PhotoIcon, ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import Image from 'next/image'
 import { generateImage } from '@/lib/api'
 
 interface ImageGenerationFormProps {
@@ -83,6 +84,9 @@ export default function ImageGenerationForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+    
+    console.log('Form submitted, preventing reload...')
     
     if (!prompt.trim()) {
       setError('Please enter a prompt')
@@ -98,7 +102,10 @@ export default function ImageGenerationForm({
     setIsGenerating(true)
 
     try {
+      console.log('Generating image...')
       const response = await generateImage(prompt, selectedFile)
+      console.log('Image generated successfully:', response)
+      
       onImageGenerated({
         id: response.id,
         prompt,
@@ -108,8 +115,9 @@ export default function ImageGenerationForm({
         createdAt: response.created_at,
         type: 'generation-with-reference'
       })
-      setPrompt('')
-      clearImage()
+      
+      // Keep form data for potential variations
+      console.log('Image added to list, form data preserved')
     } catch (err) {
       setError('Failed to generate image. Please try again.')
       console.error('Image generation error:', err)
@@ -124,12 +132,9 @@ export default function ImageGenerationForm({
         Generate New Image
       </h3>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {/* Optional Reference Image Upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Reference Image <span className="text-red-500">*</span>
-          </label>
           
           {!previewUrl ? (
             <div
@@ -167,21 +172,32 @@ export default function ImageGenerationForm({
             </div>
           ) : (
             /* Preview Area */
-            <div className="relative">
-              <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                <img
+            <div className="relative group bg-gray-100 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="aspect-square relative">
+                <Image
                   src={previewUrl}
                   alt="Reference preview"
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder-image.jpg'
+                  }}
                 />
+                
+                {/* Overlay with remove button */}
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200">
+                  <div className="absolute top-2 right-2">
+                    <button
+                      type="button"
+                      onClick={clearImage}
+                      className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors shadow-sm"
+                      title="Remove Image"
+                    >
+                      <XMarkIcon className="h-4 w-4 text-gray-700" />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={clearImage}
-                className="absolute top-2 right-2 p-1 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70"
-              >
-                <XMarkIcon className="h-4 w-4" />
-              </button>
             </div>
           )}
         </div>
