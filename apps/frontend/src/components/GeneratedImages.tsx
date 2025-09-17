@@ -10,6 +10,7 @@ interface ImageData {
   imageUrl?: string
   originalImageUrl?: string
   modifiedImageUrl?: string
+  referenceImageUrl?: string
   status: string
   createdAt: string
   type?: 'generation' | 'modification'
@@ -65,6 +66,7 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
             key={image.id}
             className="relative group bg-gray-100 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
           >
+            {/* Generated Image */}
             <div className="aspect-square relative">
               <Image
                 src={image.modifiedImageUrl || image.imageUrl || '/placeholder-image.jpg'}
@@ -118,6 +120,24 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
                 </span>
               </div>
             </div>
+            
+            {/* Reference Image */}
+            {image.referenceImageUrl && (
+              <div className="mt-2">
+                <div className="text-xs text-gray-500 mb-1">Reference Image:</div>
+                <div className="relative w-full h-20 rounded overflow-hidden">
+                  <Image
+                    src={image.referenceImageUrl}
+                    alt="Reference"
+                    fill
+                    className="object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder-image.jpg'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

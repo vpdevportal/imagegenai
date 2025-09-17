@@ -9,6 +9,7 @@ from pathlib import Path
 from io import BytesIO
 import base64
 import logging
+import time
 
 from google import genai
 from PIL import Image
@@ -98,16 +99,19 @@ class ImageGenerationService:
                             # Save the generated image
                             generated_image = Image.open(BytesIO(part.inline_data.data))
                             
-                            # Generate output filename
-                            output_filename = f"nano_banana_{len(list(self.output_dir.glob('*.png'))) + 1}.png"
+                            # Generate timestamp-based output filename
+                            timestamp = int(time.time() * 1000)  # milliseconds
+                            output_filename = f"output_{timestamp}.png"
                             output_path = self.output_dir / output_filename
                             
                             generated_image.save(output_path)
-                            return str(output_path)
+                            image_url = f"/generated_images/{output_filename}"
+                            logger.info(f"Generated image saved successfully: {image_url}")
+                            return image_url
 
             raise HTTPException(
                 status_code=500,
-                detail=f"Failed to generate image from reference: {str(e)}"
+                detail="Failed to generate image from reference: No image data found in response"
             )
     
                 
@@ -136,11 +140,11 @@ class ImageGenerationService:
             image_file.file.seek(0)  # Reset file pointer
             logger.info(f"Reference image size: {len(image_content)} bytes")
             
-            # Generate unique filename
-            image_id = str(uuid.uuid4())
+            # Generate timestamp-based filename
+            timestamp = int(time.time() * 1000)  # milliseconds
             original_filename = image_file.filename or "reference"
             file_extension = Path(original_filename).suffix or ".jpg"
-            filename = f"reference_{image_id}{file_extension}"
+            filename = f"input_{timestamp}{file_extension}"
             logger.info(f"Reference image filename: {filename}")
             
             # Save reference image
