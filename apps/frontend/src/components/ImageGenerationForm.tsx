@@ -86,8 +86,6 @@ export default function ImageGenerationForm({
     e.preventDefault()
     e.stopPropagation()
     
-    console.log('Form submitted, preventing reload...')
-    
     if (!prompt.trim()) {
       setError('Please enter a prompt')
       return
@@ -102,9 +100,7 @@ export default function ImageGenerationForm({
     setIsGenerating(true)
 
     try {
-      console.log('Generating image...')
       const response = await generateImage(prompt, selectedFile)
-      console.log('Image generated successfully:', response)
       
       onImageGenerated({
         id: response.id,
@@ -115,9 +111,6 @@ export default function ImageGenerationForm({
         createdAt: response.created_at,
         type: 'generation-with-reference'
       })
-      
-      // Keep form data for potential variations
-      console.log('Image added to list, form data preserved')
     } catch (err) {
       setError('Failed to generate image. Please try again.')
       console.error('Image generation error:', err)

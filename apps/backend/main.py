@@ -40,8 +40,7 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router)
 
-# Mount static files for generated images
-app.mount("/generated_images", StaticFiles(directory=settings.generated_images_dir), name="generated_images")
+# No longer mounting static files since we use in-memory image processing
 
 if __name__ == "__main__":
     uvicorn.run(

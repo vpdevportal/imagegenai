@@ -40,7 +40,6 @@ class Settings(BaseSettings):
     ]
     
     # Generated Images Configuration
-    generated_images_dir: str = "generated_images"
     
     class Config:
         env_file = ".env"
