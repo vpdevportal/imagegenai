@@ -3,8 +3,9 @@ Configuration settings for the ImageGenAI application
 """
 
 import os
-from typing import Optional
+from typing import Optional, Union
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -22,10 +23,17 @@ class Settings(BaseSettings):
     
     # CORS Configuration
     frontend_url: str = "http://localhost:3000"
-    allowed_origins: list = [
+    allowed_origins: Union[list, str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000"
     ]
+    
+    @field_validator('allowed_origins', mode='before')
+    @classmethod
+    def parse_allowed_origins(cls, v):
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(',')]
+        return v
     
     # AI Configuration
     google_ai_api_key: Optional[str] = None
@@ -38,8 +46,6 @@ class Settings(BaseSettings):
         "image/png",
         "image/webp"
     ]
-    
-    # Generated Images Configuration
     
     class Config:
         env_file = ".env"

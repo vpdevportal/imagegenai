@@ -142,7 +142,7 @@ export default function ImageGenerationForm({
               onDrop={handleDrop}
             >
               <PhotoIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-gray-600 mb-3">
                 Drag and drop a reference image, or click to select
                 <br />
                 <span className="text-red-500 text-xs">Reference image is required</span>
@@ -150,7 +150,7 @@ export default function ImageGenerationForm({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="btn-secondary text-sm"
+                className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
               >
                 <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
                 Choose Image

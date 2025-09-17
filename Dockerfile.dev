@@ -1,0 +1,64 @@
+# Development Dockerfile for ImageGenAI - Single container with hot reloading
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    NODE_ENV=development
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+
+# Install Python dependencies
+COPY apps/backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend code
+COPY apps/backend/ ./backend/
+
+# Install frontend dependencies
+WORKDIR /app/frontend
+COPY apps/frontend/package*.json ./
+RUN npm install
+
+# Copy frontend source code
+COPY apps/frontend/ .
+
+# Create directories
+RUN mkdir -p /app/backend/generated_images
+
+# Create startup script for development
+WORKDIR /app
+RUN echo '#!/bin/bash\n\
+# Start backend in background with hot reloading\n\
+cd /app/backend && uvicorn main:app --host 0.0.0.0 --port 8000 --reload &\n\
+\n\
+# Start frontend in background with hot reloading\n\
+cd /app/frontend && npm run dev &\n\
+\n\
+# Wait for both processes\n\
+wait\n\
+' > /app/start-dev.sh && chmod +x /app/start-dev.sh
+
+# Expose ports
+EXPOSE 3000 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health && curl -f http://localhost:3000 || exit 1
+
+# Start both services in development mode
+CMD ["/app/start-dev.sh"]

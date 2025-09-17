@@ -102,11 +102,14 @@ imagegenai/
    npm run dev
    ```
 
-### Option 3: Full Docker Stack
+### Option 3: Docker Development
 
 ```bash
-# Start everything with Docker
+# Start development environment with Docker (single container with hot reloading)
 docker-compose up -d
+
+# Or use the convenient script
+./docker-scripts.sh dev
 
 # View logs
 docker-compose logs -f
@@ -114,6 +117,13 @@ docker-compose logs -f
 # Stop everything
 docker-compose down
 ```
+
+**Access Points:**
+- Frontend: http://localhost:5001
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/api/docs
+
+For detailed Docker instructions, see [DOCKER-SINGLE.md](DOCKER-SINGLE.md).
 
 ## 📝 Available Scripts
 

@@ -3,13 +3,11 @@ Image Generation Service using Google Gemini AI
 """
 
 import os
-import uuid
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple
 from pathlib import Path
 from io import BytesIO
 import base64
 import logging
-import time
 
 from google import genai
 from PIL import Image

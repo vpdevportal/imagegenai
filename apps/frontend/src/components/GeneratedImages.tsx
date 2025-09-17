@@ -1,16 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import Image from 'next/image'
-import { PhotoIcon, ArrowDownTrayIcon, HeartIcon } from '@heroicons/react/24/outline'
+import { PhotoIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 
 interface ImageData {
   id: string | number
   prompt: string
   imageUrl?: string
-  originalImageUrl?: string
   modifiedImageUrl?: string
-  referenceImageUrl?: string
   status: string
   createdAt: string
   type?: 'generation' | 'modification'
@@ -21,7 +18,6 @@ interface GeneratedImagesProps {
 }
 
 export default function GeneratedImages({ images }: GeneratedImagesProps) {
-  const [selectedImage, setSelectedImage] = useState<ImageData | null>(null)
 
   const handleDownload = (image: ImageData) => {
     try {
@@ -38,10 +34,6 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
     }
   }
 
-  const handleLike = (imageId: number) => {
-    // TODO: Implement like functionality
-    console.log('Liked image:', imageId)
-  }
 
   if (images.length === 0) {
     return (
@@ -95,13 +87,6 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
                       {new Date(image.createdAt).toLocaleDateString()}
                     </span>
                     <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleLike(image.id)}
-                        className="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                        title="Like"
-                      >
-                        <HeartIcon className="h-4 w-4 text-white" />
-                      </button>
                       <button
                         onClick={() => handleDownload(image)}
                         className="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"

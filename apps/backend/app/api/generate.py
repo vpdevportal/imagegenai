@@ -1,13 +1,9 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-import json
 from typing import Optional
 import uuid
 from datetime import datetime
 import base64
-import io
-import os
 import logging
 
 from ..services.image_generator import image_generator
@@ -19,10 +15,6 @@ logger = logging.getLogger(__name__)
 # Create router for generate endpoints
 router = APIRouter(prefix="/generate", tags=["image-generation"])
 
-class ImageGenerationRequest(BaseModel):
-    prompt: str
-    user_id: Optional[int] = None
-    metadata: Optional[dict] = None
 
 class ImageGenerationResponse(BaseModel):
     id: str
