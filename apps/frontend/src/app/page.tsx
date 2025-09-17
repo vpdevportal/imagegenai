@@ -14,7 +14,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-primary-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,28 +35,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
-            <div className="flex items-center">
-              <PhotoIcon className="h-5 w-5 mr-1" />
-              High Quality
-            </div>
-            <div className="flex items-center">
-              <SparklesIcon className="h-5 w-5 mr-1" />
-              AI Powered
-            </div>
-            <div className="flex items-center">
-              <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
-              Fast Generation
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="pb-16 px-4 sm:px-6 lg:px-8">
+      {/* Main Content - This will grow to fill available space */}
+      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Image Generation Form */}
@@ -74,16 +54,16 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
+      {/* Footer - This will stick to the bottom */}
+      <footer className="bg-gray-900 text-white py-8 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-gray-400">
             © 2024 ImageGenAI. Built with FastAPI and Next.js
           </p>
         </div>
       </footer>
-    </main>
+    </div>
   )
 }
