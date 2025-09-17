@@ -57,7 +57,7 @@ class ImageGenerationService:
         self.output_dir.mkdir(exist_ok=True)
         logger.info(f"Output directory created/verified: {self.output_dir}")
     
-    def generate_from_image_and_text(self, image_file, prompt: str) -> str:
+    def generate_from_image_and_text(self, image_file, prompt: str) -> Tuple[bytes, str]:
         """
         Generate an image using a reference image and text prompt
         
@@ -66,7 +66,7 @@ class ImageGenerationService:
             prompt: Text prompt for image generation
             
         Returns:
-            Tuple[str, str]: (image_url, image_path)
+            Tuple[bytes, str]: (image_data, content_type)
             
         Raises:
             HTTPException: If generation fails
@@ -96,18 +96,11 @@ class ImageGenerationService:
                 if candidate.content and candidate.content.parts:
                     for part in candidate.content.parts:
                         if part.inline_data is not None:
-                            # Save the generated image
-                            generated_image = Image.open(BytesIO(part.inline_data.data))
-                            
-                            # Generate timestamp-based output filename
-                            timestamp = int(time.time() * 1000)  # milliseconds
-                            output_filename = f"output_{timestamp}.png"
-                            output_path = self.output_dir / output_filename
-                            
-                            generated_image.save(output_path)
-                            image_url = f"/generated_images/{output_filename}"
-                            logger.info(f"Generated image saved successfully: {image_url}")
-                            return image_url
+                            # Return the generated image data directly
+                            image_data = part.inline_data.data
+                            content_type = "image/png"  # Gemini typically returns PNG
+                            logger.info(f"Generated image data received: {len(image_data)} bytes")
+                            return image_data, content_type
 
             raise HTTPException(
                 status_code=500,
@@ -124,37 +117,40 @@ class ImageGenerationService:
     
     def save_reference_image(self, image_file) -> str:
         """
-        Save uploaded reference image and return its URL
+        Process uploaded reference image and return as data URL
         
         Args:
             image_file: Uploaded image file
             
         Returns:
-            str: URL of the saved reference image
+            str: Data URL of the reference image
         """
         try:
-            logger.info(f"Saving reference image: {image_file.filename}")
+            logger.info(f"Processing reference image: {image_file.filename}")
             
             # Read image content
             image_content = image_file.file.read()
             image_file.file.seek(0)  # Reset file pointer
             logger.info(f"Reference image size: {len(image_content)} bytes")
             
-            # Generate timestamp-based filename
-            timestamp = int(time.time() * 1000)  # milliseconds
+            # Determine content type from file extension
             original_filename = image_file.filename or "reference"
-            file_extension = Path(original_filename).suffix or ".jpg"
-            filename = f"input_{timestamp}{file_extension}"
-            logger.info(f"Reference image filename: {filename}")
+            file_extension = Path(original_filename).suffix.lower()
+            content_type_map = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp'
+            }
+            content_type = content_type_map.get(file_extension, 'image/jpeg')
             
-            # Save reference image
-            reference_path = self.output_dir / filename
-            with open(reference_path, 'wb') as f:
-                f.write(image_content)
+            # Convert to base64 data URL
+            image_base64 = base64.b64encode(image_content).decode('utf-8')
+            data_url = f"data:{content_type};base64,{image_base64}"
             
-            image_url = f"/generated_images/{filename}"
-            logger.info(f"Reference image saved successfully: {image_url}")
-            return image_url
+            logger.info(f"Reference image processed successfully: {len(image_content)} bytes")
+            return data_url
             
         except Exception as e:
             logger.error(f"Failed to save reference image: {str(e)}", exc_info=True)

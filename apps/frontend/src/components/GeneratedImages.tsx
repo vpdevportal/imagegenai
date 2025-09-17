@@ -24,13 +24,18 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
   const [selectedImage, setSelectedImage] = useState<ImageData | null>(null)
 
   const handleDownload = (image: ImageData) => {
-    // Create a temporary link to download the image
-    const link = document.createElement('a')
-    link.href = image.imageUrl
-    link.download = `generated-image-${image.id}.jpg`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    try {
+      // Create a temporary link to download the image
+      const link = document.createElement('a')
+      link.href = image.imageUrl || image.modifiedImageUrl || '/placeholder-image.jpg'
+      link.download = `generated-image-${image.id}.png`
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (error) {
+      console.error('Download failed:', error)
+    }
   }
 
   const handleLike = (imageId: number) => {
@@ -109,8 +114,15 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
                 </div>
               </div>
 
-              {/* Status badge */}
-              <div className="absolute top-2 right-2">
+              {/* Status badge and download button */}
+              <div className="absolute top-2 right-2 flex items-center space-x-2">
+                <button
+                  onClick={() => handleDownload(image)}
+                  className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors shadow-sm"
+                  title="Download Image"
+                >
+                  <ArrowDownTrayIcon className="h-4 w-4 text-gray-700" />
+                </button>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                   image.status === 'completed' 
                     ? 'bg-green-100 text-green-800' 
@@ -121,23 +133,6 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
               </div>
             </div>
             
-            {/* Reference Image */}
-            {image.referenceImageUrl && (
-              <div className="mt-2">
-                <div className="text-xs text-gray-500 mb-1">Reference Image:</div>
-                <div className="relative w-full h-20 rounded overflow-hidden">
-                  <Image
-                    src={image.referenceImageUrl}
-                    alt="Reference"
-                    fill
-                    className="object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder-image.jpg'
-                    }}
-                  />
-                </div>
-              </div>
-            )}
           </div>
         ))}
       </div>

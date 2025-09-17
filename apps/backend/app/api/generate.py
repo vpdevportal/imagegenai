@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import json
 from typing import Optional
@@ -128,13 +129,17 @@ async def generate_image(
             logger.info("Generating image with reference image...")
             # Reset file pointer for generation
             await image.seek(0)
-            generated_image_url = image_generator.generate_from_image_and_text(image, prompt)
-            logger.info(f"Generated image with reference: {generated_image_url}")
+            generated_image_data, content_type = image_generator.generate_from_image_and_text(image, prompt)
+            logger.info(f"Generated image data received: {len(generated_image_data)} bytes")
             
-            # Update image data with generated image URL
+            # Convert image data to base64 for JSON response
+            generated_image_base64 = base64.b64encode(generated_image_data).decode('utf-8')
+            generated_image_data_url = f"data:{content_type};base64,{generated_image_base64}"
+            
+            # Update image data with generated image data URL
             image_data.update({
                 "status": "completed",
-                "generated_image_url": generated_image_url,
+                "generated_image_url": generated_image_data_url,
                 "updated_at": datetime.now().isoformat()
             })
             
@@ -143,7 +148,7 @@ async def generate_image(
                 message="Image generated successfully",
                 prompt=prompt,
                 status="completed",
-                generated_image_url=generated_image_url,
+                generated_image_url=generated_image_data_url,
                 reference_image_url=reference_image_url,
                 created_at=current_time,
                 estimated_completion_time=None

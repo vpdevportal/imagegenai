@@ -227,17 +227,6 @@ export default function ImageGenerationForm({
         </button>
       </form>
 
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">
-          Tips for reference image generation:
-        </h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Describe how you want to use the reference image</li>
-          <li>• Specify style changes (watercolor, oil painting, digital art)</li>
-          <li>• Mention composition changes or additions</li>
-          <li>• Try prompts like "make it more vibrant" or "add vintage effects"</li>
-        </ul>
-      </div>
     </div>
   )
 }
