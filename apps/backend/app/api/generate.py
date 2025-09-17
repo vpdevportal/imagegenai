@@ -7,9 +7,13 @@ from datetime import datetime
 import base64
 import io
 import os
+import logging
 
 from ..services.image_generator import image_generator
 from ..config import settings
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Create router for generate endpoints
 router = APIRouter(prefix="/generate", tags=["image-generation"])
@@ -35,89 +39,81 @@ generated_images = {}
 @router.post("/", response_model=ImageGenerationResponse)
 async def generate_image(
     prompt: str = Form(...),
-    image: Optional[UploadFile] = File(None),
-    user_id: Optional[int] = Form(None),
-    metadata: Optional[str] = Form(None)
+    image: UploadFile = File(...)
 ):
     """
-    Generate image from text prompt with optional reference image
+    Generate image from text prompt with reference image
     
-    This endpoint accepts a text prompt and optionally a reference image
-    to generate new images. It can work in two modes:
-    1. Text-only generation: Just provide a prompt
-    2. Image + prompt generation: Provide both an image and a prompt
+    This endpoint requires both a text prompt and a reference image
+    to generate new images. The reference image is mandatory.
     
     In a real implementation, this would integrate with AI services like 
     OpenAI DALL-E, Stability AI, etc.
     """
+    logger.info(f"Starting image generation request - Prompt: '{prompt[:50]}...', Image: {image.filename}")
+    
     try:
         # Validate prompt
         if not prompt.strip():
+            logger.warning("Empty prompt provided")
             raise HTTPException(
                 status_code=400, 
                 detail="Prompt cannot be empty"
             )
         
         if len(prompt) > 1000:
+            logger.warning(f"Prompt too long: {len(prompt)} characters")
             raise HTTPException(
                 status_code=400, 
                 detail="Prompt too long (max 1000 characters)"
             )
         
-        # Parse metadata if provided
-        parsed_metadata = {}
-        if metadata:
-            try:
-                parsed_metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                parsed_metadata = {"custom_metadata": metadata}
+        # Validate that image is provided
+        if not image or not image.filename:
+            logger.warning("No image provided")
+            raise HTTPException(
+                status_code=400,
+                detail="Reference image is required"
+            )
         
         # Generate unique ID for this request
         image_id = str(uuid.uuid4())
         current_time = datetime.now().isoformat()
+        logger.info(f"Generated request ID: {image_id}")
         
-        reference_image_url = None
+        # Handle reference image (now mandatory)
+        logger.info(f"Processing reference image: {image.filename}, type: {image.content_type}")
         
-        # Handle reference image if provided
-        if image and image.filename:
-            # Validate image file
-            if image.content_type not in settings.allowed_image_types:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Invalid file type. Allowed types: {', '.join(settings.allowed_image_types)}"
-                )
-            
-            # Check file size
-            content = await image.read()
-            if len(content) > settings.max_file_size:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Reference image too large. Maximum size is {settings.max_file_size // (1024*1024)}MB"
-                )
-            
-            # Reset file pointer for service
-            await image.seek(0)
-            
-            # Save reference image and get URL
-            reference_image_url = image_generator.save_reference_image(image)
-            
-            parsed_metadata.update({
-                "has_reference_image": True,
-                "reference_filename": image.filename,
-                "reference_size": len(content),
-                "reference_type": image.content_type
-            })
-        else:
-            parsed_metadata.update({
-                "has_reference_image": False
-            })
+        # Validate image file
+        if image.content_type not in settings.allowed_image_types:
+            logger.warning(f"Invalid file type: {image.content_type}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file type. Allowed types: {', '.join(settings.allowed_image_types)}"
+            )
+        
+        # Check file size
+        content = await image.read()
+        logger.info(f"Reference image size: {len(content)} bytes")
+        if len(content) > settings.max_file_size:
+            logger.warning(f"Image too large: {len(content)} bytes (max: {settings.max_file_size})")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Reference image too large. Maximum size is {settings.max_file_size // (1024*1024)}MB"
+            )
+        
+        # Reset file pointer for service
+        await image.seek(0)
+        
+        # Save reference image and get URL
+        logger.info("Saving reference image...")
+        reference_image_url = image_generator.save_reference_image(image)
+        logger.info(f"Reference image saved: {reference_image_url}")
         
         # Create image generation record
         image_data = {
             "id": image_id,
             "prompt": prompt,
-            "user_id": user_id,
-            "metadata": parsed_metadata,
             "status": "pending",
             "generated_image_url": None,
             "reference_image_url": reference_image_url,
@@ -126,13 +122,14 @@ async def generate_image(
         }
         
         # Generate the actual image using AI
+        logger.info("Starting image generation...")
         try:
-            if reference_image_url:
-                # Reset file pointer for generation
-                await image.seek(0)
-                generated_image_url, _ = image_generator.generate_from_image_and_text(image, prompt)
-            else:
-                generated_image_url, _ = image_generator.generate_from_text(prompt)
+            # Generate image with reference image (now mandatory)
+            logger.info("Generating image with reference image...")
+            # Reset file pointer for generation
+            await image.seek(0)
+            generated_image_url = image_generator.generate_from_image_and_text(image, prompt)
+            logger.info(f"Generated image with reference: {generated_image_url}")
             
             # Update image data with generated image URL
             image_data.update({
@@ -153,6 +150,7 @@ async def generate_image(
             )
             
         except Exception as e:
+            logger.error(f"Image generation failed: {str(e)}", exc_info=True)
             # Update image data with error status
             image_data.update({
                 "status": "failed",
@@ -167,12 +165,15 @@ async def generate_image(
         
         # Store in memory (replace with database in production)
         generated_images[image_id] = image_data
+        logger.info(f"Image generation completed successfully for ID: {image_id}")
         
         return response
         
     except HTTPException:
+        logger.warning("HTTP exception occurred during image generation")
         raise
     except Exception as e:
+        logger.error(f"Unexpected error during image generation: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Internal server error: {str(e)}"
@@ -183,7 +184,10 @@ async def get_generation_status(image_id: str):
     """
     Get the status of an image generation request
     """
+    logger.info(f"Getting generation status for ID: {image_id}")
+    
     if image_id not in generated_images:
+        logger.warning(f"Generation request not found: {image_id}")
         raise HTTPException(
             status_code=404,
             detail="Image generation request not found"
@@ -207,6 +211,7 @@ async def list_generation_requests():
     """
     List all image generation requests (for demo purposes)
     """
+    logger.info(f"Listing generation requests - Total: {len(generated_images)}")
     return {
         "requests": list(generated_images.values()),
         "total": len(generated_images)
@@ -217,12 +222,16 @@ async def delete_generation_request(image_id: str):
     """
     Delete an image generation request
     """
+    logger.info(f"Deleting generation request: {image_id}")
+    
     if image_id not in generated_images:
+        logger.warning(f"Generation request not found for deletion: {image_id}")
         raise HTTPException(
             status_code=404,
             detail="Image generation request not found"
         )
     
     del generated_images[image_id]
+    logger.info(f"Generation request deleted successfully: {image_id}")
     
     return {"message": "Image generation request deleted successfully"}

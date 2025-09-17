@@ -8,8 +8,9 @@ from typing import Optional, Union, Tuple
 from pathlib import Path
 from io import BytesIO
 import base64
+import logging
 
-import google.generativeai as genai
+from google import genai
 from PIL import Image
 from fastapi import HTTPException
 from dotenv import load_dotenv
@@ -18,6 +19,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from ..config import settings
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class ImageGenerationService:
@@ -35,104 +39,29 @@ class ImageGenerationService:
         if not self.api_key:
             raise ValueError("API key is required. Set GOOGLE_AI_API_KEY environment variable")
         
-        # Configure the Gemini client
-        genai.configure(api_key=self.api_key)
-        
         # Initialize the model - using gemini-1.5-flash for image generation
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+
+                # Initialize the Gemini client
+        self.client = genai.Client(api_key=self.api_key)
+        self.model = "gemini-2.5-flash-image-preview"
+
+        logger.info("Gemini model initialized: gemini-1.5-flash")
+        
+                
+        # Configure the Gemini client
+        logger.info("Google AI client configured successfully")
         
         # Create output directory for generated images
         self.output_dir = Path('generated_images')
         self.output_dir.mkdir(exist_ok=True)
+        logger.info(f"Output directory created/verified: {self.output_dir}")
     
-    def generate_from_text(self, prompt: str) -> Tuple[str, str]:
-        """
-        Generate an image from text prompt only
-        
-        Args:
-            prompt: Text prompt for image generation
-            
-        Returns:
-            Tuple[str, str]: (image_url, image_path)
-            
-        Raises:
-            HTTPException: If generation fails
-        """
-        try:
-            # Note: Gemini models don't generate images, they're text models
-            # For now, we'll create a placeholder image
-            # In production, you would integrate with an actual image generation service
-            # like DALL-E, Midjourney API, or Stable Diffusion
-            
-            # Generate unique filename
-            image_id = str(uuid.uuid4())
-            filename = f"generated_{image_id}.png"
-            output_path = self.output_dir / filename
-            
-            # Create a placeholder image with the prompt text
-            from PIL import Image, ImageDraw, ImageFont
-            
-            # Create a 512x512 image
-            img = Image.new('RGB', (512, 512), color='lightblue')
-            draw = ImageDraw.Draw(img)
-            
-            # Try to use a default font, fallback to basic if not available
-            try:
-                font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 24)
-            except:
-                font = ImageFont.load_default()
-            
-            # Wrap text and draw it
-            words = prompt.split()
-            lines = []
-            current_line = []
-            
-            for word in words:
-                current_line.append(word)
-                test_line = ' '.join(current_line)
-                bbox = draw.textbbox((0, 0), test_line, font=font)
-                if bbox[2] - bbox[0] > 480:  # If line is too wide
-                    if len(current_line) > 1:
-                        current_line.pop()
-                        lines.append(' '.join(current_line))
-                        current_line = [word]
-                    else:
-                        lines.append(word)
-                        current_line = []
-            
-            if current_line:
-                lines.append(' '.join(current_line))
-            
-            # Draw the text
-            y = 50
-            for line in lines[:8]:  # Limit to 8 lines
-                bbox = draw.textbbox((0, 0), line, font=font)
-                text_width = bbox[2] - bbox[0]
-                x = (512 - text_width) // 2
-                draw.text((x, y), line, fill='darkblue', font=font)
-                y += 40
-            
-            # Add a note
-            draw.text((10, 450), "AI Generated Placeholder", fill='gray', font=font)
-            draw.text((10, 480), f"Prompt: {prompt[:50]}...", fill='gray', font=font)
-            
-            img.save(output_path)
-            image_url = f"/generated_images/{filename}"
-            
-            return image_url, str(output_path)
-            
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to generate image from text: {str(e)}"
-            )
-    
-    def generate_from_image_and_text(self, image_file, prompt: str) -> Tuple[str, str]:
+    def generate_from_image_and_text(self, image_file, prompt: str) -> str:
         """
         Generate an image using a reference image and text prompt
         
         Args:
-            image_file: Uploaded image file
+            image_file: Uploaded image file (mandatory)
             prompt: Text prompt for image generation
             
         Returns:
@@ -142,58 +71,48 @@ class ImageGenerationService:
             HTTPException: If generation fails
         """
         try:
+            logger.info(f"Generating image with reference image and prompt: '{prompt[:50]}...'")
+            
             # Read and process the uploaded image
             image_content = image_file.file.read()
             image_file.file.seek(0)  # Reset file pointer
+            logger.info(f"Reference image size: {len(image_content)} bytes")
             
             # Convert to PIL Image
             reference_image = Image.open(BytesIO(image_content))
+            logger.info(f"Reference image loaded: {reference_image.size}")
             
-            # Note: Gemini models don't generate images, they're text models
-            # For now, we'll create a placeholder image that combines the reference with the prompt
-            # In production, you would integrate with an actual image generation service
+
+            # Generate the image using Gemini
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=[prompt, reference_image],
+            )
             
-            # Generate unique filename
-            image_id = str(uuid.uuid4())
-            filename = f"generated_with_ref_{image_id}.png"
-            output_path = self.output_dir / filename
-            
-            # Create a placeholder image with the prompt text
-            from PIL import Image, ImageDraw, ImageFont
-            
-            # Resize reference image to fit in our canvas
-            reference_image.thumbnail((256, 256), Image.Resampling.LANCZOS)
-            
-            # Create a 512x512 canvas
-            canvas = Image.new('RGB', (512, 512), color='lightgray')
-            draw = ImageDraw.Draw(canvas)
-            
-            # Paste reference image in the center
-            ref_x = (512 - reference_image.width) // 2
-            ref_y = 50
-            canvas.paste(reference_image, (ref_x, ref_y))
-            
-            # Try to use a default font, fallback to basic if not available
-            try:
-                font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 20)
-            except:
-                font = ImageFont.load_default()
-            
-            # Draw the prompt text below the reference image
-            prompt_y = ref_y + reference_image.height + 20
-            draw.text((10, prompt_y), f"Reference + Prompt:", fill='black', font=font)
-            draw.text((10, prompt_y + 25), f"{prompt[:60]}...", fill='darkblue', font=font)
-            
-            # Add a note
-            draw.text((10, 450), "AI Generated Placeholder", fill='gray', font=font)
-            draw.text((10, 480), "Reference image + prompt combination", fill='gray', font=font)
-            
-            canvas.save(output_path)
-            image_url = f"/generated_images/{filename}"
-            
-            return image_url, str(output_path)
-            
+            # Process the response and save image
+            if response.candidates and len(response.candidates) > 0:
+                candidate = response.candidates[0]
+                if candidate.content and candidate.content.parts:
+                    for part in candidate.content.parts:
+                        if part.inline_data is not None:
+                            # Save the generated image
+                            generated_image = Image.open(BytesIO(part.inline_data.data))
+                            
+                            # Generate output filename
+                            output_filename = f"nano_banana_{len(list(self.output_dir.glob('*.png'))) + 1}.png"
+                            output_path = self.output_dir / output_filename
+                            
+                            generated_image.save(output_path)
+                            return str(output_path)
+
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to generate image from reference: {str(e)}"
+            )
+    
+                
         except Exception as e:
+            logger.error(f"Failed to generate image from reference: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to generate image from reference: {str(e)}"
@@ -210,24 +129,31 @@ class ImageGenerationService:
             str: URL of the saved reference image
         """
         try:
+            logger.info(f"Saving reference image: {image_file.filename}")
+            
             # Read image content
             image_content = image_file.file.read()
             image_file.file.seek(0)  # Reset file pointer
+            logger.info(f"Reference image size: {len(image_content)} bytes")
             
             # Generate unique filename
             image_id = str(uuid.uuid4())
             original_filename = image_file.filename or "reference"
             file_extension = Path(original_filename).suffix or ".jpg"
             filename = f"reference_{image_id}{file_extension}"
+            logger.info(f"Reference image filename: {filename}")
             
             # Save reference image
             reference_path = self.output_dir / filename
             with open(reference_path, 'wb') as f:
                 f.write(image_content)
             
-            return f"/generated_images/{filename}"
+            image_url = f"/generated_images/{filename}"
+            logger.info(f"Reference image saved successfully: {image_url}")
+            return image_url
             
         except Exception as e:
+            logger.error(f"Failed to save reference image: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to save reference image: {str(e)}"

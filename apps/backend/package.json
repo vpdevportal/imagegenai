@@ -4,7 +4,7 @@
   "description": "FastAPI backend for ImageGenAI",
   "private": true,
   "scripts": {
-    "dev": "uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+    "dev": "uvicorn main:app --reload --reload-dir app --host 0.0.0.0 --port 8000",
     "build": "echo 'FastAPI backend build completed'",
     "start": "uvicorn main:app --host 0.0.0.0 --port 8000",
     "lint": "black . && flake8 .",

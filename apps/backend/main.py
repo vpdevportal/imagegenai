@@ -2,8 +2,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
+import logging
 from app.api.routes import api_router
 from app.config import settings
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('imagegenai.log')
+    ]
+)
 
 # Create FastAPI app
 app = FastAPI(
@@ -13,6 +24,9 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc"
 )
+
+logger = logging.getLogger(__name__)
+logger.info("Starting ImageGenAI FastAPI application")
 
 # Configure CORS
 app.add_middleware(
@@ -35,5 +49,6 @@ if __name__ == "__main__":
         host=settings.host,
         port=settings.port,
         reload=settings.debug,
+        reload_dirs=["app"],
         log_level="info"
     )

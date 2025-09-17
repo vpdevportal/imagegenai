@@ -237,6 +237,9 @@ venv.bak/
 uploads/
 static/uploads/
 
+# Generated images
+apps/backend/generated_images/
+
 # Database files
 *.db
 *.sqlite

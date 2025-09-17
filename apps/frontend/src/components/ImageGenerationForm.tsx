@@ -89,11 +89,16 @@ export default function ImageGenerationForm({
       return
     }
 
+    if (!selectedFile) {
+      setError('Please select a reference image')
+      return
+    }
+
     setError('')
     setIsGenerating(true)
 
     try {
-      const response = await generateImage(prompt, selectedFile || undefined)
+      const response = await generateImage(prompt, selectedFile)
       onImageGenerated({
         id: response.id,
         prompt,
@@ -101,7 +106,7 @@ export default function ImageGenerationForm({
         referenceImageUrl: response.reference_image_url,
         status: response.status,
         createdAt: response.created_at,
-        type: selectedFile ? 'generation-with-reference' : 'generation'
+        type: 'generation-with-reference'
       })
       setPrompt('')
       clearImage()
@@ -123,7 +128,7 @@ export default function ImageGenerationForm({
         {/* Optional Reference Image Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Reference Image (Optional)
+            Reference Image <span className="text-red-500">*</span>
           </label>
           
           {!previewUrl ? (
@@ -141,6 +146,8 @@ export default function ImageGenerationForm({
               <PhotoIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
               <p className="text-sm text-gray-600 mb-2">
                 Drag and drop a reference image, or click to select
+                <br />
+                <span className="text-red-500 text-xs">Reference image is required</span>
               </p>
               <button
                 type="button"
@@ -182,16 +189,13 @@ export default function ImageGenerationForm({
         {/* Prompt Input */}
         <div>
           <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
-            {selectedFile ? 'Describe how you want to use the reference image' : 'Describe the image you want to generate'}
+            Describe how you want to use the reference image
           </label>
           <textarea
             id="prompt"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder={selectedFile 
-              ? "Use this image as inspiration, change the style to watercolor, add a sunset background..."
-              : "A serene mountain landscape at sunset with a lake reflecting the sky..."
-            }
+            placeholder="Use this image as inspiration, change the style to watercolor, add a sunset background..."
             className="input-field min-h-[120px] resize-none"
             disabled={isGenerating}
             rows={4}
@@ -206,7 +210,7 @@ export default function ImageGenerationForm({
 
         <button
           type="submit"
-          disabled={isGenerating || !prompt.trim()}
+          disabled={isGenerating || !prompt.trim() || !selectedFile}
           className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
         >
           {isGenerating ? (
@@ -225,24 +229,13 @@ export default function ImageGenerationForm({
 
       <div className="mt-6 p-4 bg-blue-50 rounded-lg">
         <h4 className="text-sm font-medium text-blue-900 mb-2">
-          {selectedFile ? 'Tips for reference image generation:' : 'Tips for better results:'}
+          Tips for reference image generation:
         </h4>
         <ul className="text-sm text-blue-800 space-y-1">
-          {selectedFile ? (
-            <>
-              <li>• Describe how you want to use the reference image</li>
-              <li>• Specify style changes (watercolor, oil painting, digital art)</li>
-              <li>• Mention composition changes or additions</li>
-              <li>• Try prompts like "make it more vibrant" or "add vintage effects"</li>
-            </>
-          ) : (
-            <>
-              <li>• Be descriptive and specific</li>
-              <li>• Include style preferences (photorealistic, artistic, etc.)</li>
-              <li>• Mention lighting and mood</li>
-              <li>• Add details about composition</li>
-            </>
-          )}
+          <li>• Describe how you want to use the reference image</li>
+          <li>• Specify style changes (watercolor, oil painting, digital art)</li>
+          <li>• Mention composition changes or additions</li>
+          <li>• Try prompts like "make it more vibrant" or "add vintage effects"</li>
         </ul>
       </div>
     </div>

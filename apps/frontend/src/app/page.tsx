@@ -18,17 +18,17 @@ export default function Home() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-3">
-              <div className="bg-primary-600 p-2 rounded-lg">
-                <SparklesIcon className="h-8 w-8 text-white" />
+          <div className="flex justify-between items-center py-2">
+            <div className="flex items-center space-x-2">
+              <div className="bg-primary-600 p-1.5 rounded-md">
+                <SparklesIcon className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">ImageGenAI</h1>
-                <p className="text-sm text-gray-500">AI-Powered Image Generation</p>
+                <h1 className="text-xl font-bold text-gray-900">ImageGenAI</h1>
+                <p className="text-xs text-gray-500">AI-Powered Image Generation</p>
               </div>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-xs text-gray-500">
               Powered by Advanced AI
             </div>
           </div>
