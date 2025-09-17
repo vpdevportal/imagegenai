@@ -65,27 +65,25 @@ start_dev() {
     docker-compose up -d --build
     print_success "Development environment started!"
     print_status "Frontend: http://localhost:5001"
-    print_status "Backend: http://localhost:8000"
-    print_status "API Docs: http://localhost:8000/api/docs"
+    print_status "Backend API: http://localhost:6001"
+    print_status "API Docs: http://localhost:6001/api/docs"
 }
 
-# Function to start production environment (single container)
+# Function to start production environment
 start_prod() {
-    print_status "Starting production environment (single container)..."
+    print_status "Starting production environment..."
     check_docker
-    docker-compose -f docker-compose.single.yml up -d --build
+    docker-compose up -d --build
     print_success "Production environment started!"
     print_status "Frontend: http://localhost:5001"
-    print_status "Backend: http://localhost:8000"
-    print_status "API Docs: http://localhost:8000/api/docs"
+    print_status "Backend API: http://localhost:6001"
+    print_status "API Docs: http://localhost:6001/api/docs"
 }
 
 # Function to stop all containers
 stop_containers() {
     print_status "Stopping all containers..."
     docker-compose down
-    docker-compose -f docker-compose.dev-single.yml down
-    docker-compose -f docker-compose.single.yml down
     print_success "All containers stopped!"
 }
 
@@ -150,8 +148,6 @@ open_shell() {
     # Try to find the running container
     if docker-compose ps | grep -q "Up"; then
         docker-compose exec app bash
-    elif docker-compose -f docker-compose.single.yml ps | grep -q "Up"; then
-        docker-compose -f docker-compose.single.yml exec app bash
     else
         print_error "No running containers found"
     fi

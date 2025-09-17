@@ -120,8 +120,8 @@ docker-compose down
 
 **Access Points:**
 - Frontend: http://localhost:5001
-- Backend API: http://localhost:8000
-- API Documentation: http://localhost:8000/api/docs
+- Backend API: http://localhost:6001
+- API Documentation: http://localhost:6001/api/docs
 
 For detailed Docker instructions, see [DOCKER-SINGLE.md](DOCKER-SINGLE.md).
 
