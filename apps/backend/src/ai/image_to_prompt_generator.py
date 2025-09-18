@@ -1,11 +1,16 @@
 from PIL import Image
 import io
 import base64
-from typing import Optional
+from typing import Dict, Any, Optional
+import json
 import os
+import logging
 from google import genai
 from ..utils.thumbnail import ThumbnailGenerator
 from ..db.config import settings
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class ImageToPromptGenerator:
     """
@@ -24,8 +29,11 @@ class ImageToPromptGenerator:
         if not self.api_key:
             raise ValueError("API key is required. Set GOOGLE_AI_API_KEY environment variable")
         
+        # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
         self.model = "gemini-2.5-flash"
+                
+        logger.info("Image to prompt generator initialized")
     
     
     async def generate_prompt_from_image(
@@ -38,6 +46,7 @@ class ImageToPromptGenerator:
         Generate a descriptive prompt from an image using Gemini AI
         """
         try:
+            # Create the prompt for the model based on style and detail level
             style_instructions = {
                 "photorealistic": "Focus on photorealistic details, high resolution, sharp focus, realistic lighting and textures",
                 "artistic": "Describe in an artistic way, focus on creative interpretation, expressive style, artistic elements",
@@ -56,6 +65,7 @@ class ImageToPromptGenerator:
             style_instruction = style_instructions.get(style, style_instructions["photorealistic"])
             detail_instruction = detail_instructions.get(detail_level, detail_instructions["detailed"])
             
+            # Create the prompt for Gemini
             prompt_content = [
                 image,
                 f"""Describe this image in detail, focusing on elements relevant for generating a similar picture. 
@@ -72,6 +82,7 @@ class ImageToPromptGenerator:
                 Make it a concise, descriptive prompt suitable for AI image generation."""
             ]
             
+            # Generate content using Gemini
             response = self.client.models.generate_content(
                 model=self.model,
                 contents=[image, prompt_content],
@@ -80,6 +91,7 @@ class ImageToPromptGenerator:
             return response.text.strip()
             
         except Exception as e:
+            print(f"Gemini API error: {e}")
             raise Exception(f"Failed to generate prompt from image: {e}")
     
     def generate_thumbnail(self, image: Image.Image, size: tuple = (150, 150)) -> bytes:
