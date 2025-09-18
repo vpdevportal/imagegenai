@@ -38,6 +38,15 @@ if [ ! -f "package.json" ] || [ ! -f "turbo.json" ]; then
     exit 1
 fi
 
+# Check if lsof is available
+if ! command -v lsof &> /dev/null; then
+    print_error "lsof command not found. Please install it:"
+    print_error "  macOS: brew install lsof"
+    print_error "  Ubuntu/Debian: sudo apt-get install lsof"
+    print_error "  CentOS/RHEL: sudo yum install lsof"
+    exit 1
+fi
+
 # Function to check if a port is in use
 check_port() {
     local port=$1
@@ -48,16 +57,30 @@ check_port() {
     fi
 }
 
-# Check if ports are already in use
-print_status "Checking if ports are available..."
+# Function to kill processes on a port
+kill_port() {
+    local port=$1
+    local service_name=$2
+    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+        print_warning "Port $port ($service_name) is in use. Killing existing processes..."
+        lsof -ti :$port | xargs kill -9 2>/dev/null || true
+        sleep 1
+        if check_port $port; then
+            print_error "Failed to kill processes on port $port"
+            exit 1
+        else
+            print_success "Successfully killed processes on port $port"
+        fi
+    else
+        print_status "Port $port ($service_name) is available"
+    fi
+}
 
-if check_port 8000; then
-    print_warning "Port 8000 (backend) is already in use. Backend might already be running."
-fi
+# Kill any existing processes on the ports
+print_status "Checking and cleaning up ports..."
 
-if check_port 3000; then
-    print_warning "Port 3000 (frontend) is already in use. Frontend might already be running."
-fi
+kill_port 8000 "backend"
+kill_port 3000 "frontend"
 
 # Check if Python virtual environment exists
 if [ ! -d "apps/backend/venv" ]; then
@@ -94,7 +117,11 @@ echo ""
 cleanup() {
     print_status "Shutting down development servers..."
     # Kill background processes
-    jobs -p | xargs -r kill
+    jobs -p | xargs -r kill 2>/dev/null || true
+    # Also kill any processes on our ports
+    lsof -ti :8000 | xargs kill -9 2>/dev/null || true
+    lsof -ti :3000 | xargs kill -9 2>/dev/null || true
+    print_success "Development servers stopped"
     exit 0
 }
 
