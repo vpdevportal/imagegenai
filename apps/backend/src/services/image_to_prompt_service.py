@@ -1,21 +1,25 @@
 from PIL import Image
 import io
 import base64
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import json
 import os
+import logging
 import google.generativeai as genai
 from ..utils.thumbnail import ThumbnailGenerator
+from ..db.config import settings
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class ImageToPromptService:
     """
     Service for generating prompts from images using Google Gemini AI
     """
     
-    def __init__(self):
-
+    def __init__(self, api_key: Optional[str] = None):
         """
-        Initialize the Image Generation Service
+        Initialize the Image to Prompt Service
         
         Args:
             api_key: Google AI API key. If not provided, will look for GOOGLE_AI_API_KEY env var
@@ -26,9 +30,10 @@ class ImageToPromptService:
             raise ValueError("API key is required. Set GOOGLE_AI_API_KEY environment variable")
         
         # Initialize the Gemini client
-        self.client = genai.Client(api_key=self.api_key)
-        self.model = "gemini-2.5-flash-image-preview"
-        self.model_loaded = True
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        
+        logger.info("Image to prompt service initialized")
     
     
     async def generate_prompt_from_image(
