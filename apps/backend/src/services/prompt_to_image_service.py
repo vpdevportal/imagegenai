@@ -11,7 +11,7 @@ import os
 from typing import Tuple
 from fastapi import HTTPException, UploadFile
 
-from ..ai.prompt_to_image_generator import get_prompt_to_image_generator
+from ..ai.prompt_to_image_generator import prompt_to_image_generator
 from .prompt_service import prompt_service
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class PromptToImageService:
     """Service for handling prompt to image generation business logic"""
     
     def __init__(self):
-        self.generator = get_prompt_to_image_generator()
+        self.generator = prompt_to_image_generator
         self.prompt_service = prompt_service
         logger.info("Prompt to image service initialized")
     

@@ -138,12 +138,5 @@ class PromptToImageGenerator:
             )
 
 
-# Global instance - will be created when first imported
-prompt_to_image_generator = None
-
-def get_prompt_to_image_generator():
-    """Get or create the global prompt to image generator instance"""
-    global prompt_to_image_generator
-    if prompt_to_image_generator is None:
-        prompt_to_image_generator = PromptToImageGenerator()
-    return prompt_to_image_generator
+# Global instance
+prompt_to_image_generator = PromptToImageGenerator()

@@ -12,7 +12,7 @@ from fastapi import HTTPException, UploadFile
 from PIL import Image
 import io
 
-from ..ai.image_to_prompt_generator import get_image_to_prompt_generator
+from ..ai.image_to_prompt_generator import image_to_prompt_generator
 from ..utils.thumbnail import ThumbnailGenerator
 from .prompt_service import prompt_service
 
@@ -23,7 +23,7 @@ class ImageToPromptService:
     """Service for handling image to prompt generation business logic"""
     
     def __init__(self):
-        self.generator = get_image_to_prompt_generator()
+        self.generator = image_to_prompt_generator
         self.prompt_service = prompt_service
         logger.info("Image to prompt service initialized")
     
