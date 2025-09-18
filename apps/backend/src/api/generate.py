@@ -5,8 +5,11 @@ import uuid
 from datetime import datetime
 import base64
 import logging
+import tempfile
+import os
 
 from ..services.image_generator import image_generator
+from ..services.prompt_service import prompt_service
 from ..config import settings
 
 # Configure logging
@@ -97,6 +100,31 @@ async def generate_image(
             generated_image_base64 = base64.b64encode(generated_image_data).decode('utf-8')
             generated_image_data_url = f"data:{content_type};base64,{generated_image_base64}"
             
+            # Save prompt to database with thumbnail
+            try:
+                # Create temporary file for the generated image
+                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+                    temp_file.write(generated_image_data)
+                    temp_file_path = temp_file.name
+                
+                # Save to database
+                prompt_record = prompt_service.create_or_update_prompt(
+                    prompt_text=prompt,
+                    model="gemini-2.5-flash-image-preview",
+                    image_path=temp_file_path
+                )
+                
+                logger.info(f"Saved prompt to database: ID={prompt_record.id}, uses={prompt_record.total_uses}")
+                
+                # Clean up temporary file
+                try:
+                    os.unlink(temp_file_path)
+                except OSError:
+                    pass
+                    
+            except Exception as db_error:
+                logger.error(f"Failed to save prompt to database: {db_error}")
+                # Continue with response even if database save fails
             
             response = ImageGenerationResponse(
                 id=image_id,

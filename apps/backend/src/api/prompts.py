@@ -79,6 +79,25 @@ async def get_recent_prompts(
         logger.error(f"Failed to get recent prompts: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve recent prompts")
 
+@router.get("/health")
+async def health_check():
+    """Health check for prompts API"""
+    try:
+        stats = prompt_service.get_stats()
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "total_prompts": stats.total_prompts,
+            "message": "Prompts API is working correctly"
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e)
+        }
+
 @router.get("/{prompt_id}", response_model=PromptResponse)
 async def get_prompt(
     prompt_id: int = Path(..., description="Prompt ID")
