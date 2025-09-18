@@ -9,7 +9,7 @@ from io import BytesIO
 import base64
 import logging
 
-from google import genai
+import google.generativeai as genai
 from PIL import Image
 from fastapi import HTTPException
 from dotenv import load_dotenv
@@ -39,8 +39,8 @@ class ImageGenerationService:
             raise ValueError("API key is required. Set GOOGLE_AI_API_KEY environment variable")
         
         # Initialize the Gemini client
-        self.client = genai.Client(api_key=self.api_key)
-        self.model = "gemini-2.5-flash-image-preview"
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel("gemini-2.0-flash-exp")
         
         logger.info("Image generation service initialized")
         
@@ -69,10 +69,7 @@ class ImageGenerationService:
             reference_image = Image.open(BytesIO(image_content))
             
             # Generate the image using Gemini
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=[prompt, reference_image],
-            )
+            response = self.model.generate_content([prompt, reference_image])
             
             # Process the response and return image data
             if response.candidates and len(response.candidates) > 0:
