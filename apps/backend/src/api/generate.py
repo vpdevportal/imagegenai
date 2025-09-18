@@ -10,7 +10,7 @@ import os
 
 from ..services.image_generator import image_generator
 from ..services.prompt_service import prompt_service
-from ..config import settings
+from ..db.config import settings
 
 # Configure logging
 logger = logging.getLogger(__name__)
