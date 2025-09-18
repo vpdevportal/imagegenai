@@ -20,8 +20,8 @@ class PromptResponse(BaseModel):
     prompt_text: str
     prompt_hash: str
     total_uses: int
-    first_used_at: datetime
-    last_used_at: datetime
+    first_used_at: Optional[datetime]
+    last_used_at: Optional[datetime]
     model: Optional[str]
     thumbnail_mime: Optional[str]
     thumbnail_width: Optional[int]
