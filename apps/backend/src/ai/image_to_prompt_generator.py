@@ -1,8 +1,6 @@
 from PIL import Image
 import io
-import base64
-from typing import Dict, Any, Optional
-import json
+from typing import Optional
 import os
 import logging
 from google import genai
@@ -91,7 +89,6 @@ class ImageToPromptGenerator:
             return response.text.strip()
             
         except Exception as e:
-            print(f"Gemini API error: {e}")
             raise Exception(f"Failed to generate prompt from image: {e}")
     
     def generate_thumbnail(self, image: Image.Image, size: tuple = (150, 150)) -> bytes:

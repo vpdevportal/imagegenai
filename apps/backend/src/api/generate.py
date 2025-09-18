@@ -5,8 +5,6 @@ import uuid
 from datetime import datetime
 import base64
 import logging
-import tempfile
-import os
 
 from ..services.prompt_to_image_service import prompt_to_image_service
 from ..db.config import settings

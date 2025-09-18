@@ -1,14 +1,7 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
-from typing import List
-import tempfile
-import os
-from PIL import Image
-import io
-import base64
 
 from ..services.image_to_prompt_service import image_to_prompt_service
-from ..db.config import settings
 
 router = APIRouter(prefix="/inspire", tags=["inspire"])
 
