@@ -254,10 +254,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
             <div
               key={prompt.id}
               onClick={() => handlePromptClick(prompt)}
-              className="bg-white rounded-lg border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white rounded-lg border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer group flex h-20 overflow-hidden"
             >
               {/* Thumbnail */}
-              <div className="aspect-square relative bg-gray-100 rounded-t-lg overflow-hidden">
+              <div className="w-20 h-20 flex-shrink-0 relative bg-gray-100 rounded-l-lg overflow-hidden border-r border-gray-200">
                 {thumbnails[prompt.id] ? (
                   <Image
                     src={thumbnails[prompt.id]}
@@ -270,25 +270,25 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400">
-                    <EyeIcon className="h-8 w-8" />
+                    <EyeIcon className="h-5 w-5" />
                   </div>
                 )}
                 
                 {/* Overlay with usage count */}
-                <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
-                  {prompt.total_uses} uses
+                <div className="absolute top-1 right-1 bg-black/70 text-white text-xs px-1 py-0.5 rounded-full">
+                  {prompt.total_uses}
                 </div>
               </div>
               
               {/* Content */}
-              <div className="p-4">
-                <p className="text-sm text-gray-900 line-clamp-3 mb-2">
+              <div className="flex-1 px-3 py-2 flex flex-col justify-between">
+                <p className="text-xs text-gray-900 line-clamp-2 leading-tight">
                   {prompt.prompt_text}
                 </p>
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
                   <span>{formatDate(prompt.last_used_at)}</span>
                   {prompt.model && (
-                    <span className="bg-gray-100 px-2 py-1 rounded">
+                    <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">
                       {prompt.model}
                     </span>
                   )}
