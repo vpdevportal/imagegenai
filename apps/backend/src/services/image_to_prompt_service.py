@@ -76,16 +76,13 @@ class ImageToPromptService:
             
             # Save the prompt to the database
             try:
-                saved_prompt = await self.prompt_service.create_prompt(
+                saved_prompt = self.prompt_service.create_or_update_prompt(
                     prompt_text=prompt,
-                    model="gemini-2.5-flash",  # The model used for generation
-                    thumbnail_data=thumbnail_data,
-                    source="inspire_tab"  # Mark as generated from inspire tab
+                    model="gemini-2.5-flash",
+                    image_data=thumbnail_data
                 )
                 prompt_id = saved_prompt.id
-            except Exception as e:
-                logger.error(f"Error saving prompt to database: {e}")
-                # Continue even if database save fails
+            except Exception:
                 prompt_id = None
             
             return {
