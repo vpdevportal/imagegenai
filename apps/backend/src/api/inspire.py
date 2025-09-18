@@ -7,14 +7,13 @@ from PIL import Image
 import io
 import base64
 
-from ..services.image_to_prompt_service import ImageToPromptService
+from ..services.image_to_prompt_generator import get_image_to_prompt_generator
 from ..services.prompt_service import PromptService
 from ..db.config import settings
 
 router = APIRouter(prefix="/inspire", tags=["inspire"])
 
 # Initialize the services
-image_to_prompt_service = ImageToPromptService()
 prompt_service = PromptService()
 
 @router.post("/generate-prompt")
@@ -43,15 +42,18 @@ async def generate_prompt_from_image(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid image file: {str(e)}")
         
+        # Get the generator instance
+        generator = get_image_to_prompt_generator()
+        
         # Generate prompt from image
-        prompt = await image_to_prompt_service.generate_prompt_from_image(
+        prompt = await generator.generate_prompt_from_image(
             image=image,
             style=style,
             detail_level=detail_level
         )
         
         # Generate a thumbnail for the uploaded image
-        thumbnail_data = image_to_prompt_service.generate_thumbnail(image)
+        thumbnail_data = generator.generate_thumbnail(image)
         
         # Save the prompt to the database
         try:

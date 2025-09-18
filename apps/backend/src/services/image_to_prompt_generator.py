@@ -12,14 +12,14 @@ from ..db.config import settings
 # Configure logging
 logger = logging.getLogger(__name__)
 
-class ImageToPromptService:
+class ImageToPromptGenerator:
     """
-    Service for generating prompts from images using Google Gemini AI
+    Generator for creating prompts from images using Google Gemini AI
     """
     
     def __init__(self, api_key: Optional[str] = None):
         """
-        Initialize the Image Generation Service
+        Initialize the Image to Prompt Generator
         
         Args:
             api_key: Google AI API key. If not provided, will look for GOOGLE_AI_API_KEY env var
@@ -33,7 +33,7 @@ class ImageToPromptService:
         self.client = genai.Client(api_key=self.api_key)
         self.model = "gemini-2.5-flash"
                 
-        logger.info("Image to prompt service initialized")
+        logger.info("Image to prompt generator initialized")
     
     
     async def generate_prompt_from_image(
@@ -99,4 +99,14 @@ class ImageToPromptService:
         Generate a thumbnail from the image using the utility function
         """
         return ThumbnailGenerator.generate_thumbnail_from_pil_image(image, size)
-    
+
+
+# Global instance - will be created when first imported
+image_to_prompt_generator = None
+
+def get_image_to_prompt_generator():
+    """Get or create the global image to prompt generator instance"""
+    global image_to_prompt_generator
+    if image_to_prompt_generator is None:
+        image_to_prompt_generator = ImageToPromptGenerator()
+    return image_to_prompt_generator
