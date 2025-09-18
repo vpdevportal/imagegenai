@@ -17,7 +17,6 @@ services:
     volumes:
       - ./apps/backend:/app/backend
       - ./apps/frontend:/app/frontend
-      - ./apps/backend/generated_images:/app/backend/generated_images
       - /app/frontend/node_modules
       - /app/frontend/.next
     restart: unless-stopped

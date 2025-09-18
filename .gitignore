@@ -243,6 +243,9 @@ static/uploads/
 *.sqlite
 *.sqlite3
 
+# Development database (keep local but don't commit)
+data/prompts.db
+
 # Docker volumes
 postgres_data/
 redis_data/

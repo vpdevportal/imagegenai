@@ -177,7 +177,11 @@ npm run test           # Run tests
 - `GET /api/health` - Health check
 - `GET /api/` - Root endpoint
 - `POST /api/generate` - Generate image from prompt
-- `GET /api/images` - List generated images
+- `GET /api/prompts/` - List prompts with thumbnails
+- `GET /api/prompts/popular` - Most popular prompts
+- `GET /api/prompts/recent` - Recently used prompts
+- `GET /api/prompts/search` - Search prompts
+- `GET /api/prompts/stats/overview` - Database statistics
 - `GET /api/docs` - Interactive API documentation (Swagger)
 
 ## 🔧 Configuration
