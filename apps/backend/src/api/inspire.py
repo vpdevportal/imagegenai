@@ -8,12 +8,14 @@ import io
 import base64
 
 from ..services.image_to_prompt_service import ImageToPromptService
+from ..services.prompt_service import PromptService
 from ..db.config import settings
 
 router = APIRouter(prefix="/inspire", tags=["inspire"])
 
-# Initialize the image-to-prompt service
+# Initialize the services
 image_to_prompt_service = ImageToPromptService()
+prompt_service = PromptService()
 
 @router.post("/generate-prompt")
 async def generate_prompt_from_image(
@@ -51,13 +53,29 @@ async def generate_prompt_from_image(
         # Generate a thumbnail for the uploaded image
         thumbnail_data = image_to_prompt_service.generate_thumbnail(image)
         
+        # Save the prompt to the database
+        try:
+            saved_prompt = await prompt_service.create_prompt(
+                prompt_text=prompt,
+                model="gemini-2.0-flash-exp",  # The model used for generation
+                thumbnail_data=thumbnail_data,
+                source="inspire_tab"  # Mark as generated from inspire tab
+            )
+            prompt_id = saved_prompt.id
+        except Exception as e:
+            print(f"Error saving prompt to database: {e}")
+            # Continue even if database save fails
+            prompt_id = None
+        
         return JSONResponse(content={
             "success": True,
             "prompt": prompt,
             "style": style,
             "detail_level": detail_level,
             "thumbnail": base64.b64encode(thumbnail_data).decode('utf-8'),
-            "original_filename": file.filename
+            "original_filename": file.filename,
+            "prompt_id": prompt_id,
+            "saved_to_database": prompt_id is not None
         })
         
     except HTTPException:

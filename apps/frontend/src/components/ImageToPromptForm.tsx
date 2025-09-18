@@ -15,6 +15,7 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
   const [detailLevel, setDetailLevel] = useState('detailed')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
+  const [isSavedToDatabase, setIsSavedToDatabase] = useState(false)
   const [styles, setStyles] = useState<Array<{ value: string; label: string }>>([])
   const [detailLevels, setDetailLevels] = useState<Array<{ value: string; label: string }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -57,7 +58,13 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
       
       if (result.success) {
         setGeneratedPrompt(result.prompt)
+        setIsSavedToDatabase(result.saved_to_database)
         onPromptGenerated(result.prompt, result.thumbnail)
+        
+        // Show success message if saved to database
+        if (result.saved_to_database) {
+          console.log('Prompt saved to database with ID:', result.prompt_id)
+        }
       }
     } catch (error) {
       console.error('Error generating prompt:', error)
@@ -71,6 +78,7 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
     setSelectedFile(null)
     setPreview(null)
     setGeneratedPrompt(null)
+    setIsSavedToDatabase(false)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -189,7 +197,17 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
       {/* Generated Prompt Display */}
       {generatedPrompt && (
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Generated Prompt:</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-700">Generated Prompt:</h3>
+            {isSavedToDatabase && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                Saved
+              </span>
+            )}
+          </div>
           <p className="text-sm text-gray-900 bg-white p-3 rounded border">
             {generatedPrompt}
           </p>
