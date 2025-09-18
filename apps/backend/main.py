@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import logging
-from app.api.routes import api_router
-from app.config import settings
+from src.api.routes import api_router
+from src.db.config import settings
 
 # Configure logging
 logging.basicConfig(

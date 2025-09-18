@@ -33,7 +33,6 @@ RUN npm install
 WORKDIR /app
 
 # Create directories
-RUN mkdir -p backend/generated_images
 
 # Create startup script
 RUN echo '#!/bin/bash\n\
