@@ -7,14 +7,12 @@ from PIL import Image
 import io
 import base64
 
-from ..services.image_to_prompt_generator import get_image_to_prompt_generator
-from ..services.prompt_service import PromptService
+from ..services.image_to_prompt_service import image_to_prompt_service
 from ..db.config import settings
 
 router = APIRouter(prefix="/inspire", tags=["inspire"])
 
-# Initialize the services
-prompt_service = PromptService()
+# Service is already initialized globally
 
 @router.post("/generate-prompt")
 async def generate_prompt_from_image(
@@ -26,59 +24,14 @@ async def generate_prompt_from_image(
     Generate a prompt from an uploaded image
     """
     try:
-        # Validate file type
-        if not file.content_type or not file.content_type.startswith('image/'):
-            raise HTTPException(status_code=400, detail="File must be an image")
-        
-        # Read the uploaded file
-        contents = await file.read()
-        
-        # Validate image
-        try:
-            image = Image.open(io.BytesIO(contents))
-            # Convert to RGB if necessary
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid image file: {str(e)}")
-        
-        # Get the generator instance
-        generator = get_image_to_prompt_generator()
-        
-        # Generate prompt from image
-        prompt = await generator.generate_prompt_from_image(
-            image=image,
+        # Use the service to handle all the business logic
+        result = await image_to_prompt_service.generate_prompt_from_image(
+            file=file,
             style=style,
             detail_level=detail_level
         )
         
-        # Generate a thumbnail for the uploaded image
-        thumbnail_data = generator.generate_thumbnail(image)
-        
-        # Save the prompt to the database
-        try:
-            saved_prompt = await prompt_service.create_prompt(
-                prompt_text=prompt,
-                model="gemini-2.0-flash-exp",  # The model used for generation
-                thumbnail_data=thumbnail_data,
-                source="inspire_tab"  # Mark as generated from inspire tab
-            )
-            prompt_id = saved_prompt.id
-        except Exception as e:
-            print(f"Error saving prompt to database: {e}")
-            # Continue even if database save fails
-            prompt_id = None
-        
-        return JSONResponse(content={
-            "success": True,
-            "prompt": prompt,
-            "style": style,
-            "detail_level": detail_level,
-            "thumbnail": base64.b64encode(thumbnail_data).decode('utf-8'),
-            "original_filename": file.filename,
-            "prompt_id": prompt_id,
-            "saved_to_database": prompt_id is not None
-        })
+        return JSONResponse(content=result)
         
     except HTTPException:
         raise
