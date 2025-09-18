@@ -91,11 +91,6 @@ class ImageToPromptGenerator:
         except Exception as e:
             raise Exception(f"Failed to generate prompt from image: {e}")
     
-    def generate_thumbnail(self, image: Image.Image, size: tuple = (150, 150)) -> bytes:
-        """
-        Generate a thumbnail from the image using the utility function
-        """
-        return ThumbnailGenerator.generate_thumbnail_from_pil_image(image, size)
 
 
 # Global instance - will be created when first imported

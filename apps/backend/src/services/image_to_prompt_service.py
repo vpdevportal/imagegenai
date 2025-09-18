@@ -13,6 +13,7 @@ from PIL import Image
 import io
 
 from ..ai.image_to_prompt_generator import get_image_to_prompt_generator
+from ..utils.thumbnail import ThumbnailGenerator
 from .prompt_service import prompt_service
 
 logger = logging.getLogger(__name__)
@@ -71,7 +72,7 @@ class ImageToPromptService:
             )
             
             # Generate a thumbnail for the uploaded image
-            thumbnail_data = self.generator.generate_thumbnail(image)
+            thumbnail_data = ThumbnailGenerator.generate_thumbnail_from_pil_image(image)
             
             # Save the prompt to the database
             try:
