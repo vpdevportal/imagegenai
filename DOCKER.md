@@ -38,7 +38,7 @@ The application will be available at:
 - **Environment**: Development with hot reloading
 - **Volumes**: 
   - Full source code mounted for hot reloading
-  - Generated images persisted: `./apps/backend/generated_images:/app/generated_images`
+  - Database persisted: `./data/prompts.db` (SQLite database with thumbnails)
 
 ### Frontend (Next.js)
 - **Port**: 3000
@@ -124,10 +124,10 @@ lsof -i :8000
 ```
 
 ### Permission Issues
-If you encounter permission issues with generated images:
+If you encounter permission issues with the database:
 ```bash
 # Fix ownership
-sudo chown -R $USER:$USER ./apps/backend/generated_images
+sudo chown -R $USER:$USER ./data
 ```
 
 ### Clean Up

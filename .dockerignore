@@ -96,5 +96,8 @@ jspm_packages/
 .next/
 out/
 
-# Generated images
-generated_images/
+# Database files (development)
+data/
+*.db
+*.sqlite
+*.sqlite3
