@@ -1,11 +1,13 @@
 from fastapi import APIRouter
 from .generate import router as generate_router
+from .prompts import router as prompts_router
 
 # Create main API router
 api_router = APIRouter(prefix="/api", tags=["api"])
 
 # Include all sub-routers
 api_router.include_router(generate_router)
+api_router.include_router(prompts_router)
 
 # Health check endpoint
 @api_router.get("/health")
@@ -28,6 +30,7 @@ async def root():
         "endpoints": {
             "health": "/api/health",
             "generate": "/api/generate",
+            "prompts": "/api/prompts",
             "docs": "/api/docs"
         }
     }
