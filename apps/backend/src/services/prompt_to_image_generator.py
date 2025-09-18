@@ -1,5 +1,5 @@
 """
-Image Generation Service using Google Gemini AI
+Prompt to Image Generator using Google Gemini AI
 """
 
 import os
@@ -9,7 +9,7 @@ from io import BytesIO
 import base64
 import logging
 
-import google.generativeai as genai
+from google import genai
 from PIL import Image
 from fastapi import HTTPException
 from dotenv import load_dotenv
@@ -23,12 +23,12 @@ from ..db.config import settings
 logger = logging.getLogger(__name__)
 
 
-class ImageGenerationService:
+class PromptToImageGenerator:
     """Service for generating images using Google Gemini AI"""
     
     def __init__(self, api_key: Optional[str] = None):
         """
-        Initialize the Image Generation Service
+        Initialize the Prompt to Image Generator
         
         Args:
             api_key: Google AI API key. If not provided, will look for GOOGLE_AI_API_KEY env var
@@ -39,10 +39,10 @@ class ImageGenerationService:
             raise ValueError("API key is required. Set GOOGLE_AI_API_KEY environment variable")
         
         # Initialize the Gemini client
-        genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel("gemini-2.0-flash-exp")
+        self.client = genai.Client(api_key=self.api_key)
+        self.model = "gemini-2.5-flash-image-preview"
         
-        logger.info("Image generation service initialized")
+        logger.info("Prompt to image generator initialized")
         
         # No longer creating output directory since we use in-memory processing
     
@@ -69,7 +69,10 @@ class ImageGenerationService:
             reference_image = Image.open(BytesIO(image_content))
             
             # Generate the image using Gemini
-            response = self.model.generate_content([prompt, reference_image])
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=[prompt, reference_image],
+            )
             
             # Process the response and return image data
             if response.candidates and len(response.candidates) > 0:
@@ -136,4 +139,4 @@ class ImageGenerationService:
 
 
 # Global instance
-image_generator = ImageGenerationService()
+prompt_to_image_generator = PromptToImageGenerator()

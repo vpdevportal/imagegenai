@@ -8,7 +8,7 @@ import logging
 import tempfile
 import os
 
-from ..services.image_generator import image_generator
+from ..services.prompt_to_image_generator import prompt_to_image_generator
 from ..services.prompt_service import prompt_service
 from ..db.config import settings
 
@@ -88,13 +88,13 @@ async def generate_image(
         await image.seek(0)
         
         # Process reference image and get data URL
-        reference_image_url = image_generator.process_reference_image(image)
+        reference_image_url = prompt_to_image_generator.process_reference_image(image)
         
         # Generate the actual image using AI
         try:
             # Reset file pointer for generation
             await image.seek(0)
-            generated_image_data, content_type = image_generator.generate_from_image_and_text(image, prompt)
+            generated_image_data, content_type = prompt_to_image_generator.generate_from_image_and_text(image, prompt)
             
             # Convert image data to base64 for JSON response
             generated_image_base64 = base64.b64encode(generated_image_data).decode('utf-8')
