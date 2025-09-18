@@ -1,18 +1,9 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
-from typing import List
-import tempfile
-import os
-from PIL import Image
-import io
-import base64
 
 from ..services.image_to_prompt_service import image_to_prompt_service
-from ..db.config import settings
 
 router = APIRouter(prefix="/inspire", tags=["inspire"])
-
-# Service is already initialized globally
 
 @router.post("/generate-prompt")
 async def generate_prompt_from_image(
@@ -20,19 +11,14 @@ async def generate_prompt_from_image(
     style: str = "photorealistic",
     detail_level: str = "detailed"
 ):
-    """
-    Generate a prompt from an uploaded image
-    """
+    """Generate a prompt from an uploaded image"""
     try:
-        # Use the service to handle all the business logic
         result = await image_to_prompt_service.generate_prompt_from_image(
             file=file,
             style=style,
             detail_level=detail_level
         )
-        
         return JSONResponse(content=result)
-        
     except HTTPException:
         raise
     except Exception as e:
@@ -40,9 +26,7 @@ async def generate_prompt_from_image(
 
 @router.get("/styles")
 async def get_available_styles():
-    """
-    Get available prompt styles
-    """
+    """Get available prompt styles"""
     return {
         "styles": [
             {"value": "photorealistic", "label": "Photorealistic"},
@@ -61,7 +45,5 @@ async def get_available_styles():
 
 @router.get("/health")
 async def health_check():
-    """
-    Health check endpoint
-    """
+    """Health check endpoint"""
     return {"status": "healthy", "service": "image-to-prompt"}
