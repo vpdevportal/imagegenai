@@ -3,15 +3,22 @@ import io
 import base64
 from typing import Dict, Any
 import json
+import os
+import google.generativeai as genai
 
 class ImageToPromptService:
     """
-    Service for generating prompts from images using AI vision models
+    Service for generating prompts from images using Google Gemini AI
     """
     
     def __init__(self):
-        # In a real implementation, you would initialize your AI model here
-        # For now, we'll use a mock implementation
+        # Configure Gemini AI
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY environment variable is required")
+        
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
         self.model_loaded = True
     
     async def generate_prompt_from_image(
@@ -21,18 +28,66 @@ class ImageToPromptService:
         detail_level: str = "detailed"
     ) -> str:
         """
-        Generate a descriptive prompt from an image
+        Generate a descriptive prompt from an image using Gemini AI
         """
         try:
-            # In a real implementation, you would:
-            # 1. Send the image to an AI vision model (like GPT-4V, Claude Vision, etc.)
-            # 2. Get a detailed description of the image
-            # 3. Format it according to the requested style and detail level
+            # Create the prompt for the model based on style and detail level
+            style_instructions = {
+                "photorealistic": "Focus on photorealistic details, high resolution, sharp focus, realistic lighting and textures",
+                "artistic": "Describe in an artistic way, focus on creative interpretation, expressive style, artistic elements",
+                "minimalist": "Keep it minimal and clean, focus on essential elements, simple composition, elegant design",
+                "vintage": "Describe with vintage aesthetic, retro style, nostalgic elements, film photography feel",
+                "modern": "Focus on contemporary design, sleek and clean, modern aesthetic, current trends",
+                "abstract": "Describe abstract elements, non-representational aspects, creative interpretation, artistic abstraction"
+            }
             
-            # For now, we'll generate a mock prompt based on image properties
+            detail_instructions = {
+                "simple": "Keep the description concise and simple, focus on main elements only",
+                "detailed": "Provide a detailed description including colors, composition, mood, and key elements",
+                "comprehensive": "Give a comprehensive description with intricate details, complex composition, professional quality"
+            }
+            
+            style_instruction = style_instructions.get(style, style_instructions["photorealistic"])
+            detail_instruction = detail_instructions.get(detail_level, detail_instructions["detailed"])
+            
+            # Create the prompt for Gemini
+            prompt_content = [
+                image,
+                f"""Describe this image in detail, focusing on elements relevant for generating a similar picture. 
+                {style_instruction}. {detail_instruction}.
+                
+                Include:
+                - Main subjects and objects
+                - Colors and lighting
+                - Composition and framing
+                - Style and mood
+                - Textures and materials
+                - Background and setting
+                
+                Make it a concise, descriptive prompt suitable for AI image generation."""
+            ]
+            
+            # Generate content using Gemini
+            response = self.model.generate_content(prompt_content)
+            
+            if response and response.candidates:
+                generated_description = response.candidates[0].content.parts[0].text
+                return generated_description.strip()
+            else:
+                # Fallback to basic analysis if Gemini fails
+                return self._generate_fallback_prompt(image, style, detail_level)
+            
+        except Exception as e:
+            # Fallback to basic analysis if Gemini fails
+            print(f"Gemini API error: {e}")
+            return self._generate_fallback_prompt(image, style, detail_level)
+    
+    def _generate_fallback_prompt(self, image: Image.Image, style: str, detail_level: str) -> str:
+        """
+        Fallback method using basic image analysis
+        """
+        try:
             width, height = image.size
-            
-            # Analyze basic image properties
             colors = self._analyze_colors(image)
             composition = self._analyze_composition(width, height)
             
@@ -63,7 +118,7 @@ class ImageToPromptService:
             return prompt
             
         except Exception as e:
-            raise Exception(f"Error generating prompt: {str(e)}")
+            return f"An image with {style} style"
     
     def generate_thumbnail(self, image: Image.Image, size: tuple = (150, 150)) -> bytes:
         """

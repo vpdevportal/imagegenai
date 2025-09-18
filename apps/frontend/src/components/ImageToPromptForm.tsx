@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { PhotoIcon, SparklesIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { SparklesIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { generatePromptFromImage, getInspireStyles } from '@/lib/api'
 
 interface ImageToPromptFormProps {
@@ -78,12 +78,7 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center space-x-2 mb-6">
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-2 rounded-lg">
-          <PhotoIcon className="h-5 w-5 text-white" />
-        </div>
-        <h2 className="text-lg font-semibold text-gray-900">Upload Image</h2>
-      </div>
+      <h2 className="text-lg font-semibold text-gray-900 mb-6">Upload Image</h2>
 
       {/* File Upload Area */}
       <div className="mb-6">
@@ -92,7 +87,9 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-400 cursor-pointer transition-colors"
           >
-            <PhotoIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+            </svg>
             <p className="text-sm text-gray-600 mb-2">
               Click to upload an image
             </p>
@@ -100,23 +97,25 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
               PNG, JPG, GIF up to 10MB
             </p>
           </div>
-        ) : (
-          <div className="relative">
-            <img
-              src={preview}
-              alt="Preview"
-              className="w-full h-48 object-cover rounded-lg"
-            />
-            <button
-              onClick={handleClear}
-              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
+          ) : (
+            <div className="relative group">
+              <div className="aspect-square relative bg-gray-100 rounded-lg overflow-hidden">
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <button
+                onClick={handleClear}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-sm opacity-0 group-hover:opacity-100"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
         
         <input
           ref={fileInputRef}
