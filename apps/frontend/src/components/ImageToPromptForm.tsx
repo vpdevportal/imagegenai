@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { SparklesIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { generatePromptFromImage, getInspireStyles } from '@/lib/api'
 
@@ -21,7 +21,7 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Load styles on component mount
-  useState(() => {
+  useEffect(() => {
     const loadStyles = async () => {
       try {
         const data = await getInspireStyles()
