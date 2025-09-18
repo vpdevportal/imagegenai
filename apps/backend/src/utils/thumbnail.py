@@ -92,6 +92,33 @@ class ThumbnailGenerator:
         }
     
     @staticmethod
+    def generate_thumbnail_from_pil_image(
+        image: Image.Image,
+        size: tuple = (150, 150),
+        quality: int = 85,
+        format: str = "JPEG"
+    ) -> bytes:
+        """Generate thumbnail from PIL Image object"""
+        try:
+            # Create a copy to avoid modifying the original
+            img_copy = image.copy()
+            
+            # Resize image while maintaining aspect ratio
+            img_copy.thumbnail(size, Image.Resampling.LANCZOS)
+            
+            # Convert to RGB if necessary
+            if img_copy.mode != 'RGB':
+                img_copy = img_copy.convert('RGB')
+            
+            # Save to bytes
+            img_byte_arr = io.BytesIO()
+            img_copy.save(img_byte_arr, format=format, quality=quality)
+            return img_byte_arr.getvalue()
+            
+        except Exception as e:
+            raise Exception(f"Error generating thumbnail: {str(e)}")
+    
+    @staticmethod
     def _error_result(error: str) -> Dict[str, Any]:
         """Return error result"""
         return {

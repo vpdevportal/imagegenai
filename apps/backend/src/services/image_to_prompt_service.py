@@ -5,6 +5,7 @@ from typing import Dict, Any
 import json
 import os
 import google.generativeai as genai
+from ..utils.thumbnail import ThumbnailGenerator
 
 class ImageToPromptService:
     """
@@ -12,14 +13,23 @@ class ImageToPromptService:
     """
     
     def __init__(self):
-        # Configure Gemini AI using existing GOOGLE_AI_API_KEY
-        api_key = os.getenv('GOOGLE_AI_API_KEY')
-        if not api_key:
-            raise ValueError("GOOGLE_AI_API_KEY environment variable is required")
+
+        """
+        Initialize the Image Generation Service
         
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        Args:
+            api_key: Google AI API key. If not provided, will look for GOOGLE_AI_API_KEY env var
+        """
+        self.api_key = api_key or os.getenv('GOOGLE_AI_API_KEY') or getattr(settings, 'GOOGLE_AI_API_KEY', None)
+        
+        if not self.api_key:
+            raise ValueError("API key is required. Set GOOGLE_AI_API_KEY environment variable")
+        
+        # Initialize the Gemini client
+        self.client = genai.Client(api_key=self.api_key)
+        self.model = "gemini-2.5-flash-image-preview"
         self.model_loaded = True
+    
     
     async def generate_prompt_from_image(
         self, 
@@ -74,129 +84,15 @@ class ImageToPromptService:
                 generated_description = response.candidates[0].content.parts[0].text
                 return generated_description.strip()
             else:
-                # Fallback to basic analysis if Gemini fails
-                return self._generate_fallback_prompt(image, style, detail_level)
+                raise Exception("Gemini API returned no valid response")
             
         except Exception as e:
-            # Fallback to basic analysis if Gemini fails
             print(f"Gemini API error: {e}")
-            return self._generate_fallback_prompt(image, style, detail_level)
-    
-    def _generate_fallback_prompt(self, image: Image.Image, style: str, detail_level: str) -> str:
-        """
-        Fallback method using basic image analysis
-        """
-        try:
-            width, height = image.size
-            colors = self._analyze_colors(image)
-            composition = self._analyze_composition(width, height)
-            
-            # Generate style-specific prompt
-            base_description = f"A {composition} image with {colors} color palette"
-            
-            if style == "photorealistic":
-                prompt = f"Photorealistic {base_description}, high resolution, detailed, sharp focus"
-            elif style == "artistic":
-                prompt = f"Artistic interpretation of {base_description}, creative, expressive, stylized"
-            elif style == "minimalist":
-                prompt = f"Minimalist {base_description}, clean lines, simple composition, elegant"
-            elif style == "vintage":
-                prompt = f"Vintage {base_description}, retro style, aged, nostalgic, film photography"
-            elif style == "modern":
-                prompt = f"Modern {base_description}, contemporary, sleek, clean design"
-            elif style == "abstract":
-                prompt = f"Abstract {base_description}, non-representational, creative, artistic"
-            else:
-                prompt = base_description
-            
-            # Add detail level modifiers
-            if detail_level == "simple":
-                prompt = prompt.split(',')[0]  # Take only the first part
-            elif detail_level == "comprehensive":
-                prompt += ", intricate details, complex composition, professional quality"
-            
-            return prompt
-            
-        except Exception as e:
-            return f"An image with {style} style"
+            raise Exception(f"Failed to generate prompt from image: {e}")
     
     def generate_thumbnail(self, image: Image.Image, size: tuple = (150, 150)) -> bytes:
         """
-        Generate a thumbnail from the image
+        Generate a thumbnail from the image using the utility function
         """
-        try:
-            # Resize image while maintaining aspect ratio
-            image.thumbnail(size, Image.Resampling.LANCZOS)
-            
-            # Convert to RGB if necessary
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
-            
-            # Save to bytes
-            img_byte_arr = io.BytesIO()
-            image.save(img_byte_arr, format='JPEG', quality=85)
-            img_byte_arr = img_byte_arr.getvalue()
-            
-            return img_byte_arr
-            
-        except Exception as e:
-            raise Exception(f"Error generating thumbnail: {str(e)}")
+        return ThumbnailGenerator.generate_thumbnail_from_pil_image(image, size)
     
-    def _analyze_colors(self, image: Image.Image) -> str:
-        """
-        Analyze the dominant colors in the image
-        """
-        try:
-            # Convert to RGB if necessary
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
-            
-            # Get color palette
-            colors = image.getcolors(maxcolors=256*256*256)
-            if not colors:
-                return "neutral"
-            
-            # Sort by frequency
-            colors.sort(key=lambda x: x[0], reverse=True)
-            
-            # Get top 3 colors
-            top_colors = colors[:3]
-            color_names = []
-            
-            for count, (r, g, b) in top_colors:
-                # Simple color classification
-                if r > 200 and g > 200 and b > 200:
-                    color_names.append("bright")
-                elif r < 50 and g < 50 and b < 50:
-                    color_names.append("dark")
-                elif r > g and r > b:
-                    color_names.append("warm")
-                elif g > r and g > b:
-                    color_names.append("cool")
-                else:
-                    color_names.append("neutral")
-            
-            # Return unique color descriptions
-            unique_colors = list(set(color_names))
-            if len(unique_colors) == 1:
-                return unique_colors[0]
-            else:
-                return f"{unique_colors[0]} and {unique_colors[1]}" if len(unique_colors) >= 2 else unique_colors[0]
-                
-        except Exception:
-            return "neutral"
-    
-    def _analyze_composition(self, width: int, height: int) -> str:
-        """
-        Analyze the composition based on aspect ratio
-        """
-        ratio = width / height
-        
-        if ratio > 1.5:
-            return "wide landscape"
-        elif ratio < 0.67:
-            return "portrait"
-        elif 0.8 <= ratio <= 1.2:
-            return "square"
-        else:
-            return "landscape"
