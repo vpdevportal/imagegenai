@@ -126,35 +126,28 @@ export default function ImageGenerationForm({
       </h3>
       
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        {/* Optional Reference Image Upload */}
+        {/* Reference Image Upload */}
         <div>
-          
           {!previewUrl ? (
             <div
-              className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
                 dragActive 
                   ? 'border-primary-500 bg-primary-50' 
-                  : 'border-gray-300 hover:border-gray-400'
+                  : 'border-gray-300 hover:border-primary-400'
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
             >
-              <PhotoIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-3">
-                Drag and drop a reference image, or click to select
-                <br />
-                <span className="text-red-500 text-xs">Reference image is required</span>
+              <PhotoIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-sm text-gray-600 mb-2">
+                Click to upload a reference image
               </p>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
-              >
-                <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
-                Choose Image
-              </button>
+              <p className="text-xs text-gray-500">
+                PNG, JPG, GIF up to 10MB
+              </p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -165,32 +158,20 @@ export default function ImageGenerationForm({
             </div>
           ) : (
             /* Preview Area */
-            <div className="relative group bg-gray-100 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="aspect-square relative">
-                <Image
-                  src={previewUrl}
-                  alt="Reference preview"
-                  fill
-                  className="object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder-image.jpg'
-                  }}
-                />
-                
-                {/* Overlay with remove button */}
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200">
-                  <div className="absolute top-2 right-2">
-                    <button
-                      type="button"
-                      onClick={clearImage}
-                      className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors shadow-sm"
-                      title="Remove Image"
-                    >
-                      <XMarkIcon className="h-4 w-4 text-gray-700" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+            <div className="relative">
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="w-full h-48 object-cover rounded-lg"
+              />
+              <button
+                onClick={clearImage}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
         </div>
