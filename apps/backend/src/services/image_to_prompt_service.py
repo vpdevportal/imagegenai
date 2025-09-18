@@ -12,10 +12,10 @@ class ImageToPromptService:
     """
     
     def __init__(self):
-        # Configure Gemini AI
-        api_key = os.getenv('GEMINI_API_KEY')
+        # Configure Gemini AI using existing GOOGLE_AI_API_KEY
+        api_key = os.getenv('GOOGLE_AI_API_KEY')
         if not api_key:
-            raise ValueError("GEMINI_API_KEY environment variable is required")
+            raise ValueError("GOOGLE_AI_API_KEY environment variable is required")
         
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
