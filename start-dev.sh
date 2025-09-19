@@ -128,6 +128,16 @@ cleanup() {
 # Set up trap to handle Ctrl+C
 trap cleanup SIGINT SIGTERM
 
+# Load environment variables from env.dev
+if [ -f "env.dev" ]; then
+    print_status "Loading environment variables from env.dev..."
+    # Create a temporary .env file for the backend with proper format
+    cp env.dev apps/backend/.env
+    print_success "Environment variables loaded"
+else
+    print_warning "env.dev file not found, using system environment variables"
+fi
+
 # Start backend in background
 print_status "Starting FastAPI backend on http://localhost:8000"
 cd apps/backend
