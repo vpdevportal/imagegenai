@@ -85,6 +85,12 @@ class ImageToPromptService:
             )
             logger.info(f"AI prompt generation completed - prompt length: {len(prompt)} characters")
             
+            # Validate prompt length
+            if len(prompt) > 1000:
+                logger.warning(f"Generated prompt exceeds 1000 characters ({len(prompt)}), truncating")
+                prompt = prompt[:1000].rsplit(' ', 1)[0]  # Truncate at last complete word
+                logger.info(f"Final prompt length after truncation: {len(prompt)} characters")
+            
             # Generate a thumbnail for the uploaded image
             logger.debug("Generating thumbnail for uploaded image")
             thumbnail_data = ThumbnailGenerator.generate_thumbnail_from_pil_image(image)

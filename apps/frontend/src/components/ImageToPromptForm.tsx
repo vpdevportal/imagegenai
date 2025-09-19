@@ -68,13 +68,19 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
         setIsSavedToDatabase(result.saved_to_database)
         onPromptGenerated(result.prompt, result.thumbnail)
         
-        // Show success toast
+        // Check if prompt was truncated
+        const wasTruncated = result.prompt.length >= 1000
+        const message = result.saved_to_database 
+          ? 'Prompt has been generated and saved to your collection.' 
+          : 'Prompt has been generated successfully.'
+        
+        // Show success toast with truncation warning if needed
         addToast({
-          type: 'success',
-          title: 'Prompt Generated Successfully!',
-          message: result.saved_to_database 
-            ? 'Prompt has been generated and saved to your collection.' 
-            : 'Prompt has been generated successfully.'
+          type: wasTruncated ? 'warning' : 'success',
+          title: wasTruncated ? 'Prompt Generated (Truncated)' : 'Prompt Generated Successfully!',
+          message: wasTruncated 
+            ? `${message} Note: Prompt was truncated to 1000 characters.`
+            : message
         })
       }
     } catch (error: any) {
@@ -217,14 +223,19 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-700">Generated Prompt:</h3>
-            {isSavedToDatabase && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                Saved
+            <div className="flex items-center space-x-2">
+              <span className={`text-xs font-medium ${generatedPrompt.length >= 1000 ? 'text-red-600' : generatedPrompt.length >= 800 ? 'text-yellow-600' : 'text-gray-500'}`}>
+                {generatedPrompt.length}/1000
               </span>
-            )}
+              {isSavedToDatabase && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Saved
+                </span>
+              )}
+            </div>
           </div>
           <p className="text-sm text-gray-900 bg-white p-3 rounded border">
             {generatedPrompt}

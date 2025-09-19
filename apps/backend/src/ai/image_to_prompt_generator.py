@@ -84,7 +84,7 @@ class ImageToPromptGenerator:
                 - Textures and materials
                 - Background and setting
                 
-                Make it a concise, descriptive prompt suitable for AI image generation."""
+                Make it a concise, descriptive prompt suitable for AI image generation. Keep the response under 1000 characters."""
             ]
             
             # Generate content using Gemini
@@ -97,6 +97,12 @@ class ImageToPromptGenerator:
             generated_prompt = response.text.strip()
             logger.info(f"Gemini API response received - prompt_length: {len(generated_prompt)} characters")
             logger.debug(f"Generated prompt preview: {generated_prompt[:100]}...")
+            
+            # Validate and truncate if necessary
+            if len(generated_prompt) > 1000:
+                logger.warning(f"Generated prompt exceeds 1000 characters ({len(generated_prompt)}), truncating to 1000")
+                generated_prompt = generated_prompt[:1000].rsplit(' ', 1)[0]  # Truncate at last complete word
+                logger.info(f"Truncated prompt length: {len(generated_prompt)} characters")
             
             return generated_prompt
             
