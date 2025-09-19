@@ -15,53 +15,72 @@ class PromptRepository:
     
     def create_or_update(self, prompt: Prompt) -> Prompt:
         """Create or update a prompt"""
-        with db_connection.get_connection() as conn:
-            # Try to update existing record
-            cursor = conn.execute("""
-                UPDATE prompts 
-                SET total_uses = total_uses + 1,
-                    last_used_at = CURRENT_TIMESTAMP,
-                    thumbnail_data = COALESCE(?, thumbnail_data),
-                    thumbnail_mime = COALESCE(?, thumbnail_mime),
-                    thumbnail_width = COALESCE(?, thumbnail_width),
-                    thumbnail_height = COALESCE(?, thumbnail_height)
-                WHERE prompt_hash = ?
-            """, (
-                prompt.thumbnail_data,
-                prompt.thumbnail_mime,
-                prompt.thumbnail_width,
-                prompt.thumbnail_height,
-                prompt.prompt_hash
-            ))
-            
-            if cursor.rowcount > 0:
-                # Record was updated, get the updated record
+        logger.info(f"Starting create_or_update for prompt - hash: {prompt.prompt_hash[:8]}..., text: '{prompt.prompt_text[:50]}{'...' if len(prompt.prompt_text) > 50 else ''}', model: {prompt.model}")
+        
+        try:
+            with db_connection.get_connection() as conn:
+                # Try to update existing record
+                logger.debug(f"Attempting to update existing prompt with hash: {prompt.prompt_hash}")
                 cursor = conn.execute("""
-                    SELECT * FROM prompts WHERE prompt_hash = ?
-                """, (prompt.prompt_hash,))
-                row = cursor.fetchone()
-                if row:
-                    return self._row_to_prompt(row)
-            else:
-                # Record doesn't exist, insert new one
-                cursor = conn.execute("""
-                    INSERT INTO prompts (
-                        prompt_text, prompt_hash, model,
-                        thumbnail_data, thumbnail_mime, thumbnail_width, thumbnail_height
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    UPDATE prompts 
+                    SET total_uses = total_uses + 1,
+                        last_used_at = CURRENT_TIMESTAMP,
+                        thumbnail_data = COALESCE(?, thumbnail_data),
+                        thumbnail_mime = COALESCE(?, thumbnail_mime),
+                        thumbnail_width = COALESCE(?, thumbnail_width),
+                        thumbnail_height = COALESCE(?, thumbnail_height)
+                    WHERE prompt_hash = ?
                 """, (
-                    prompt.prompt_text,
-                    prompt.prompt_hash,
-                    prompt.model,
                     prompt.thumbnail_data,
                     prompt.thumbnail_mime,
                     prompt.thumbnail_width,
-                    prompt.thumbnail_height
+                    prompt.thumbnail_height,
+                    prompt.prompt_hash
                 ))
-                prompt.id = cursor.lastrowid
-            
-            conn.commit()
-            return prompt
+                
+                if cursor.rowcount > 0:
+                    # Record was updated, get the updated record
+                    logger.info(f"Successfully updated existing prompt - hash: {prompt.prompt_hash[:8]}..., rows affected: {cursor.rowcount}")
+                    cursor = conn.execute("""
+                        SELECT * FROM prompts WHERE prompt_hash = ?
+                    """, (prompt.prompt_hash,))
+                    row = cursor.fetchone()
+                    if row:
+                        updated_prompt = self._row_to_prompt(row)
+                        logger.info(f"Retrieved updated prompt - ID: {updated_prompt.id}, total_uses: {updated_prompt.total_uses}, last_used_at: {updated_prompt.last_used_at}")
+                        conn.commit()
+                        logger.debug(f"Database transaction committed for updated prompt - ID: {updated_prompt.id}")
+                        return updated_prompt
+                    else:
+                        logger.error(f"Failed to retrieve updated prompt after update - hash: {prompt.prompt_hash}")
+                        conn.rollback()
+                        return prompt
+                else:
+                    # Record doesn't exist, insert new one
+                    logger.info(f"No existing prompt found, creating new record - hash: {prompt.prompt_hash[:8]}...")
+                    cursor = conn.execute("""
+                        INSERT INTO prompts (
+                            prompt_text, prompt_hash, model,
+                            thumbnail_data, thumbnail_mime, thumbnail_width, thumbnail_height
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        prompt.prompt_text,
+                        prompt.prompt_hash,
+                        prompt.model,
+                        prompt.thumbnail_data,
+                        prompt.thumbnail_mime,
+                        prompt.thumbnail_width,
+                        prompt.thumbnail_height
+                    ))
+                    prompt.id = cursor.lastrowid
+                    logger.info(f"Successfully created new prompt - ID: {prompt.id}, hash: {prompt.prompt_hash[:8]}..., total_uses: {prompt.total_uses}")
+                    conn.commit()
+                    logger.debug(f"Database transaction committed for new prompt - ID: {prompt.id}")
+                    return prompt
+                    
+        except Exception as e:
+            logger.error(f"Error in create_or_update for prompt - hash: {prompt.prompt_hash[:8]}..., error: {str(e)}")
+            raise
     
     def get_by_id(self, prompt_id: int) -> Optional[Prompt]:
         """Get prompt by ID"""
