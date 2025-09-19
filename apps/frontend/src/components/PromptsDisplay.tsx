@@ -22,12 +22,14 @@ import {
 } from '@/lib/api'
 import { Prompt, PromptStats } from '@/types'
 import ConfirmationDialog from './ConfirmationDialog'
+import { useToast } from '@/contexts/ToastContext'
 
 interface PromptsDisplayProps {
   onPromptSelect?: (prompt: string) => void
 }
 
 export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) {
+  const { addToast } = useToast()
   const [prompts, setPrompts] = useState<Prompt[]>([])
   const [stats, setStats] = useState<PromptStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -166,7 +168,11 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
       
     } catch (error) {
       console.error('Failed to delete prompt:', error)
-      alert('Failed to delete prompt. Please try again.')
+      addToast({
+        type: 'error',
+        title: 'Delete Failed',
+        message: 'Failed to delete prompt. Please try again.'
+      })
     } finally {
       setDeletingIds(prev => {
         const newSet = new Set(prev)
