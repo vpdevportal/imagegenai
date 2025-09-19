@@ -28,16 +28,25 @@ logger = logging.getLogger(__name__)
 logger.info("Starting ImageGenAI FastAPI application")
 
 # Configure CORS
+cors_origins = settings.allowed_origins + [settings.frontend_url]
+logger.info(f"CORS allowed origins: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins + [settings.frontend_url],
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Include API routes
 app.include_router(api_router)
+
+# Health check endpoint
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy", "message": "ImageGenAI API is running"}
 
 # No longer mounting static files since we use in-memory image processing
 
