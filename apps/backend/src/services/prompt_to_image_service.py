@@ -61,30 +61,15 @@ class PromptToImageService:
             # Save prompt to database with thumbnail
             logger.debug("Attempting to save prompt to database")
             try:
-                # Create temporary file for the generated image
-                logger.debug("Creating temporary file for generated image")
-                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
-                    temp_file.write(generated_image_data)
-                    temp_file_path = temp_file.name
-                logger.debug(f"Temporary file created: {temp_file_path}")
-                
-                # Save to database
-                logger.debug("Saving prompt to database")
+                # Save to database using image_data directly
+                logger.debug("Saving prompt to database with generated image data")
                 prompt_record = self.prompt_service.create_or_update_prompt(
                     prompt_text=prompt,
                     model="gemini-2.5-flash-image-preview",
-                    image_path=temp_file_path
+                    image_data=generated_image_data
                 )
                 
                 logger.info(f"Saved prompt to database successfully - ID: {prompt_record.id}, total_uses: {prompt_record.total_uses}")
-                
-                # Clean up temporary file
-                logger.debug("Cleaning up temporary file")
-                try:
-                    os.unlink(temp_file_path)
-                    logger.debug("Temporary file cleaned up successfully")
-                except OSError as cleanup_error:
-                    logger.warning(f"Failed to clean up temporary file {temp_file_path}: {cleanup_error}")
                     
             except Exception as db_error:
                 logger.error(f"Failed to save prompt to database: {db_error}", exc_info=True)

@@ -20,11 +20,10 @@ class PromptService:
         self,
         prompt_text: str,
         model: Optional[str] = None,
-        image_path: Optional[str] = None,
         image_data: Optional[bytes] = None
     ) -> PromptResponse:
         """Create or update a prompt with optional thumbnail"""
-        logger.info(f"Starting prompt creation/update - prompt_length: {len(prompt_text)}, model: {model}, has_image_path: {image_path is not None}, has_image_data: {image_data is not None}")
+        logger.info(f"Starting prompt creation/update - prompt_length: {len(prompt_text)}, model: {model}, has_image_data: {image_data is not None}")
         
         try:
             # Create prompt model
@@ -36,9 +35,9 @@ class PromptService:
             logger.debug(f"Prompt model created - hash: {prompt.prompt_hash}")
             
             # Generate thumbnail if image is provided
-            if image_path or image_data:
+            if image_data:
                 logger.debug("Generating thumbnail for prompt")
-                thumbnail_result = self._generate_thumbnail(image_path, image_data)
+                thumbnail_result = self._generate_thumbnail(image_data)
                 if thumbnail_result["success"]:
                     prompt.thumbnail_data = thumbnail_result["thumbnail_data"]
                     prompt.thumbnail_mime = thumbnail_result["mime_type"]
@@ -158,21 +157,11 @@ class PromptService:
     
     def _generate_thumbnail(
         self,
-        image_path: Optional[str],
-        image_data: Optional[bytes]
+        image_data: bytes
     ) -> Dict[str, Any]:
-        """Generate thumbnail from image path or data"""
-        logger.debug(f"Generating thumbnail - has_image_path: {image_path is not None}, has_image_data: {image_data is not None}")
-        
-        if image_path:
-            logger.debug(f"Generating thumbnail from image path: {image_path}")
-            result = ThumbnailGenerator.generate_thumbnail(image_path)
-        elif image_data:
-            logger.debug(f"Generating thumbnail from image data - size: {len(image_data)} bytes")
-            result = ThumbnailGenerator.generate_thumbnail_from_bytes(image_data)
-        else:
-            logger.warning("No image provided for thumbnail generation")
-            result = ThumbnailGenerator._error_result("No image provided")
+        """Generate thumbnail from image data"""
+        logger.debug(f"Generating thumbnail from image data - size: {len(image_data)} bytes")
+        result = ThumbnailGenerator.generate_thumbnail_from_bytes(image_data)
         
         if result["success"]:
             logger.debug(f"Thumbnail generation successful - size: {result['width']}x{result['height']}, mime: {result['mime_type']}")

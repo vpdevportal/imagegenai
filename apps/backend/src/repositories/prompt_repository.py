@@ -96,6 +96,13 @@ class PromptRepository:
             row = cursor.fetchone()
             return self._row_to_prompt(row) if row else None
     
+    def exists_by_prompt(self, prompt: Prompt) -> bool:
+        """Check if prompt already exists by Prompt object"""
+        with db_connection.get_connection() as conn:
+            cursor = conn.execute("SELECT 1 FROM prompts WHERE prompt_hash = ?", (prompt.prompt_hash,))
+            row = cursor.fetchone()
+            return row is not None
+    
     def get_recent(self, limit: int = 50, model: Optional[str] = None) -> List[Prompt]:
         """Get recent prompts"""
         with db_connection.get_connection() as conn:

@@ -25,7 +25,7 @@ class DatabaseConnection:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     prompt_text TEXT NOT NULL,
                     prompt_hash TEXT NOT NULL UNIQUE,
-                    total_uses INTEGER NOT NULL DEFAULT 1,
+                    total_uses INTEGER NOT NULL DEFAULT 0,
                     first_used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     last_used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     model TEXT,
