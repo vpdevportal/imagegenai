@@ -39,6 +39,11 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router)
 
+# Health check endpoint
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy", "message": "ImageGenAI API is running"}
+
 # No longer mounting static files since we use in-memory image processing
 
 if __name__ == "__main__":

@@ -6,6 +6,8 @@ services:
     ports:
       - "5001:3000"
       - "6001:8000"
+    env_file:
+      - ./apps/backend/.env
     environment:
       - HOST=0.0.0.0
       - PORT=8000
@@ -14,7 +16,6 @@ services:
       - ALLOWED_ORIGINS=http://localhost:5001,http://localhost:6001
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:6001/api
-      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY}
     volumes:
       - ./apps/backend:/app/backend
       - ./apps/frontend:/app/frontend
