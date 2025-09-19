@@ -109,7 +109,7 @@ class ImageToPromptService:
                 "prompt": prompt,
                 "style": style,
                 "detail_level": detail_level,
-                "thumbnail": base64.b64encode(thumbnail_data).decode('utf-8'),
+                "thumbnail": f"data:image/webp;base64,{base64.b64encode(thumbnail_data).decode('utf-8')}",
                 "original_filename": file.filename,
                 "prompt_id": prompt_id,
                 "saved_to_database": prompt_id is not None
