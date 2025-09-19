@@ -22,10 +22,12 @@ class Settings(BaseSettings):
     debug: bool = True
     
     # CORS Configuration
-    frontend_url: str = "http://localhost:3000"
+    frontend_url: str = "http://localhost:5001"
     allowed_origins: Union[list, str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000"
+        "http://localhost:5001",
+        "http://127.0.0.1:5001",
+        "http://localhost:6001",
+        "http://127.0.0.1:6001"
     ]
     
     @field_validator('allowed_origins', mode='before')
