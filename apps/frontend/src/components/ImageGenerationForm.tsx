@@ -114,6 +114,12 @@ export default function ImageGenerationForm({
       return
     }
 
+    if (prompt.length > 1000) {
+      console.log('Validation failed: Prompt too long')
+      setError('Prompt too long (max 1000 characters)')
+      return
+    }
+
     if (!selectedFile) {
       console.log('Validation failed: No file selected')
       setError('Please select a reference image')
@@ -136,9 +142,12 @@ export default function ImageGenerationForm({
         createdAt: response.created_at,
         type: 'generation-with-reference'
       })
-    } catch (err) {
-      setError('Failed to generate image. Please try again.')
+    } catch (err: any) {
       console.error('Image generation error:', err)
+      
+      // Extract specific error message from API response
+      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to generate image. Please try again.'
+      setError(errorMessage)
     } finally {
       setIsGenerating(false)
     }
@@ -222,6 +231,16 @@ export default function ImageGenerationForm({
             disabled={isGenerating}
             rows={4}
           />
+          <div className="flex justify-between items-center mt-1">
+            <span className={`text-xs ${prompt.length > 1000 ? 'text-red-600' : prompt.length > 800 ? 'text-yellow-600' : 'text-gray-500'}`}>
+              {prompt.length}/1000 characters
+            </span>
+            {prompt.length > 1000 && (
+              <span className="text-xs text-red-600 font-medium">
+                Prompt too long!
+              </span>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -232,10 +251,10 @@ export default function ImageGenerationForm({
 
         <button
           type="submit"
-          disabled={isGenerating || !prompt.trim() || !selectedFile}
+          disabled={isGenerating || !prompt.trim() || !selectedFile || prompt.length > 1000}
           className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           onClick={(e) => {
-            console.log('Button clicked - prompt:', `"${prompt}"`, 'selectedFile:', selectedFile, 'disabled:', isGenerating || !prompt.trim() || !selectedFile)
+            console.log('Button clicked - prompt:', `"${prompt}"`, 'length:', prompt.length, 'selectedFile:', selectedFile, 'disabled:', isGenerating || !prompt.trim() || !selectedFile || prompt.length > 1000)
           }}
         >
           {isGenerating ? (
