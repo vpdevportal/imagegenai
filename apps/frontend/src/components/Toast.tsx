@@ -70,13 +70,13 @@ const Toast: React.FC<{ toast: ToastType }> = ({ toast }) => {
   }
 
   return (
-    <div className={`max-w-sm w-full ${getBackgroundColor()} border rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden`}>
+    <div className={`w-80 max-w-sm ${getBackgroundColor()} border rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden`}>
       <div className="p-4">
         <div className="flex items-start">
           <div className="flex-shrink-0">
             {getIcon()}
           </div>
-          <div className="ml-3 w-0 flex-1 pt-0.5">
+          <div className="ml-3 flex-1 pt-0.5 min-w-0">
             <p className={`text-sm font-medium ${getTitleColor()}`}>
               {toast.title}
             </p>
@@ -107,7 +107,7 @@ export const ToastContainer: React.FC = () => {
   if (toasts.length === 0) return null
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
+    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm w-full">
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} />
       ))}
