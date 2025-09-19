@@ -23,8 +23,9 @@ class PromptRepository:
                 cursor = conn.execute("""
                     INSERT INTO prompts (
                         prompt_text, prompt_hash, model,
-                        thumbnail_data, thumbnail_mime, thumbnail_width, thumbnail_height
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        thumbnail_data, thumbnail_mime, thumbnail_width, thumbnail_height,
+                        total_uses
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     prompt.prompt_text,
                     prompt.prompt_hash,
@@ -32,7 +33,8 @@ class PromptRepository:
                     prompt.thumbnail_data,
                     prompt.thumbnail_mime,
                     prompt.thumbnail_width,
-                    prompt.thumbnail_height
+                    prompt.thumbnail_height,
+                    prompt.total_uses
                 ))
                 prompt.id = cursor.lastrowid
                 logger.info(f"Successfully created new prompt - ID: {prompt.id}, hash: {prompt.prompt_hash[:8]}..., total_uses: {prompt.total_uses}")

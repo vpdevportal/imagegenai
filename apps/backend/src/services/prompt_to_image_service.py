@@ -71,8 +71,12 @@ class PromptToImageService:
                     generated_thumbnail_data, thumbnail_content_type = self.generator.generate_from_text(
                         prompt
                     )
-                    self.prompt_service.create_prompt(prompt, "gemini-2.5-flash-image-preview", generated_thumbnail_data);
-                    
+                    self.prompt_service.create_prompt(
+                        prompt_text=prompt,
+                        model="gemini-2.5-flash",
+                        image_data=generated_thumbnail_data,
+                        total_uses=1
+                    )
             except Exception as db_error:
                 logger.error(f"Failed to save prompt to database: {db_error}", exc_info=True)
                 # Continue with response even if database save fails

@@ -20,7 +20,8 @@ class PromptService:
         self,
         prompt_text: str,
         model: Optional[str] = None,
-        image_data: Optional[bytes] = None
+        image_data: Optional[bytes] = None,
+        total_uses: int = 0
     ) -> PromptResponse:
         """Create a new prompt with thumbnail (only inserts, no updating)"""
         logger.info(f"Starting prompt creation - prompt_length: {len(prompt_text)}, model: {model}, has_image_data: {image_data is not None}")
@@ -30,7 +31,8 @@ class PromptService:
             logger.debug("Creating prompt model")
             prompt = Prompt(
                 prompt_text=prompt_text,
-                model=model
+                model=model,
+                total_uses=total_uses
             )
             logger.debug(f"Prompt model created - hash: {prompt.prompt_hash}")
             
