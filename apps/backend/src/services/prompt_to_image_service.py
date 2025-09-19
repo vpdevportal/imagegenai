@@ -43,41 +43,54 @@ class PromptToImageService:
         Raises:
             HTTPException: If generation fails
         """
+        logger.info(f"Starting prompt to image generation - prompt_length: {len(prompt)}, reference_image_filename: {reference_image.filename}, reference_image_size: {reference_image.size if hasattr(reference_image, 'size') else 'unknown'}")
+        
         try:
             # Process reference image and get data URL
+            logger.debug("Processing reference image")
             reference_image_url = self.generator.process_reference_image(reference_image)
+            logger.info(f"Reference image processed successfully - url_length: {len(reference_image_url) if reference_image_url else 0}")
             
             # Generate the actual image using AI
+            logger.info("Starting AI image generation")
             generated_image_data, content_type = self.generator.generate_from_image_and_text(
                 reference_image, prompt
             )
+            logger.info(f"AI image generation completed - generated_size: {len(generated_image_data)} bytes, content_type: {content_type}")
             
             # Save prompt to database with thumbnail
+            logger.debug("Attempting to save prompt to database")
             try:
                 # Create temporary file for the generated image
+                logger.debug("Creating temporary file for generated image")
                 with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
                     temp_file.write(generated_image_data)
                     temp_file_path = temp_file.name
+                logger.debug(f"Temporary file created: {temp_file_path}")
                 
                 # Save to database
+                logger.debug("Saving prompt to database")
                 prompt_record = self.prompt_service.create_or_update_prompt(
                     prompt_text=prompt,
                     model="gemini-2.5-flash-image-preview",
                     image_path=temp_file_path
                 )
                 
-                logger.info(f"Saved prompt to database: ID={prompt_record.id}, uses={prompt_record.total_uses}")
+                logger.info(f"Saved prompt to database successfully - ID: {prompt_record.id}, total_uses: {prompt_record.total_uses}")
                 
                 # Clean up temporary file
+                logger.debug("Cleaning up temporary file")
                 try:
                     os.unlink(temp_file_path)
-                except OSError:
-                    pass
+                    logger.debug("Temporary file cleaned up successfully")
+                except OSError as cleanup_error:
+                    logger.warning(f"Failed to clean up temporary file {temp_file_path}: {cleanup_error}")
                     
             except Exception as db_error:
-                logger.error(f"Failed to save prompt to database: {db_error}")
+                logger.error(f"Failed to save prompt to database: {db_error}", exc_info=True)
                 # Continue with response even if database save fails
             
+            logger.info("Prompt to image generation completed successfully")
             return generated_image_data, content_type, reference_image_url
             
         except Exception as e:

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { SparklesIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { generatePromptFromImage, getInspireStyles } from '@/lib/api'
+import { useToast } from '@/contexts/ToastContext'
 
 interface ImageToPromptFormProps {
   onPromptGenerated: (prompt: string, thumbnail: string) => void
@@ -19,9 +20,10 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
   const [styles, setStyles] = useState<Array<{ value: string; label: string }>>([])
   const [detailLevels, setDetailLevels] = useState<Array<{ value: string; label: string }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { addToast } = useToast()
 
   // Load styles on component mount
-  useState(() => {
+  useEffect(() => {
     const loadStyles = async () => {
       try {
         const data = await getInspireStyles()
@@ -29,10 +31,15 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
         setDetailLevels(data.detail_levels)
       } catch (error) {
         console.error('Error loading styles:', error)
+        addToast({
+          type: 'warning',
+          title: 'Failed to Load Styles',
+          message: 'Using default styles. Some options may not be available.'
+        })
       }
     }
     loadStyles()
-  }, [])
+  }, [addToast])
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -61,14 +68,25 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
         setIsSavedToDatabase(result.saved_to_database)
         onPromptGenerated(result.prompt, result.thumbnail)
         
-        // Show success message if saved to database
-        if (result.saved_to_database) {
-          console.log('Prompt saved to database with ID:', result.prompt_id)
-        }
+        // Show success toast
+        addToast({
+          type: 'success',
+          title: 'Prompt Generated Successfully!',
+          message: result.saved_to_database 
+            ? 'Prompt has been generated and saved to your collection.' 
+            : 'Prompt has been generated successfully.'
+        })
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating prompt:', error)
-      alert('Error generating prompt. Please try again.')
+      
+      // Show error toast with more specific error message
+      const errorMessage = error?.response?.data?.detail || error?.message || 'An unexpected error occurred'
+      addToast({
+        type: 'error',
+        title: 'Failed to Generate Prompt',
+        message: errorMessage
+      })
     } finally {
       setIsGenerating(false)
     }

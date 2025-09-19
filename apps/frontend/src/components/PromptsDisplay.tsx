@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   MagnifyingGlassIcon, 
   FireIcon, 
   ClockIcon, 
   EyeIcon,
   ChartBarIcon,
-  XMarkIcon
+  XMarkIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { 
@@ -16,9 +17,11 @@ import {
   getRecentPrompts, 
   searchPrompts, 
   getPromptStats,
-  getPromptThumbnail 
+  getPromptThumbnail,
+  deletePrompt
 } from '@/lib/api'
 import { Prompt, PromptStats } from '@/types'
+import ConfirmationDialog from './ConfirmationDialog'
 
 interface PromptsDisplayProps {
   onPromptSelect?: (prompt: string) => void
@@ -32,8 +35,18 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'recent' | 'popular' | 'search'>('recent')
   const [thumbnails, setThumbnails] = useState<Record<number, string>>({})
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set())
+  const [confirmationDialog, setConfirmationDialog] = useState<{
+    isOpen: boolean
+    promptId: number | null
+    promptText: string
+  }>({
+    isOpen: false,
+    promptId: null,
+    promptText: ''
+  })
 
-  const loadPrompts = async (tab: 'recent' | 'popular' | 'search' = 'recent') => {
+  const loadPrompts = useCallback(async (tab: 'recent' | 'popular' | 'search' = 'recent') => {
     setLoading(true)
     setError('')
     
@@ -78,21 +91,21 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchQuery])
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const statsData = await getPromptStats()
       setStats(statsData)
     } catch (err) {
       console.error('Error loading stats:', err)
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadPrompts(activeTab)
     loadStats()
-  }, [activeTab])
+  }, [activeTab, loadPrompts, loadStats])
 
   useEffect(() => {
     if (activeTab === 'search' && searchQuery.trim()) {
@@ -101,12 +114,74 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
       }, 500)
       return () => clearTimeout(timeoutId)
     }
-  }, [searchQuery, activeTab])
+  }, [searchQuery, activeTab, loadPrompts])
 
   const handlePromptClick = (prompt: Prompt) => {
     if (onPromptSelect) {
       onPromptSelect(prompt.prompt_text)
     }
+  }
+
+  const handleDeletePrompt = (promptId: number, event: React.MouseEvent) => {
+    event.stopPropagation() // Prevent triggering the card click
+    
+    const prompt = prompts.find(p => p.id === promptId)
+    if (prompt) {
+      setConfirmationDialog({
+        isOpen: true,
+        promptId,
+        promptText: prompt.prompt_text
+      })
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!confirmationDialog.promptId) return
+
+    const promptId = confirmationDialog.promptId
+    setDeletingIds(prev => new Set(prev).add(promptId))
+    
+    try {
+      await deletePrompt(promptId)
+      
+      // Remove the prompt from the local state
+      setPrompts(prev => prev.filter(p => p.id !== promptId))
+      
+      // Remove thumbnail from state
+      setThumbnails(prev => {
+        const newThumbnails = { ...prev }
+        delete newThumbnails[promptId]
+        return newThumbnails
+      })
+      
+      // Reload stats to update counts
+      loadStats()
+      
+      // Close confirmation dialog
+      setConfirmationDialog({
+        isOpen: false,
+        promptId: null,
+        promptText: ''
+      })
+      
+    } catch (error) {
+      console.error('Failed to delete prompt:', error)
+      alert('Failed to delete prompt. Please try again.')
+    } finally {
+      setDeletingIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(promptId)
+        return newSet
+      })
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setConfirmationDialog({
+      isOpen: false,
+      promptId: null,
+      promptText: ''
+    })
   }
 
   const formatDate = (dateString: string) => {
@@ -287,17 +362,46 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                 </p>
                 <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
                   <span>{formatDate(prompt.last_used_at)}</span>
-                  {prompt.model && (
-                    <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">
-                      {prompt.model}
-                    </span>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    {prompt.model && (
+                      <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">
+                        {prompt.model}
+                      </span>
+                    )}
+                    <button
+                      onClick={(e) => handleDeletePrompt(prompt.id, e)}
+                      disabled={deletingIds.has(prompt.id)}
+                      className="text-red-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="Delete prompt"
+                    >
+                      {deletingIds.has(prompt.id) ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
+                      ) : (
+                        <TrashIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={confirmationDialog.isOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Prompt"
+        message={`Are you sure you want to delete this prompt? This action cannot be undone.
+
+"${confirmationDialog.promptText.length > 100 ? confirmationDialog.promptText.substring(0, 100) + '...' : confirmationDialog.promptText}"`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={confirmationDialog.promptId ? deletingIds.has(confirmationDialog.promptId) : false}
+      />
     </div>
   )
 }

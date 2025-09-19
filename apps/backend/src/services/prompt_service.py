@@ -24,29 +24,40 @@ class PromptService:
         image_data: Optional[bytes] = None
     ) -> PromptResponse:
         """Create or update a prompt with optional thumbnail"""
+        logger.info(f"Starting prompt creation/update - prompt_length: {len(prompt_text)}, model: {model}, has_image_path: {image_path is not None}, has_image_data: {image_data is not None}")
+        
         try:
             # Create prompt model
+            logger.debug("Creating prompt model")
             prompt = Prompt(
                 prompt_text=prompt_text,
                 model=model
             )
+            logger.debug(f"Prompt model created - hash: {prompt.prompt_hash}")
             
             # Generate thumbnail if image is provided
             if image_path or image_data:
+                logger.debug("Generating thumbnail for prompt")
                 thumbnail_result = self._generate_thumbnail(image_path, image_data)
                 if thumbnail_result["success"]:
                     prompt.thumbnail_data = thumbnail_result["thumbnail_data"]
                     prompt.thumbnail_mime = thumbnail_result["mime_type"]
                     prompt.thumbnail_width = thumbnail_result["width"]
                     prompt.thumbnail_height = thumbnail_result["height"]
+                    logger.info(f"Thumbnail generated successfully - size: {thumbnail_result['width']}x{thumbnail_result['height']}, mime: {thumbnail_result['mime_type']}")
                 else:
                     logger.warning(f"Failed to generate thumbnail: {thumbnail_result['error']}")
+            else:
+                logger.debug("No image provided, skipping thumbnail generation")
             
             # Save to database
+            logger.debug("Saving prompt to database")
             saved_prompt = prompt_repository.create_or_update(prompt)
+            logger.info(f"Prompt saved to database successfully - id: {saved_prompt.id}, total_uses: {saved_prompt.total_uses}")
             
             # Convert to response schema
-            return PromptResponse(
+            logger.debug("Converting to response schema")
+            response = PromptResponse(
                 id=saved_prompt.id,
                 prompt_text=saved_prompt.prompt_text,
                 prompt_hash=saved_prompt.prompt_hash,
@@ -59,8 +70,11 @@ class PromptService:
                 thumbnail_height=saved_prompt.thumbnail_height
             )
             
+            logger.info(f"Prompt creation/update completed successfully - id: {response.id}")
+            return response
+            
         except Exception as e:
-            logger.error(f"Failed to create/update prompt: {e}")
+            logger.error(f"Failed to create/update prompt - error: {str(e)}", exc_info=True)
             raise
     
     def get_prompt(self, prompt_id: int) -> Optional[PromptResponse]:
@@ -148,12 +162,24 @@ class PromptService:
         image_data: Optional[bytes]
     ) -> Dict[str, Any]:
         """Generate thumbnail from image path or data"""
+        logger.debug(f"Generating thumbnail - has_image_path: {image_path is not None}, has_image_data: {image_data is not None}")
+        
         if image_path:
-            return ThumbnailGenerator.generate_thumbnail(image_path)
+            logger.debug(f"Generating thumbnail from image path: {image_path}")
+            result = ThumbnailGenerator.generate_thumbnail(image_path)
         elif image_data:
-            return ThumbnailGenerator.generate_thumbnail_from_bytes(image_data)
+            logger.debug(f"Generating thumbnail from image data - size: {len(image_data)} bytes")
+            result = ThumbnailGenerator.generate_thumbnail_from_bytes(image_data)
         else:
-            return ThumbnailGenerator._error_result("No image provided")
+            logger.warning("No image provided for thumbnail generation")
+            result = ThumbnailGenerator._error_result("No image provided")
+        
+        if result["success"]:
+            logger.debug(f"Thumbnail generation successful - size: {result['width']}x{result['height']}, mime: {result['mime_type']}")
+        else:
+            logger.error(f"Thumbnail generation failed - error: {result['error']}")
+        
+        return result
     
     def _prompt_to_response(self, prompt: Prompt) -> PromptResponse:
         """Convert Prompt model to PromptResponse"""

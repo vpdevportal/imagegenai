@@ -47,34 +47,51 @@ class ImageToPromptService:
         Raises:
             HTTPException: If generation fails
         """
+        logger.info(f"Starting image to prompt generation - filename: {file.filename}, size: {file.size if hasattr(file, 'size') else 'unknown'}, style: {style}, detail_level: {detail_level}")
+        
         try:
             # Validate file type
+            logger.debug(f"Validating file type - content_type: {file.content_type}")
             if not file.content_type or not file.content_type.startswith('image/'):
+                logger.warning(f"Invalid file type received - content_type: {file.content_type}")
                 raise HTTPException(status_code=400, detail="File must be an image")
             
             # Read the uploaded file
+            logger.debug("Reading uploaded file contents")
             contents = await file.read()
+            logger.info(f"File read successfully - size: {len(contents)} bytes")
             
             # Validate image
+            logger.debug("Validating and processing image")
             try:
                 image = Image.open(io.BytesIO(contents))
+                logger.info(f"Image opened successfully - mode: {image.mode}, size: {image.size}")
+                
                 # Convert to RGB if necessary
                 if image.mode != 'RGB':
+                    logger.debug(f"Converting image from {image.mode} to RGB")
                     image = image.convert('RGB')
+                    logger.info("Image converted to RGB successfully")
             except Exception as e:
+                logger.error(f"Failed to process image - error: {str(e)}")
                 raise HTTPException(status_code=400, detail=f"Invalid image file: {str(e)}")
             
             # Generate prompt from image using AI
+            logger.info("Starting AI prompt generation")
             prompt = await self.generator.generate_prompt_from_image(
                 image=image,
                 style=style,
                 detail_level=detail_level
             )
+            logger.info(f"AI prompt generation completed - prompt length: {len(prompt)} characters")
             
             # Generate a thumbnail for the uploaded image
+            logger.debug("Generating thumbnail for uploaded image")
             thumbnail_data = ThumbnailGenerator.generate_thumbnail_from_pil_image(image)
+            logger.info(f"Thumbnail generated successfully - size: {len(thumbnail_data)} bytes")
             
             # Save the prompt to the database
+            logger.debug("Attempting to save prompt to database")
             try:
                 saved_prompt = self.prompt_service.create_or_update_prompt(
                     prompt_text=prompt,
@@ -82,10 +99,12 @@ class ImageToPromptService:
                     image_data=thumbnail_data
                 )
                 prompt_id = saved_prompt.id
-            except Exception:
+                logger.info(f"Prompt saved to database successfully - prompt_id: {prompt_id}, total_uses: {saved_prompt.total_uses}")
+            except Exception as e:
+                logger.error(f"Failed to save prompt to database - error: {str(e)}")
                 prompt_id = None
             
-            return {
+            result = {
                 "success": True,
                 "prompt": prompt,
                 "style": style,
@@ -96,10 +115,14 @@ class ImageToPromptService:
                 "saved_to_database": prompt_id is not None
             }
             
-        except HTTPException:
+            logger.info(f"Image to prompt generation completed successfully - saved_to_database: {prompt_id is not None}")
+            return result
+            
+        except HTTPException as e:
+            logger.error(f"HTTP error in image to prompt generation - status: {e.status_code}, detail: {e.detail}")
             raise
         except Exception as e:
-            logger.error(f"Error generating prompt: {str(e)}", exc_info=True)
+            logger.error(f"Unexpected error in image to prompt generation - error: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail=f"Error generating prompt: {str(e)}")
 
 

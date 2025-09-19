@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { SparklesIcon, PhotoIcon, ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { generateImage } from '@/lib/api'
@@ -9,19 +9,35 @@ interface ImageGenerationFormProps {
   onImageGenerated: (image: any) => void
   isGenerating: boolean
   setIsGenerating: (value: boolean) => void
+  initialPrompt?: string
 }
 
 export default function ImageGenerationForm({ 
   onImageGenerated, 
   isGenerating, 
-  setIsGenerating 
+  setIsGenerating,
+  initialPrompt = ''
 }: ImageGenerationFormProps) {
-  const [prompt, setPrompt] = useState('')
+  const [prompt, setPrompt] = useState(initialPrompt)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Debug component mount
+  useEffect(() => {
+    console.log('ImageGenerationForm mounted - initialPrompt:', `"${initialPrompt}"`, 'prompt:', `"${prompt}"`)
+  }, [])
+
+  // Update prompt when initialPrompt prop changes
+  useEffect(() => {
+    console.log('useEffect triggered - initialPrompt:', `"${initialPrompt}"`, 'current prompt:', `"${prompt}"`)
+    if (initialPrompt) {
+      console.log('Setting prompt to:', `"${initialPrompt}"`)
+      setPrompt(initialPrompt)
+    }
+  }, [initialPrompt])
 
   const handleFileSelect = (file: File) => {
     // Validate file type
@@ -86,12 +102,20 @@ export default function ImageGenerationForm({
     e.preventDefault()
     e.stopPropagation()
     
+    // Clear any previous errors
+    setError('')
+    
+    // Debug logging
+    console.log('Form submission - prompt:', `"${prompt}"`, 'length:', prompt.length, 'selectedFile:', selectedFile)
+    
     if (!prompt.trim()) {
+      console.log('Validation failed: Empty prompt')
       setError('Please enter a prompt')
       return
     }
 
     if (!selectedFile) {
+      console.log('Validation failed: No file selected')
       setError('Please select a reference image')
       return
     }
@@ -100,6 +124,7 @@ export default function ImageGenerationForm({
     setIsGenerating(true)
 
     try {
+      console.log('Calling generateImage API with prompt:', `"${prompt}"`, 'file:', selectedFile.name)
       const response = await generateImage(prompt, selectedFile)
       
       onImageGenerated({
@@ -125,7 +150,14 @@ export default function ImageGenerationForm({
         Generate New Image
       </h3>
       
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <form 
+        onSubmit={(e) => {
+          console.log('Form onSubmit triggered - prompt:', `"${prompt}"`, 'selectedFile:', selectedFile)
+          handleSubmit(e)
+        }} 
+        className="space-y-4" 
+        noValidate
+      >
         {/* Reference Image Upload */}
         <div>
           {!previewUrl ? (
@@ -202,6 +234,9 @@ export default function ImageGenerationForm({
           type="submit"
           disabled={isGenerating || !prompt.trim() || !selectedFile}
           className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          onClick={(e) => {
+            console.log('Button clicked - prompt:', `"${prompt}"`, 'selectedFile:', selectedFile, 'disabled:', isGenerating || !prompt.trim() || !selectedFile)
+          }}
         >
           {isGenerating ? (
             <>

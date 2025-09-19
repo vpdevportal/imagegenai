@@ -43,8 +43,11 @@ class ImageToPromptGenerator:
         """
         Generate a descriptive prompt from an image using Gemini AI
         """
+        logger.info(f"Starting AI prompt generation - image_size: {image.size}, mode: {image.mode}, style: {style}, detail_level: {detail_level}")
+        
         try:
             # Create the prompt for the model based on style and detail level
+            logger.debug("Building style and detail level instructions")
             style_instructions = {
                 "photorealistic": "Focus on photorealistic details, high resolution, sharp focus, realistic lighting and textures",
                 "artistic": "Describe in an artistic way, focus on creative interpretation, expressive style, artistic elements",
@@ -63,7 +66,11 @@ class ImageToPromptGenerator:
             style_instruction = style_instructions.get(style, style_instructions["photorealistic"])
             detail_instruction = detail_instructions.get(detail_level, detail_instructions["detailed"])
             
+            logger.debug(f"Selected style instruction: {style_instruction[:50]}...")
+            logger.debug(f"Selected detail instruction: {detail_instruction[:50]}...")
+            
             # Create the prompt for Gemini
+            logger.debug("Constructing prompt content for Gemini")
             prompt_content = [
                 image,
                 f"""Describe this image in detail, focusing on elements relevant for generating a similar picture. 
@@ -81,14 +88,20 @@ class ImageToPromptGenerator:
             ]
             
             # Generate content using Gemini
+            logger.info(f"Calling Gemini API - model: {self.model}")
             response = self.client.models.generate_content(
                 model=self.model,
                 contents=[image, prompt_content],
             )
             
-            return response.text.strip()
+            generated_prompt = response.text.strip()
+            logger.info(f"Gemini API response received - prompt_length: {len(generated_prompt)} characters")
+            logger.debug(f"Generated prompt preview: {generated_prompt[:100]}...")
+            
+            return generated_prompt
             
         except Exception as e:
+            logger.error(f"Failed to generate prompt from image - error: {str(e)}", exc_info=True)
             raise Exception(f"Failed to generate prompt from image: {e}")
     
 
