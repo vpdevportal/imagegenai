@@ -131,8 +131,18 @@ trap cleanup SIGINT SIGTERM
 # Load environment variables from env.dev
 if [ -f "env.dev" ]; then
     print_status "Loading environment variables from env.dev..."
-    # Create a temporary .env file for the backend with proper format
-    cp env.dev apps/backend/.env
+    # Create a temporary .env file for the backend with only backend-relevant variables
+    cat > apps/backend/.env << EOF
+# Backend Configuration
+HOST=0.0.0.0
+PORT=8000
+DEBUG=true
+GOOGLE_AI_API_KEY=$(grep '^GOOGLE_AI_API_KEY=' env.dev | cut -d'=' -f2)
+FRONTEND_URL=$(grep '^FRONTEND_URL=' env.dev | cut -d'=' -f2)
+ALLOWED_ORIGINS=$(grep '^ALLOWED_ORIGINS=' env.dev | cut -d'=' -f2)
+MAX_FILE_SIZE=$(grep '^MAX_FILE_SIZE=' env.dev | cut -d'=' -f2)
+ALLOWED_IMAGE_TYPES=$(grep '^ALLOWED_IMAGE_TYPES=' env.dev | cut -d'=' -f2)
+EOF
     print_success "Environment variables loaded"
 else
     print_warning "env.dev file not found, using system environment variables"
