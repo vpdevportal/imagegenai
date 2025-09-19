@@ -7,10 +7,7 @@ services:
       - "5001:3000"
       - "6001:8000"
     env_file:
-      - ./config/development.env
-    environment:
-      # Override API key from host environment if set
-      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY}
+      - ./env.dev
     volumes:
       - ./apps/backend:/app/backend
       - ./apps/frontend:/app/frontend
