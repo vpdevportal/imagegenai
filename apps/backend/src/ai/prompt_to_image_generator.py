@@ -118,6 +118,66 @@ class PromptToImageGenerator:
                 detail=f"Failed to generate image from reference: {str(e)}"
             )
     
+    def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
+        """
+        Generate an image using only text prompt (no reference image)
+        
+        Args:
+            prompt: Text prompt for image generation
+            
+        Returns:
+            Tuple[bytes, str]: (image_data, content_type)
+            
+        Raises:
+            HTTPException: If generation fails
+        """
+        logger.info(f"Starting AI image generation from text only - prompt: '{prompt[:100]}{'...' if len(prompt) > 100 else ''}', model: {self.model}")
+        
+        try:
+            # Generate the image using Gemini with text only
+            logger.info(f"Calling Gemini API with text only - model: {self.model}")
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=[prompt],
+            )
+            logger.info(f"Gemini API response received - has_candidates: {bool(response.candidates)}")
+            
+            # Process the response and return image data
+            if response.candidates and len(response.candidates) > 0:
+                logger.debug(f"Processing response - candidates_count: {len(response.candidates)}")
+                candidate = response.candidates[0]
+                logger.debug(f"Processing candidate - has_content: {bool(candidate.content)}, has_parts: {bool(candidate.content.parts) if candidate.content else False}")
+                
+                if candidate.content and candidate.content.parts:
+                    logger.debug(f"Processing parts - parts_count: {len(candidate.content.parts)}")
+                    for i, part in enumerate(candidate.content.parts):
+                        logger.debug(f"Processing part {i} - has_inline_data: {bool(part.inline_data)}")
+                        if part.inline_data is not None:
+                            # Return the generated image data directly
+                            image_data = part.inline_data.data
+                            content_type = "image/png"  # Gemini typically returns PNG
+                            logger.info(f"Image generation successful - data_size: {len(image_data)} bytes, content_type: {content_type}")
+                            return image_data, content_type
+                        else:
+                            logger.debug(f"Part {i} has no inline data")
+                else:
+                    logger.warning("Candidate has no content or parts")
+            else:
+                logger.warning("Response has no candidates")
+
+            logger.error("No image data found in Gemini response")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to generate image from text: No image data found in response"
+            )
+                
+        except Exception as e:
+            logger.error(f"Failed to generate image from text: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to generate image from text: {str(e)}"
+            )
+    
     def process_reference_image(self, image_file) -> str:
         """
         Process uploaded reference image and return as data URL

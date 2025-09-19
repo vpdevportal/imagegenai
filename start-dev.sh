@@ -57,19 +57,40 @@ check_port() {
     fi
 }
 
-# Function to kill processes on a port
+# Function to kill processes on a port (safer version)
 kill_port() {
     local port=$1
     local service_name=$2
     if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
-        print_warning "Port $port ($service_name) is in use. Killing existing processes..."
-        lsof -ti :$port | xargs kill -9 2>/dev/null || true
-        sleep 1
+        print_warning "Port $port ($service_name) is in use. Attempting to identify and kill only development processes..."
+        
+        # Get process info for processes using the port
+        local pids=$(lsof -ti :$port 2>/dev/null)
+        if [ -n "$pids" ]; then
+            for pid in $pids; do
+                # Check if it's a development process (python, node, uvicorn, next)
+                local cmd=$(ps -p $pid -o comm= 2>/dev/null)
+                if [[ "$cmd" =~ (python|node|uvicorn|next|npm) ]]; then
+                    print_status "Killing development process $pid ($cmd) on port $port"
+                    kill -TERM $pid 2>/dev/null || true
+                    sleep 1
+                    # If still running, force kill
+                    if kill -0 $pid 2>/dev/null; then
+                        kill -9 $pid 2>/dev/null || true
+                    fi
+                else
+                    print_warning "Skipping non-development process $pid ($cmd) on port $port"
+                fi
+            done
+        fi
+        
+        sleep 2
         if check_port $port; then
-            print_error "Failed to kill processes on port $port"
+            print_error "Failed to free port $port. Please manually stop the process using this port."
+            print_error "You can check what's using the port with: lsof -i :$port"
             exit 1
         else
-            print_success "Successfully killed processes on port $port"
+            print_success "Successfully freed port $port"
         fi
     else
         print_status "Port $port ($service_name) is available"
@@ -78,6 +99,15 @@ kill_port() {
 
 # Kill any existing processes on the ports
 print_status "Checking and cleaning up ports..."
+
+# Check if Chrome might be using these ports
+for port in 8000 3000; do
+    chrome_pids=$(lsof -ti :$port 2>/dev/null | xargs -I {} ps -p {} -o comm= 2>/dev/null | grep -i chrome || true)
+    if [ -n "$chrome_pids" ]; then
+        print_warning "Chrome processes detected on port $port. This might cause Chrome sessions to be cleared."
+        print_warning "Consider closing Chrome or using different ports for development."
+    fi
+done
 
 kill_port 8000 "backend"
 kill_port 3000 "frontend"
@@ -116,11 +146,23 @@ echo ""
 # Create a function to handle cleanup on exit
 cleanup() {
     print_status "Shutting down development servers..."
-    # Kill background processes
+    # Kill background processes (our development servers)
     jobs -p | xargs -r kill 2>/dev/null || true
-    # Also kill any processes on our ports
-    lsof -ti :8000 | xargs kill -9 2>/dev/null || true
-    lsof -ti :3000 | xargs kill -9 2>/dev/null || true
+    
+    # Safely kill only development processes on our ports
+    for port in 8000 3000; do
+        local pids=$(lsof -ti :$port 2>/dev/null)
+        if [ -n "$pids" ]; then
+            for pid in $pids; do
+                local cmd=$(ps -p $pid -o comm= 2>/dev/null)
+                if [[ "$cmd" =~ (python|node|uvicorn|next|npm) ]]; then
+                    print_status "Stopping development process $pid ($cmd) on port $port"
+                    kill -TERM $pid 2>/dev/null || true
+                fi
+            done
+        fi
+    done
+    
     print_success "Development servers stopped"
     exit 0
 }

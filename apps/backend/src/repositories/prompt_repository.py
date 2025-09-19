@@ -13,30 +13,50 @@ logger = logging.getLogger(__name__)
 class PromptRepository:
     """Repository for prompt database operations"""
     
-    def create_or_update(self, prompt: Prompt) -> Prompt:
-        """Create or update a prompt"""
-        logger.info(f"Starting create_or_update for prompt - hash: {prompt.prompt_hash[:8]}..., text: '{prompt.prompt_text[:50]}{'...' if len(prompt.prompt_text) > 50 else ''}', model: {prompt.model}")
+    def create(self, prompt: Prompt) -> Prompt:
+        """Create a new prompt"""
+        logger.info(f"Starting create for prompt - hash: {prompt.prompt_hash[:8]}..., text: '{prompt.prompt_text[:50]}{'...' if len(prompt.prompt_text) > 50 else ''}', model: {prompt.model}")
         
         try:
             with db_connection.get_connection() as conn:
-                # Try to update existing record
-                logger.debug(f"Attempting to update existing prompt with hash: {prompt.prompt_hash}")
+                logger.debug(f"Creating new prompt with hash: {prompt.prompt_hash}")
                 cursor = conn.execute("""
-                    UPDATE prompts 
-                    SET total_uses = total_uses + 1,
-                        last_used_at = CURRENT_TIMESTAMP,
-                        thumbnail_data = COALESCE(?, thumbnail_data),
-                        thumbnail_mime = COALESCE(?, thumbnail_mime),
-                        thumbnail_width = COALESCE(?, thumbnail_width),
-                        thumbnail_height = COALESCE(?, thumbnail_height)
-                    WHERE prompt_hash = ?
+                    INSERT INTO prompts (
+                        prompt_text, prompt_hash, model,
+                        thumbnail_data, thumbnail_mime, thumbnail_width, thumbnail_height
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, (
+                    prompt.prompt_text,
+                    prompt.prompt_hash,
+                    prompt.model,
                     prompt.thumbnail_data,
                     prompt.thumbnail_mime,
                     prompt.thumbnail_width,
-                    prompt.thumbnail_height,
-                    prompt.prompt_hash
+                    prompt.thumbnail_height
                 ))
+                prompt.id = cursor.lastrowid
+                logger.info(f"Successfully created new prompt - ID: {prompt.id}, hash: {prompt.prompt_hash[:8]}..., total_uses: {prompt.total_uses}")
+                conn.commit()
+                logger.debug(f"Database transaction committed for new prompt - ID: {prompt.id}")
+                return prompt
+                    
+        except Exception as e:
+            logger.error(f"Error in create for prompt - hash: {prompt.prompt_hash[:8]}..., error: {str(e)}")
+            raise
+    
+    def update(self, prompt: Prompt) -> Prompt:
+        """Update an existing prompt (only updates usage stats, no thumbnail modification)"""
+        logger.info(f"Starting update for prompt - hash: {prompt.prompt_hash[:8]}..., text: '{prompt.prompt_text[:50]}{'...' if len(prompt.prompt_text) > 50 else ''}', model: {prompt.model}")
+        
+        try:
+            with db_connection.get_connection() as conn:
+                logger.debug(f"Updating existing prompt with hash: {prompt.prompt_hash}")
+                cursor = conn.execute("""
+                    UPDATE prompts 
+                    SET total_uses = total_uses + 1,
+                        last_used_at = CURRENT_TIMESTAMP
+                    WHERE prompt_hash = ?
+                """, (prompt.prompt_hash,))
                 
                 if cursor.rowcount > 0:
                     # Record was updated, get the updated record
@@ -56,30 +76,12 @@ class PromptRepository:
                         conn.rollback()
                         return prompt
                 else:
-                    # Record doesn't exist, insert new one
-                    logger.info(f"No existing prompt found, creating new record - hash: {prompt.prompt_hash[:8]}...")
-                    cursor = conn.execute("""
-                        INSERT INTO prompts (
-                            prompt_text, prompt_hash, model,
-                            thumbnail_data, thumbnail_mime, thumbnail_width, thumbnail_height
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        prompt.prompt_text,
-                        prompt.prompt_hash,
-                        prompt.model,
-                        prompt.thumbnail_data,
-                        prompt.thumbnail_mime,
-                        prompt.thumbnail_width,
-                        prompt.thumbnail_height
-                    ))
-                    prompt.id = cursor.lastrowid
-                    logger.info(f"Successfully created new prompt - ID: {prompt.id}, hash: {prompt.prompt_hash[:8]}..., total_uses: {prompt.total_uses}")
-                    conn.commit()
-                    logger.debug(f"Database transaction committed for new prompt - ID: {prompt.id}")
+                    logger.warning(f"No prompt found to update with hash: {prompt.prompt_hash}")
+                    conn.rollback()
                     return prompt
                     
         except Exception as e:
-            logger.error(f"Error in create_or_update for prompt - hash: {prompt.prompt_hash[:8]}..., error: {str(e)}")
+            logger.error(f"Error in update for prompt - hash: {prompt.prompt_hash[:8]}..., error: {str(e)}")
             raise
     
     def get_by_id(self, prompt_id: int) -> Optional[Prompt]:

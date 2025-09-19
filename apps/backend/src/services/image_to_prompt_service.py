@@ -99,13 +99,29 @@ class ImageToPromptService:
             # Save the prompt to the database
             logger.debug("Attempting to save prompt to database")
             try:
-                saved_prompt = self.prompt_service.create_or_update_prompt(
-                    prompt_text=prompt,
-                    model="gemini-2.5-flash",
-                    image_data=thumbnail_data
-                )
-                prompt_id = saved_prompt.id
-                logger.info(f"Prompt saved to database successfully - prompt_id: {prompt_id}, total_uses: {saved_prompt.total_uses}")
+
+                if self.prompt_service.exists_by_text(prompt):
+                    logger.info("Prompt already exists in database")
+                    return {
+                        "success": False,
+                        "message": "Prompt already exists in database",
+                        "prompt": prompt,
+                        "style": style,
+                        "detail_level": detail_level,
+                        "thumbnail": f"data:image/webp;base64,{base64.b64encode(thumbnail_data).decode('utf-8')}",
+                        "original_filename": file.filename,
+                        "prompt_id": None,
+                        "saved_to_database": False
+                    }
+                else:
+                    logger.info("Prompt does not exist in database")
+                    saved_prompt = self.prompt_service.create_prompt(
+                        prompt_text=prompt,
+                        model="gemini-2.5-flash",
+                        image_data=thumbnail_data
+                    )
+                    prompt_id = saved_prompt.id
+                    logger.info(f"Prompt saved to database successfully - prompt_id: {prompt_id}, total_uses: {saved_prompt.total_uses}")
             except Exception as e:
                 logger.error(f"Failed to save prompt to database - error: {str(e)}")
                 prompt_id = None

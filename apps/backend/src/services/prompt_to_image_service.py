@@ -58,18 +58,20 @@ class PromptToImageService:
             )
             logger.info(f"AI image generation completed - generated_size: {len(generated_image_data)} bytes, content_type: {content_type}")
             
-            # Save prompt to database with thumbnail
-            logger.debug("Attempting to save prompt to database")
             try:
-                # Save to database using image_data directly
-                logger.debug("Saving prompt to database with generated image data")
-                prompt_record = self.prompt_service.create_or_update_prompt(
-                    prompt_text=prompt,
-                    model="gemini-2.5-flash-image-preview",
-                    image_data=generated_image_data
-                )
-                
-                logger.info(f"Saved prompt to database successfully - ID: {prompt_record.id}, total_uses: {prompt_record.total_uses}")
+
+                # Save prompt to database with thumbnail
+                logger.debug("Attempting to save prompt to database")
+
+                if self.prompt_service.exists_by_text(prompt):
+                    logger.info("Prompt already exists in database")
+                    self.prompt_service.update_prompt(prompt, "gemini-2.5-flash-image-preview");
+                else:
+                    logger.info("Prompt does not exist in database")
+                    generated_thumbnail_data, thumbnail_content_type = self.generator.generate_from_text(
+                        prompt
+                    )
+                    self.prompt_service.create_prompt(prompt, "gemini-2.5-flash-image-preview", generated_thumbnail_data);
                     
             except Exception as db_error:
                 logger.error(f"Failed to save prompt to database: {db_error}", exc_info=True)
