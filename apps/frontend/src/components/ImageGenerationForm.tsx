@@ -203,7 +203,7 @@ export default function ImageGenerationForm({
               <img
                 src={previewUrl}
                 alt="Preview"
-                className="w-full h-48 object-cover rounded-lg"
+                className="w-full h-auto max-h-96 object-contain rounded-lg"
               />
               <button
                 onClick={clearImage}
