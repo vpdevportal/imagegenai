@@ -10,6 +10,8 @@ import base64
 import logging
 
 from google import genai
+from google.generativeai.types import HarmBlockThreshold, HarmCategory
+from google.api_core.exceptions import GoogleAPIError
 from PIL import Image
 from fastapi import HTTPException
 from dotenv import load_dotenv
@@ -18,9 +20,39 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from ..db.config import settings
+from ..constants import DEFAULT_GEMINI_MODEL
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+
+def log_error_reason(response):
+    """Log detailed error reasons when response candidates are empty and return error details"""
+    if len(response.candidates) == 0:
+        if hasattr(response, 'prompt_feedback') and response.prompt_feedback and hasattr(response.prompt_feedback, 'block_reason') and response.prompt_feedback.block_reason:
+            block_reason = response.prompt_feedback.block_reason
+            safety_ratings = getattr(response.prompt_feedback, 'safety_ratings', None)
+            
+            logger.error(f"Response was blocked. Block reason: {block_reason}")
+            
+            error_details = [f"Block reason: {block_reason}"]
+            
+            if safety_ratings:
+                for rating in safety_ratings:
+                    try:
+                        category_name = HarmCategory(rating.category).name
+                        threshold_name = HarmBlockThreshold(rating.probability).name
+                        logger.error(f"  - Category: {category_name}, Probability: {threshold_name}")
+                        error_details.append(f"Category: {category_name}, Probability: {threshold_name}")
+                    except (ValueError, AttributeError) as e:
+                        logger.error(f"  - Category: {getattr(rating, 'category', 'Unknown')}, Probability: {getattr(rating, 'probability', 'Unknown')}")
+                        error_details.append(f"Category: {getattr(rating, 'category', 'Unknown')}, Probability: {getattr(rating, 'probability', 'Unknown')}")
+            
+            return True, "; ".join(error_details)
+        else:
+            logger.error("Response has no candidates but no block reason found")
+            return True, "Response has no candidates but no block reason found"
+    return False, None
 
 
 class PromptToImageGenerator:
@@ -40,7 +72,7 @@ class PromptToImageGenerator:
         
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
-        self.model = "gemini-2.5-flash-image-preview"
+        self.model = getattr(settings, 'gemini_model', DEFAULT_GEMINI_MODEL)
         
         logger.info("Prompt to image generator initialized")
         
@@ -62,61 +94,65 @@ class PromptToImageGenerator:
         """
         logger.info(f"Starting AI image generation - prompt: '{prompt[:100]}{'...' if len(prompt) > 100 else ''}', model: {self.model}")
         
-        try:
-            # Read and process the uploaded image
-            logger.debug("Reading uploaded image content")
-            image_content = image_file.file.read()
-            image_file.file.seek(0)  # Reset file pointer
-            logger.info(f"Image content read - size: {len(image_content)} bytes")
+        # Read and process the uploaded image
+        logger.info("Reading uploaded image content")
+        image_content = image_file.file.read()
+        image_file.file.seek(0)  # Reset file pointer
+        logger.info(f"Image content read - size: {len(image_content)} bytes")
+        
+        # Convert to PIL Image
+        logger.debug("Converting image content to PIL Image")
+        reference_image = Image.open(BytesIO(image_content))
+        logger.info(f"PIL Image created - size: {reference_image.size}, mode: {reference_image.mode}")
+        
+        # Generate the image using Gemini
+        logger.info(f"Calling Gemini API - model: {self.model}")
+        response = self.client.models.generate_content(
+            model=self.model,
+            contents=[prompt, reference_image],
+        )
+        logger.info(f"Gemini API response received - has_candidates: {bool(response.candidates)}")
+        logger.info(f"Gemini API response received - has_candidates: {len(response.candidates)}")
+
+        # Process the response and return image data
+        if bool(response.candidates) and len(response.candidates) > 0:
+            logger.info(f"Processing response - candidates_count: {len(response.candidates)}")
+            candidate = response.candidates[0]
+            logger.info(f"Processing candidate - has_content: {bool(candidate.content)}, has_parts: {bool(candidate.content.parts) if candidate.content else False}")
             
-            # Convert to PIL Image
-            logger.debug("Converting image content to PIL Image")
-            reference_image = Image.open(BytesIO(image_content))
-            logger.info(f"PIL Image created - size: {reference_image.size}, mode: {reference_image.mode}")
+            if candidate.content and candidate.content.parts:
+                logger.info(f"Processing parts - parts_count: {len(candidate.content.parts)}")
+                for i, part in enumerate(candidate.content.parts):
+                    logger.info(f"Processing part {i} - has_inline_data: {bool(part.inline_data)}")
+                    if part.inline_data is not None:
+                        # Return the generated image data directly
+                        image_data = part.inline_data.data
+                        content_type = "image/png"  # Gemini typically returns PNG
+                        logger.info(f"Image generation successful - data_size: {len(image_data)} bytes, content_type: {content_type}")
+                        return image_data, content_type
+                    else:
+                        logger.info(f"Part {i} has no inline data")
+            else:
+                logger.warning("Candidate has no content or parts")
+        else:
+            # Log detailed error reasons when candidates are empty
+            is_blocked, error_details = log_error_reason(response)
+            logger.warning(f"Gemini response error details: is_blocked={is_blocked}, error_details={error_details}")
             
-            # Generate the image using Gemini
-            logger.info(f"Calling Gemini API - model: {self.model}")
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=[prompt, reference_image],
-            )
-            logger.info(f"Gemini API response received - has_candidates: {bool(response.candidates)}")
-            
-            # Process the response and return image data
-            if response.candidates and len(response.candidates) > 0:
-                logger.debug(f"Processing response - candidates_count: {len(response.candidates)}")
-                candidate = response.candidates[0]
-                logger.debug(f"Processing candidate - has_content: {bool(candidate.content)}, has_parts: {bool(candidate.content.parts) if candidate.content else False}")
-                
-                if candidate.content and candidate.content.parts:
-                    logger.debug(f"Processing parts - parts_count: {len(candidate.content.parts)}")
-                    for i, part in enumerate(candidate.content.parts):
-                        logger.debug(f"Processing part {i} - has_inline_data: {bool(part.inline_data)}")
-                        if part.inline_data is not None:
-                            # Return the generated image data directly
-                            image_data = part.inline_data.data
-                            content_type = "image/png"  # Gemini typically returns PNG
-                            logger.info(f"Image generation successful - data_size: {len(image_data)} bytes, content_type: {content_type}")
-                            return image_data, content_type
-                        else:
-                            logger.debug(f"Part {i} has no inline data")
-                else:
-                    logger.warning("Candidate has no content or parts")
+            if is_blocked:
+                detail_message = f"Image generation was blocked due to content policy violations: {error_details}"
+                raise HTTPException(
+                    status_code=400,
+                    detail=detail_message
+                )
             else:
                 logger.warning("Response has no candidates")
 
-            logger.error("No image data found in Gemini response")
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to generate image from reference: No image data found in response"
-            )
-                
-        except Exception as e:
-            logger.error(f"Failed to generate image from reference: {str(e)}", exc_info=True)
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to generate image from reference: {str(e)}"
-            )
+        logger.error("No image data found in Gemini response")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate image from reference: No image data found in response"
+        )
     
     def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
         """
@@ -144,14 +180,14 @@ class PromptToImageGenerator:
             
             # Process the response and return image data
             if response.candidates and len(response.candidates) > 0:
-                logger.debug(f"Processing response - candidates_count: {len(response.candidates)}")
+                logger.info(f"Processing response - candidates_count: {len(response.candidates)}")
                 candidate = response.candidates[0]
-                logger.debug(f"Processing candidate - has_content: {bool(candidate.content)}, has_parts: {bool(candidate.content.parts) if candidate.content else False}")
+                logger.info(f"Processing candidate - has_content: {bool(candidate.content)}, has_parts: {bool(candidate.content.parts) if candidate.content else False}")
                 
                 if candidate.content and candidate.content.parts:
-                    logger.debug(f"Processing parts - parts_count: {len(candidate.content.parts)}")
+                    logger.info(f"Processing parts - parts_count: {len(candidate.content.parts)}")
                     for i, part in enumerate(candidate.content.parts):
-                        logger.debug(f"Processing part {i} - has_inline_data: {bool(part.inline_data)}")
+                        logger.info(f"Processing part {i} - has_inline_data: {bool(part.inline_data)}")
                         if part.inline_data is not None:
                             # Return the generated image data directly
                             image_data = part.inline_data.data
@@ -159,11 +195,21 @@ class PromptToImageGenerator:
                             logger.info(f"Image generation successful - data_size: {len(image_data)} bytes, content_type: {content_type}")
                             return image_data, content_type
                         else:
-                            logger.debug(f"Part {i} has no inline data")
+                            logger.info(f"Part {i} has no inline data")
                 else:
                     logger.warning("Candidate has no content or parts")
             else:
-                logger.warning("Response has no candidates")
+                # Log detailed error reasons when candidates are empty
+                is_blocked, error_details = log_error_reason(response)
+                logger.error(f"### log_error_reason: is_blocked={is_blocked}, error_details={error_details}")
+                if is_blocked:
+                    detail_message = f"Image generation was blocked due to content policy violations: {error_details}"
+                    raise HTTPException(
+                        status_code=400,
+                        detail=detail_message
+                    )
+                else:
+                    logger.warning("Response has no candidates")
 
             logger.error("No image data found in Gemini response")
             raise HTTPException(
@@ -173,9 +219,25 @@ class PromptToImageGenerator:
                 
         except Exception as e:
             logger.error(f"Failed to generate image from text: {str(e)}", exc_info=True)
+            # Extract clean error message from Google API errors
+            error_message = "Image generation failed. Please try again later."
+            if hasattr(e, 'details') and isinstance(e.details, dict):
+                if 'message' in e.details:
+                    error_message = e.details['message']
+            elif hasattr(e, 'message'):
+                error_message = e.message
+            elif str(e).startswith('503'):
+                error_message = "The service is currently unavailable."
+            elif str(e).startswith('400'):
+                error_message = "Invalid request. Please check your input."
+            elif str(e).startswith('401'):
+                error_message = "Authentication failed. Please check your API key."
+            elif str(e).startswith('429'):
+                error_message = "Rate limit exceeded. Please try again later."
+            
             raise HTTPException(
                 status_code=500,
-                detail=f"Failed to generate image from text: {str(e)}"
+                detail=error_message
             )
     
     def process_reference_image(self, image_file) -> str:
@@ -192,7 +254,7 @@ class PromptToImageGenerator:
         
         try:
             # Read image content
-            logger.debug("Reading reference image content")
+            logger.info("Reading reference image content")
             image_content = image_file.file.read()
             image_file.file.seek(0)  # Reset file pointer
             logger.info(f"Reference image content read - size: {len(image_content)} bytes")
@@ -200,7 +262,7 @@ class PromptToImageGenerator:
             # Determine content type from file extension
             original_filename = image_file.filename or "reference"
             file_extension = Path(original_filename).suffix.lower()
-            logger.debug(f"Determining content type - filename: {original_filename}, extension: {file_extension}")
+            logger.info(f"Determining content type - filename: {original_filename}, extension: {file_extension}")
             
             content_type_map = {
                 '.jpg': 'image/jpeg',
@@ -213,7 +275,7 @@ class PromptToImageGenerator:
             logger.info(f"Content type determined: {content_type}")
             
             # Convert to base64 data URL
-            logger.debug("Converting image to base64")
+            logger.info("Converting image to base64")
             image_base64 = base64.b64encode(image_content).decode('utf-8')
             data_url = f"data:{content_type};base64,{image_base64}"
             logger.info(f"Reference image processed successfully - data_url_length: {len(data_url)}")

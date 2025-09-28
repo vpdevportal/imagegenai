@@ -6,6 +6,7 @@ import logging
 from google import genai
 from ..utils.thumbnail import ThumbnailGenerator
 from ..db.config import settings
+from ..constants import DEFAULT_GEMINI_MODEL
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ class ImageToPromptGenerator:
         
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
-        self.model = "gemini-2.5-flash-image-preview"
+        self.model = getattr(settings, 'gemini_model', DEFAULT_GEMINI_MODEL)
                 
         logger.info("Image to prompt generator initialized")
     

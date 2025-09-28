@@ -10,6 +10,7 @@ from ..models.prompt import Prompt
 from ..repositories.prompt_repository import prompt_repository
 from ..utils.thumbnail import ThumbnailGenerator
 from ..schemas.prompt import PromptResponse, PromptWithThumbnail, PromptStats
+from ..db.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +213,36 @@ class PromptService:
         
         logger.debug(f"Prompt exists check result: {exists}")
         return exists
+    
+    def attempt_save_prompt(self, prompt_text: str, thumbnail_data: Optional[bytes] = None) -> Optional[PromptResponse]:
+        """
+        Attempt to save a prompt to the database.
+        If prompt exists, update usage count. If not, create new prompt with thumbnail.
+        
+        Args:
+            prompt_text: The prompt text to save
+            thumbnail_data: Optional thumbnail data for new prompts
+            
+        Returns:
+            PromptResponse if successful, None if failed
+        """
+        logger.debug("Attempting to save prompt to database")
+        
+        try:
+            if self.exists_by_text(prompt_text):
+                logger.info("Prompt already exists in database")
+                return self.update_prompt(prompt_text, settings.gemini_model)
+            else:
+                logger.info("Prompt does not exist in database")
+                return self.create_prompt(
+                    prompt_text=prompt_text,
+                    model=settings.gemini_model,
+                    image_data=thumbnail_data,
+                    total_uses=1
+                )
+        except Exception as db_error:
+            logger.error(f"Failed to save prompt to database: {db_error}", exc_info=True)
+            return None
     
     def cleanup_old_prompts(self, days: int = 90) -> int:
         """Clean up old prompts without thumbnails"""

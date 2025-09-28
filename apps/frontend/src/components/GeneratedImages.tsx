@@ -24,7 +24,8 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
       // Create a temporary link to download the image
       const link = document.createElement('a')
       link.href = image.imageUrl || image.modifiedImageUrl || '/placeholder-image.jpg'
-      link.download = `generated-image-${image.id}.png`
+      const timestamp = Math.floor(Date.now() / 1000) // Current time in seconds from epoch
+      link.download = `image-${timestamp}.png`
       link.target = '_blank'
       document.body.appendChild(link)
       link.click()

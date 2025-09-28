@@ -109,50 +109,42 @@ async def generate_image(
         logger.debug("Reset image file pointer for service call")
         
         # Generate image using service
-        try:
-            logger.info("Starting image generation via service")
-            # Reset file pointer for generation
-            await image.seek(0)
-            logger.debug("Reset image file pointer for generation")
-            
-            generated_image_data, content_type, reference_image_url = await prompt_to_image_service.generate_image_from_prompt(
-                prompt=prompt,
-                reference_image=image
-            )
-            
-            logger.info(f"Image generation completed - generated_size: {len(generated_image_data)} bytes, content_type: {content_type}")
-            
-            # Convert image data to base64 for JSON response
-            logger.debug("Converting generated image to base64")
-            generated_image_base64 = base64.b64encode(generated_image_data).decode('utf-8')
-            generated_image_data_url = f"data:{content_type};base64,{generated_image_base64}"
-            logger.info(f"Base64 conversion completed - data_url_length: {len(generated_image_data_url)}")
-            
-            response = ImageGenerationResponse(
-                id=image_id,
-                message="Image generated successfully",
-                prompt=prompt,
-                status="completed",
-                generated_image_url=generated_image_data_url,
-                reference_image_url=reference_image_url,
-                created_at=current_time,
-                estimated_completion_time=None
-            )
-            
-            logger.info(f"Image generation request completed successfully - id: {image_id}")
-            
-        except Exception as e:
-            logger.error(f"Image generation failed: {str(e)}", exc_info=True)
-            raise HTTPException(
-                status_code=500,
-                detail=f"Image generation failed: {str(e)}"
-            )
+        logger.info("Starting image generation via service")
+        # Reset file pointer for generation
+        await image.seek(0)
+        logger.debug("Reset image file pointer for generation")
+        
+        generated_image_data, content_type, reference_image_url = await prompt_to_image_service.generate_image_from_prompt(
+            prompt=prompt,
+            reference_image=image
+        )
+        
+        logger.info(f"Image generation completed - generated_size: {len(generated_image_data)} bytes, content_type: {content_type}")
+        
+        # Convert image data to base64 for JSON response
+        logger.debug("Converting generated image to base64")
+        generated_image_base64 = base64.b64encode(generated_image_data).decode('utf-8')
+        generated_image_data_url = f"data:{content_type};base64,{generated_image_base64}"
+        logger.info(f"Base64 conversion completed - data_url_length: {len(generated_image_data_url)}")
+        
+        response = ImageGenerationResponse(
+            id=image_id,
+            message="Image generated successfully",
+            prompt=prompt,
+            status="completed",
+            generated_image_url=generated_image_data_url,
+            reference_image_url=reference_image_url,
+            created_at=current_time,
+            estimated_completion_time=None
+        )
+        
+        logger.info(f"Image generation request completed successfully - id: {image_id}")
         
         return response
         
     except HTTPException as e:
         logger.error(f"HTTP error during image generation - status: {e.status_code}, detail: {e.detail}")
-        raise
+        raise e
     except Exception as e:
         logger.error(f"Unexpected error during image generation - error: {str(e)}", exc_info=True)
         raise HTTPException(

@@ -7,28 +7,37 @@ from typing import Optional, Union
 from pydantic_settings import BaseSettings
 from pydantic import field_validator
 
+from ..constants import (
+    DEFAULT_GEMINI_MODEL,
+    API_TITLE,
+    API_DESCRIPTION,
+    API_VERSION,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    DEFAULT_DEBUG,
+    DEFAULT_FRONTEND_URL,
+    DEFAULT_ALLOWED_ORIGINS,
+    DEFAULT_MAX_FILE_SIZE,
+    DEFAULT_ALLOWED_IMAGE_TYPES
+)
+
 
 class Settings(BaseSettings):
     """Application settings"""
     
     # API Configuration
-    api_title: str = "ImageGenAI API"
-    api_description: str = "AI-powered image generation and processing API"
-    api_version: str = "1.0.0"
+    api_title: str = API_TITLE
+    api_description: str = API_DESCRIPTION
+    api_version: str = API_VERSION
     
     # Server Configuration
-    host: str = "0.0.0.0"
-    port: int = 8000
-    debug: bool = True
+    host: str = DEFAULT_HOST
+    port: int = DEFAULT_PORT
+    debug: bool = DEFAULT_DEBUG
     
     # CORS Configuration
-    frontend_url: str = "http://localhost:5001"
-    allowed_origins: Union[list, str] = [
-        "http://localhost:5001",
-        "http://127.0.0.1:5001",
-        "http://localhost:6001",
-        "http://127.0.0.1:6001"
-    ]
+    frontend_url: str = DEFAULT_FRONTEND_URL
+    allowed_origins: Union[list, str] = DEFAULT_ALLOWED_ORIGINS
     
     @field_validator('allowed_origins', mode='before')
     @classmethod
@@ -39,15 +48,11 @@ class Settings(BaseSettings):
     
     # AI Configuration
     google_ai_api_key: Optional[str] = None
+    gemini_model: str = DEFAULT_GEMINI_MODEL
     
     # File Upload Configuration
-    max_file_size: int = 10 * 1024 * 1024  # 10MB
-    allowed_image_types: list = [
-        "image/jpeg",
-        "image/jpg", 
-        "image/png",
-        "image/webp"
-    ]
+    max_file_size: int = DEFAULT_MAX_FILE_SIZE
+    allowed_image_types: list = DEFAULT_ALLOWED_IMAGE_TYPES
     
     class Config:
         env_file = ".env"

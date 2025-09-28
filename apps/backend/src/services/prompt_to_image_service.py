@@ -13,6 +13,7 @@ from fastapi import HTTPException, UploadFile
 
 from ..ai.prompt_to_image_generator import prompt_to_image_generator
 from .prompt_service import prompt_service
+from ..db.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -58,38 +59,25 @@ class PromptToImageService:
             )
             logger.info(f"AI image generation completed - generated_size: {len(generated_image_data)} bytes, content_type: {content_type}")
             
-            try:
-
-                # Save prompt to database with thumbnail
-                logger.debug("Attempting to save prompt to database")
-
-                if self.prompt_service.exists_by_text(prompt):
-                    logger.info("Prompt already exists in database")
-                    self.prompt_service.update_prompt(prompt, "gemini-2.5-flash-image-preview");
-                else:
-                    logger.info("Prompt does not exist in database")
-                    generated_thumbnail_data, thumbnail_content_type = self.generator.generate_from_text(
-                        prompt
-                    )
-                    self.prompt_service.create_prompt(
-                        prompt_text=prompt,
-                        model="gemini-2.5-flash",
-                        image_data=generated_thumbnail_data,
-                        total_uses=1
-                    )
-            except Exception as db_error:
-                logger.error(f"Failed to save prompt to database: {db_error}", exc_info=True)
-                # Continue with response even if database save fails
+            # Save prompt to database with thumbnail
+            logger.debug("Attempting to save prompt to database")
+            generated_thumbnail_data, thumbnail_content_type = self.generator.generate_from_text(prompt)
+            saved_prompt = self.prompt_service.attempt_save_prompt(prompt, generated_thumbnail_data)
+            if saved_prompt:
+                logger.info(f"Prompt saved successfully - id: {saved_prompt.id}, total_uses: {saved_prompt.total_uses}")
+            else:
+                logger.warning("Failed to save prompt to database, continuing with response")
             
             logger.info("Prompt to image generation completed successfully")
             return generated_image_data, content_type, reference_image_url
             
         except Exception as e:
             logger.error(f"Image generation failed: {str(e)}", exc_info=True)
-            raise HTTPException(
-                status_code=500,
-                detail=f"Image generation failed: {str(e)}"
-            )
+            raise e
+            # raise HTTPException(
+            #     status_code=500,
+            #     detail="Image generation failed. Please try again later."
+            # )
 
 
 # Global service instance

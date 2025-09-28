@@ -15,6 +15,7 @@ import io
 from ..ai.image_to_prompt_generator import image_to_prompt_generator
 from ..utils.thumbnail import ThumbnailGenerator
 from .prompt_service import prompt_service
+from ..db.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +118,7 @@ class ImageToPromptService:
                     logger.info("Prompt does not exist in database")
                     saved_prompt = self.prompt_service.create_prompt(
                         prompt_text=prompt,
-                        model="gemini-2.5-flash",
+                        model=settings.gemini_model,
                         image_data=thumbnail_data
                     )
                     prompt_id = saved_prompt.id
