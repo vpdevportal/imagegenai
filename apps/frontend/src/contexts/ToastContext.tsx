@@ -38,7 +38,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const id = Math.random().toString(36).substr(2, 9)
     const newToast: Toast = {
       id,
-      duration: 5000,
+      duration: 2000,
       ...toast
     }
     

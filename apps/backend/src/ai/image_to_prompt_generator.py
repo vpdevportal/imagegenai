@@ -29,7 +29,7 @@ class ImageToPromptGenerator:
         
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
-        self.model = "gemini-2.5-flash"
+        self.model = "gemini-2.5-flash-image-preview"
                 
         logger.info("Image to prompt generator initialized")
     
@@ -73,16 +73,18 @@ class ImageToPromptGenerator:
             logger.debug("Constructing prompt content for Gemini")
             prompt_content = [
                 image,
-                f"""Describe this image in detail, focusing on elements relevant for generating a similar picture. 
+                f"""Describe this image focusing on body features and physical characteristics relevant for generating a similar picture. 
                 {style_instruction}. {detail_instruction}.
                 
-                Include:
-                - Main subjects and objects
-                - Colors and lighting
-                - Composition and framing
-                - Style and mood
-                - Textures and materials
-                - Background and setting
+                Focus specifically on:
+                - Body type and physique
+                - Breast size and shape
+                - Facial features and expressions
+                - Hair color, length, and style
+                - Skin tone and texture
+                - Clothing and styling
+                - Pose and body positioning
+                - Overall attractiveness and appeal
                 
                 Make it a concise, descriptive prompt suitable for AI image generation. Keep the response under 1000 characters."""
             ]
