@@ -10,8 +10,6 @@ import base64
 import logging
 
 from google import genai
-from google.generativeai.types import HarmBlockThreshold, HarmCategory
-from google.api_core.exceptions import GoogleAPIError
 from PIL import Image
 from fastapi import HTTPException
 from dotenv import load_dotenv
@@ -39,14 +37,10 @@ def log_error_reason(response):
             
             if safety_ratings:
                 for rating in safety_ratings:
-                    try:
-                        category_name = HarmCategory(rating.category).name
-                        threshold_name = HarmBlockThreshold(rating.probability).name
-                        logger.error(f"  - Category: {category_name}, Probability: {threshold_name}")
-                        error_details.append(f"Category: {category_name}, Probability: {threshold_name}")
-                    except (ValueError, AttributeError) as e:
-                        logger.error(f"  - Category: {getattr(rating, 'category', 'Unknown')}, Probability: {getattr(rating, 'probability', 'Unknown')}")
-                        error_details.append(f"Category: {getattr(rating, 'category', 'Unknown')}, Probability: {getattr(rating, 'probability', 'Unknown')}")
+                    category = getattr(rating, 'category', 'Unknown')
+                    probability = getattr(rating, 'probability', 'Unknown')
+                    logger.error(f"  - Category: {category}, Probability: {probability}")
+                    error_details.append(f"Category: {category}, Probability: {probability}")
             
             return True, "; ".join(error_details)
         else:
