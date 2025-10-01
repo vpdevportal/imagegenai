@@ -65,12 +65,13 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
             className="relative group bg-gray-100 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
           >
             {/* Generated Image */}
-            <div className="aspect-square relative">
+            <div className="relative w-full" style={{ minHeight: '300px' }}>
               <Image
                 src={image.modifiedImageUrl || image.imageUrl || '/placeholder-image.jpg'}
                 alt={image.prompt}
-                fill
-                className="object-cover"
+                width={800}
+                height={800}
+                className="object-contain w-full h-auto"
                 onError={(e) => {
                   // Fallback to placeholder if image fails to load
                   e.currentTarget.src = '/placeholder-image.jpg'
