@@ -23,6 +23,8 @@ export default function ImageGenerationForm({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [dragActive, setDragActive] = useState(false)
+  const [retryAttempt, setRetryAttempt] = useState(0)
+  const [maxRetries, setMaxRetries] = useState(3)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Debug component mount
@@ -127,11 +129,15 @@ export default function ImageGenerationForm({
     }
 
     setError('')
+    setRetryAttempt(0)
     setIsGenerating(true)
 
     try {
       console.log('Calling generateImage API with prompt:', `"${prompt}"`, 'file:', selectedFile.name)
-      const response = await generateImage(prompt, selectedFile)
+      const response = await generateImage(prompt, selectedFile, (attempt, maxAttempts) => {
+        setRetryAttempt(attempt)
+        setMaxRetries(maxAttempts)
+      })
       
       onImageGenerated({
         id: response.id,
@@ -146,10 +152,11 @@ export default function ImageGenerationForm({
       console.error('Image generation error:', err)
       
       // Extract specific error message from API response
-      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to generate image. Please try again.'
+      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to generate image after multiple attempts. Please try again.'
       setError(errorMessage)
     } finally {
       setIsGenerating(false)
+      setRetryAttempt(0)
     }
   }
 
@@ -249,6 +256,22 @@ export default function ImageGenerationForm({
           </div>
         )}
 
+        {/* Retry Progress */}
+        {isGenerating && retryAttempt > 0 && (
+          <div className="text-blue-600 text-sm bg-blue-50 p-3 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span>Retrying... Attempt {retryAttempt} of {maxRetries}</span>
+            </div>
+            <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                style={{ width: `${(retryAttempt / maxRetries) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={isGenerating || !prompt.trim() || !selectedFile || prompt.length > 1000}
@@ -260,7 +283,9 @@ export default function ImageGenerationForm({
           {isGenerating ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              <span>Generating...</span>
+              <span>
+                {retryAttempt > 0 ? `Retrying... (${retryAttempt}/${maxRetries})` : 'Generating...'}
+              </span>
             </>
           ) : (
             <>
