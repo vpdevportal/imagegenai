@@ -56,11 +56,11 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
       let data: Prompt[] = []
       
       if (tab === 'recent') {
-        data = await getRecentPrompts(50)
+        data = await getRecentPrompts(200)
       } else if (tab === 'popular') {
-        data = await getPopularPrompts(50)
+        data = await getPopularPrompts(200)
       } else if (tab === 'search' && searchQuery.trim()) {
-        data = await searchPrompts(searchQuery.trim(), 50)
+        data = await searchPrompts(searchQuery.trim(), 200)
       }
       
       setPrompts(data)
