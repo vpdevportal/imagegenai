@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { SparklesIcon, ArrowPathIcon, XMarkIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import { generatePromptFromImage, getInspireStyles } from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
@@ -83,21 +83,14 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
   }
 
   // Process queue sequentially
-  const processQueue = async () => {
+  const processQueue = useCallback(async () => {
     if (processingRef.current || queue.length === 0) return
     
-    processingRef.current = true
-    setIsProcessing(true)
-
-    // Find the first pending item
     const pendingItem = queue.find(item => item.status === 'pending')
     if (!pendingItem) {
-      processingRef.current = false
-      setIsProcessing(false)
-      
       // Check if all completed
       const allCompleted = queue.every(item => item.status === 'completed')
-      if (allCompleted && queue.length > 0) {
+      if (allCompleted && queue.length > 0 && processingRef.current) {
         addToast({
           type: 'success',
           title: 'All Prompts Generated',
@@ -106,6 +99,9 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
       }
       return
     }
+
+    processingRef.current = true
+    setIsProcessing(true)
 
     // Update status to processing
     setQueue(prev => prev.map(item => 
@@ -147,7 +143,7 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
               status: 'error' as const,
               error: errorMessage
             } 
-            : item
+          : item
       ))
       
       addToast({
@@ -155,19 +151,19 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
         title: 'Generation Failed',
         message: errorMessage
       })
+    } finally {
+      // Reset processing flag and state
+      processingRef.current = false
+      setIsProcessing(false)
     }
+  }, [queue, addToast, onPromptGenerated])
 
-    // Continue processing next item
-    processingRef.current = false
-    setTimeout(() => processQueue(), 500)
-  }
-
-  // Auto-process queue when items are added
+  // Auto-process queue when items are added or status changes
   useEffect(() => {
     if (queue.some(item => item.status === 'pending') && !processingRef.current) {
       processQueue()
     }
-  }, [queue])
+  }, [queue, processQueue])
 
   const removeFromQueue = (id: string) => {
     setQueue(prev => prev.filter(item => item.id !== id))
