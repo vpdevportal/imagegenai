@@ -65,9 +65,14 @@ export interface PromptStats {
   most_popular_uses: number
 }
 
-export interface PromptListResponse {
-  prompts: Prompt[]
-  total: number
-  page: number
-  limit: number
+export interface QueueItem {
+  id: string
+  file: File
+  preview: string
+  style: string
+  detailLevel: string
+  status: 'pending' | 'processing' | 'completed' | 'error'
+  prompt?: string
+  thumbnail?: string
+  error?: string
 }
