@@ -20,7 +20,7 @@ import {
   getPromptThumbnail,
   deletePrompt
 } from '@/lib/api'
-import { Prompt, PromptStats } from '@/types'
+import { Prompt, PromptStats, PromptListResponse } from '@/types'
 import ConfirmationDialog from './ConfirmationDialog'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -38,6 +38,13 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
   const [activeTab, setActiveTab] = useState<'recent' | 'popular' | 'search'>('recent')
   const [thumbnails, setThumbnails] = useState<Record<number, string>>({})
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set())
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [itemsPerPage] = useState(20) // Smaller page size for better UX
+  const [allPrompts, setAllPrompts] = useState<Prompt[]>([]) // Store all fetched prompts
   const [confirmationDialog, setConfirmationDialog] = useState<{
     isOpen: boolean
     promptId: number | null
@@ -53,20 +60,23 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
     setError('')
     
     try {
-      let data: Prompt[] = []
+      let fetchedPrompts: Prompt[] = []
       
       if (tab === 'recent') {
-        data = await getRecentPrompts(200)
+        fetchedPrompts = await getRecentPrompts(100) // Fetch more data for client-side pagination
       } else if (tab === 'popular') {
-        data = await getPopularPrompts(200)
+        fetchedPrompts = await getPopularPrompts(100) // Fetch more data for client-side pagination
       } else if (tab === 'search' && searchQuery.trim()) {
-        data = await searchPrompts(searchQuery.trim(), 200)
+        fetchedPrompts = await searchPrompts(searchQuery.trim(), 100) // Fetch more data for client-side pagination
       }
       
-      setPrompts(data)
+      setAllPrompts(fetchedPrompts)
+      setTotalItems(fetchedPrompts.length)
+      setTotalPages(Math.ceil(fetchedPrompts.length / itemsPerPage))
+      setCurrentPage(1) // Reset to first page when loading new data
       
-      // Load thumbnails for prompts that have them
-      const thumbnailPromises = data
+      // Load thumbnails for all fetched prompts
+      const thumbnailPromises = fetchedPrompts
         .filter(prompt => prompt.thumbnail_mime)
         .map(async (prompt) => {
           try {
@@ -93,7 +103,15 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
     } finally {
       setLoading(false)
     }
-  }, [searchQuery])
+  }, [searchQuery, itemsPerPage])
+
+  // Update displayed prompts based on current page
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const pagePrompts = allPrompts.slice(startIndex, endIndex)
+    setPrompts(pagePrompts)
+  }, [allPrompts, currentPage, itemsPerPage])
 
   const loadStats = useCallback(async () => {
     try {
@@ -117,6 +135,14 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
       return () => clearTimeout(timeoutId)
     }
   }, [searchQuery, activeTab, loadPrompts])
+
+  // Handle page changes (client-side pagination)
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage)
+      // No need to call loadPrompts again since we have all data
+    }
+  }
 
   const handlePromptClick = (prompt: Prompt) => {
     if (onPromptSelect) {
@@ -391,6 +417,67 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && !error && prompts.length > 0 && totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 px-4 py-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center text-sm text-gray-700">
+            <span>
+              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} prompts
+            </span>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {/* Previous Button */}
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+            >
+              Previous
+            </button>
+            
+            {/* Page Numbers */}
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number
+                if (totalPages <= 5) {
+                  pageNum = i + 1
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i
+                } else {
+                  pageNum = currentPage - 2 + i
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`px-3 py-1 text-sm font-medium rounded-md ${
+                      currentPage === pageNum
+                        ? 'bg-primary-600 text-white'
+                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              })}
+            </div>
+            
+            {/* Next Button */}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
 

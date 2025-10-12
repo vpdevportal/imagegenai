@@ -64,3 +64,10 @@ export interface PromptStats {
   most_popular_prompt?: string
   most_popular_uses: number
 }
+
+export interface PromptListResponse {
+  prompts: Prompt[]
+  total: number
+  page: number
+  limit: number
+}
