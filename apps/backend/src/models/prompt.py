@@ -14,7 +14,8 @@ class Prompt:
     id: Optional[int] = None
     prompt_text: str = ""
     prompt_hash: str = ""
-    total_uses: int = 1
+    total_uses: int = 0
+    total_fails: int = 0
     first_used_at: Optional[datetime] = None
     last_used_at: Optional[datetime] = None
     model: Optional[str] = None

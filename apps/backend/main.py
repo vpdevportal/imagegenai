@@ -5,14 +5,31 @@ import logging
 from src.api.routes import api_router
 from src.db.config import settings
 
+# Custom formatter to shorten logger names to last 10 characters
+class ShortNameFormatter(logging.Formatter):
+    def format(self, record):
+        # Truncate or pad logger name to exactly 20 characters
+        if hasattr(record, 'name') and record.name:
+            if len(record.name) > 20:
+                record.name = record.name[-20:]  # Take last 20 characters
+            else:
+                record.name = record.name.ljust(20)  # Pad with spaces to 20 characters
+        return super().format(record)
+
 # Configure logging
+formatter = ShortNameFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Create handlers
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+
+file_handler = logging.FileHandler('imagegenai.log')
+file_handler.setFormatter(formatter)
+
+# Configure root logger
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('imagegenai.log')
-    ]
+    handlers=[stream_handler, file_handler]
 )
 
 # Create FastAPI app
@@ -39,6 +56,11 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router)
 
+# Health check endpoint
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy", "message": "ImageGenAI API is running"}
+
 # No longer mounting static files since we use in-memory image processing
 
 if __name__ == "__main__":
@@ -47,6 +69,6 @@ if __name__ == "__main__":
         host=settings.host,
         port=settings.port,
         reload=settings.debug,
-        reload_dirs=["app"],
+        reload_dirs=["src"],
         log_level="info"
     )

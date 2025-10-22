@@ -10,47 +10,61 @@ from ..models.prompt import Prompt
 from ..repositories.prompt_repository import prompt_repository
 from ..utils.thumbnail import ThumbnailGenerator
 from ..schemas.prompt import PromptResponse, PromptWithThumbnail, PromptStats
+from ..db.config import settings
 
 logger = logging.getLogger(__name__)
 
 class PromptService:
     """Service for prompt business logic"""
     
-    def create_or_update_prompt(
+    def create_prompt(
         self,
         prompt_text: str,
         model: Optional[str] = None,
-        image_path: Optional[str] = None,
-        image_data: Optional[bytes] = None
+        image_data: Optional[bytes] = None,
+        total_uses: int = 0
     ) -> PromptResponse:
-        """Create or update a prompt with optional thumbnail"""
+        """Create a new prompt with thumbnail (only inserts, no updating)"""
+        logger.info(f"Starting prompt creation - prompt_length: {len(prompt_text)}, model: {model}, has_image_data: {image_data is not None}")
+        
         try:
             # Create prompt model
+            logger.debug("Creating prompt model")
             prompt = Prompt(
                 prompt_text=prompt_text,
-                model=model
+                model=model,
+                total_uses=total_uses
             )
+            logger.debug(f"Prompt model created - hash: {prompt.prompt_hash}")
             
-            # Generate thumbnail if image is provided
-            if image_path or image_data:
-                thumbnail_result = self._generate_thumbnail(image_path, image_data)
+            # Generate thumbnail if image is provided (only for create)
+            if image_data:
+                logger.debug("Generating thumbnail for new prompt")
+                thumbnail_result = self._generate_thumbnail(image_data)
                 if thumbnail_result["success"]:
                     prompt.thumbnail_data = thumbnail_result["thumbnail_data"]
                     prompt.thumbnail_mime = thumbnail_result["mime_type"]
                     prompt.thumbnail_width = thumbnail_result["width"]
                     prompt.thumbnail_height = thumbnail_result["height"]
+                    logger.info(f"Thumbnail generated successfully - size: {thumbnail_result['width']}x{thumbnail_result['height']}, mime: {thumbnail_result['mime_type']}")
                 else:
                     logger.warning(f"Failed to generate thumbnail: {thumbnail_result['error']}")
+            else:
+                logger.debug("No image provided, creating prompt without thumbnail")
             
-            # Save to database
-            saved_prompt = prompt_repository.create_or_update(prompt)
+            # Save to database using create (will create new record)
+            logger.debug("Creating prompt in database")
+            saved_prompt = prompt_repository.create(prompt)
+            logger.info(f"Prompt created successfully - id: {saved_prompt.id}, total_uses: {saved_prompt.total_uses}")
             
             # Convert to response schema
-            return PromptResponse(
+            logger.debug("Converting to response schema")
+            response = PromptResponse(
                 id=saved_prompt.id,
                 prompt_text=saved_prompt.prompt_text,
                 prompt_hash=saved_prompt.prompt_hash,
                 total_uses=saved_prompt.total_uses,
+                total_fails=saved_prompt.total_fails,
                 first_used_at=saved_prompt.first_used_at,
                 last_used_at=saved_prompt.last_used_at,
                 model=saved_prompt.model,
@@ -59,8 +73,61 @@ class PromptService:
                 thumbnail_height=saved_prompt.thumbnail_height
             )
             
+            logger.info(f"Prompt creation completed successfully - id: {response.id}")
+            return response
+            
         except Exception as e:
-            logger.error(f"Failed to create/update prompt: {e}")
+            logger.error(f"Failed to create prompt - error: {str(e)}", exc_info=True)
+            raise
+    
+    def update_prompt(
+        self,
+        prompt_text: str,
+        model: Optional[str] = None
+    ) -> PromptResponse:
+        """Update an existing prompt (only updates usage stats, no thumbnail modification)"""
+        logger.info(f"Starting prompt update - prompt_length: {len(prompt_text)}, model: {model}")
+        
+        try:
+            # Create prompt model (without thumbnail data)
+            logger.debug("Creating prompt model for update")
+            prompt = Prompt(
+                prompt_text=prompt_text,
+                model=model
+            )
+            logger.debug(f"Prompt model created - hash: {prompt.prompt_hash}")
+            
+            # Check if prompt exists before attempting update
+            if not prompt_repository.exists_by_prompt(prompt):
+                logger.warning(f"Prompt does not exist, cannot update - hash: {prompt.prompt_hash}")
+                raise ValueError(f"Prompt with text '{prompt_text[:50]}{'...' if len(prompt_text) > 50 else ''}' does not exist and cannot be updated")
+            
+            # Update in database (without modifying thumbnail)
+            logger.debug("Updating prompt in database (usage stats only)")
+            saved_prompt = prompt_repository.update(prompt)
+            logger.info(f"Prompt updated successfully - id: {saved_prompt.id}, total_uses: {saved_prompt.total_uses}")
+            
+            # Convert to response schema
+            logger.debug("Converting to response schema")
+            response = PromptResponse(
+                id=saved_prompt.id,
+                prompt_text=saved_prompt.prompt_text,
+                prompt_hash=saved_prompt.prompt_hash,
+                total_uses=saved_prompt.total_uses,
+                total_fails=saved_prompt.total_fails,
+                first_used_at=saved_prompt.first_used_at,
+                last_used_at=saved_prompt.last_used_at,
+                model=saved_prompt.model,
+                thumbnail_mime=saved_prompt.thumbnail_mime,
+                thumbnail_width=saved_prompt.thumbnail_width,
+                thumbnail_height=saved_prompt.thumbnail_height
+            )
+            
+            logger.info(f"Prompt update completed successfully - id: {response.id}")
+            return response
+            
+        except Exception as e:
+            logger.error(f"Failed to update prompt - error: {str(e)}", exc_info=True)
             raise
     
     def get_prompt(self, prompt_id: int) -> Optional[PromptResponse]:
@@ -120,6 +187,15 @@ class PromptService:
         prompts = prompt_repository.get_popular(limit, model)
         return [self._prompt_to_response(prompt) for prompt in prompts]
     
+    def get_most_failed_prompts(
+        self,
+        limit: int = 50,
+        model: Optional[str] = None
+    ) -> List[PromptResponse]:
+        """Get most failed prompts"""
+        prompts = prompt_repository.get_most_failed(limit, model)
+        return [self._prompt_to_response(prompt) for prompt in prompts]
+    
     def search_prompts(self, query: str, limit: int = 20) -> List[PromptResponse]:
         """Search prompts"""
         prompts = prompt_repository.search(query, limit)
@@ -138,22 +214,87 @@ class PromptService:
         """Delete a prompt"""
         return prompt_repository.delete(prompt_id)
     
+    def exists_by_text(self, prompt_text: str) -> bool:
+        """Check if a prompt exists by its text using the existing exists_by_prompt method"""
+        logger.debug(f"Checking if prompt exists by text - length: {len(prompt_text)}")
+        
+        # Create a temporary Prompt object to use with exists_by_prompt
+        temp_prompt = Prompt(prompt_text=prompt_text)
+        exists = prompt_repository.exists_by_prompt(temp_prompt)
+        
+        logger.debug(f"Prompt exists check result: {exists}")
+        return exists
+    
+    def attempt_save_prompt(self, prompt_text: str, thumbnail_data: Optional[bytes] = None) -> Optional[PromptResponse]:
+        """
+        Attempt to save a prompt to the database.
+        If prompt exists, update usage count. If not, create new prompt with thumbnail.
+        
+        Args:
+            prompt_text: The prompt text to save
+            thumbnail_data: Optional thumbnail data for new prompts
+            
+        Returns:
+            PromptResponse if successful, None if failed
+        """
+        logger.debug("Attempting to save prompt to database")
+        
+        try:
+            if self.exists_by_text(prompt_text):
+                logger.info("Prompt already exists in database")
+                return self.update_prompt(prompt_text, settings.gemini_model)
+            else:
+                logger.info("Prompt does not exist in database")
+                return self.create_prompt(
+                    prompt_text=prompt_text,
+                    model=settings.gemini_model,
+                    image_data=thumbnail_data,
+                    total_uses=1
+                )
+        except Exception as db_error:
+            logger.error(f"Failed to save prompt to database: {db_error}", exc_info=True)
+            return None
+    
     def cleanup_old_prompts(self, days: int = 90) -> int:
         """Clean up old prompts without thumbnails"""
         return prompt_repository.cleanup_old(days)
     
+    def track_failure(self, prompt_text: str) -> bool:
+        """Track a failure for a prompt"""
+        logger.info(f"Tracking failure for prompt - length: {len(prompt_text)}")
+        
+        try:
+            # Create prompt model to get hash
+            prompt = Prompt(prompt_text=prompt_text)
+            logger.debug(f"Prompt hash for failure tracking: {prompt.prompt_hash}")
+            
+            # Increment failure count
+            success = prompt_repository.increment_failures(prompt.prompt_hash)
+            if success:
+                logger.info(f"Successfully tracked failure for prompt - hash: {prompt.prompt_hash[:8]}...")
+            else:
+                logger.warning(f"Failed to track failure - prompt not found in database - hash: {prompt.prompt_hash[:8]}...")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Error tracking failure for prompt - error: {str(e)}", exc_info=True)
+            return False
+    
     def _generate_thumbnail(
         self,
-        image_path: Optional[str],
-        image_data: Optional[bytes]
+        image_data: bytes
     ) -> Dict[str, Any]:
-        """Generate thumbnail from image path or data"""
-        if image_path:
-            return ThumbnailGenerator.generate_thumbnail(image_path)
-        elif image_data:
-            return ThumbnailGenerator.generate_thumbnail_from_bytes(image_data)
+        """Generate thumbnail from image data"""
+        logger.debug(f"Generating thumbnail from image data - size: {len(image_data)} bytes")
+        result = ThumbnailGenerator.generate_thumbnail_from_bytes(image_data)
+        
+        if result["success"]:
+            logger.debug(f"Thumbnail generation successful - size: {result['width']}x{result['height']}, mime: {result['mime_type']}")
         else:
-            return ThumbnailGenerator._error_result("No image provided")
+            logger.error(f"Thumbnail generation failed - error: {result['error']}")
+        
+        return result
     
     def _prompt_to_response(self, prompt: Prompt) -> PromptResponse:
         """Convert Prompt model to PromptResponse"""
@@ -162,6 +303,7 @@ class PromptService:
             prompt_text=prompt.prompt_text,
             prompt_hash=prompt.prompt_hash,
             total_uses=prompt.total_uses,
+            total_fails=prompt.total_fails,
             first_used_at=prompt.first_used_at,
             last_used_at=prompt.last_used_at,
             model=prompt.model,

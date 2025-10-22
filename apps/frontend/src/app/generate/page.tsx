@@ -1,12 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import ImageGenerationForm from '@/components/ImageGenerationForm'
 import GeneratedImages from '@/components/GeneratedImages'
 
-export default function GeneratePage() {
+function GeneratePageContent() {
   const [images, setImages] = useState<any[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
+  const [initialPrompt, setInitialPrompt] = useState('')
+  const searchParams = useSearchParams()
+
+  // Read prompt from URL parameters
+  useEffect(() => {
+    const prompt = searchParams.get('prompt')
+    if (prompt) {
+      setInitialPrompt(decodeURIComponent(prompt))
+    }
+  }, [searchParams])
 
   const handleImageGenerated = (newImage: any) => {
     setImages(prev => [newImage, ...prev])
@@ -22,6 +33,7 @@ export default function GeneratePage() {
               onImageGenerated={handleImageGenerated}
               isGenerating={isGenerating}
               setIsGenerating={setIsGenerating}
+              initialPrompt={initialPrompt}
             />
           </div>
           
@@ -32,5 +44,13 @@ export default function GeneratePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function GeneratePage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-500"></div></div>}>
+      <GeneratePageContent />
+    </Suspense>
   )
 }

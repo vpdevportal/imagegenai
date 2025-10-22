@@ -7,10 +7,9 @@ export default function PromptsPage() {
   const router = useRouter()
 
   const handlePromptSelect = (prompt: string) => {
-    // Navigate to generate page with the selected prompt
-    router.push('/generate')
-    // You could pass this to the form component via URL params or state
-    console.log('Selected prompt:', prompt)
+    // Navigate to generate page with the selected prompt as URL parameter
+    const encodedPrompt = encodeURIComponent(prompt)
+    router.push(`/generate?prompt=${encodedPrompt}`)
   }
 
   return (

@@ -42,6 +42,7 @@ export interface Prompt {
   prompt_text: string
   prompt_hash: string
   total_uses: number
+  total_fails: number
   first_used_at: string
   last_used_at: string
   model?: string
@@ -60,7 +61,22 @@ export interface PromptListResponse {
 export interface PromptStats {
   total_prompts: number
   total_uses: number
+  total_fails: number
   prompts_with_thumbnails: number
   most_popular_prompt?: string
   most_popular_uses: number
+  most_failed_prompt?: string
+  most_failed_count: number
+}
+
+export interface QueueItem {
+  id: string
+  file: File
+  preview: string
+  style: string
+  detailLevel: string
+  status: 'pending' | 'processing' | 'completed' | 'error'
+  prompt?: string
+  thumbnail?: string
+  error?: string
 }

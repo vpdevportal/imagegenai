@@ -38,6 +38,15 @@ if [ ! -f "package.json" ] || [ ! -f "turbo.json" ]; then
     exit 1
 fi
 
+# Check if lsof is available
+if ! command -v lsof &> /dev/null; then
+    print_error "lsof command not found. Please install it:"
+    print_error "  macOS: brew install lsof"
+    print_error "  Ubuntu/Debian: sudo apt-get install lsof"
+    print_error "  CentOS/RHEL: sudo yum install lsof"
+    exit 1
+fi
+
 # Function to check if a port is in use
 check_port() {
     local port=$1
@@ -48,16 +57,60 @@ check_port() {
     fi
 }
 
-# Check if ports are already in use
-print_status "Checking if ports are available..."
+# Function to kill processes on a port (safer version)
+kill_port() {
+    local port=$1
+    local service_name=$2
+    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+        print_warning "Port $port ($service_name) is in use. Attempting to identify and kill only development processes..."
+        
+        # Get process info for processes using the port
+        local pids=$(lsof -ti :$port 2>/dev/null)
+        if [ -n "$pids" ]; then
+            for pid in $pids; do
+                # Check if it's a development process (python, node, uvicorn, next)
+                local cmd=$(ps -p $pid -o comm= 2>/dev/null)
+                if [[ "$cmd" =~ (python|node|uvicorn|next|npm) ]]; then
+                    print_status "Killing development process $pid ($cmd) on port $port"
+                    kill -TERM $pid 2>/dev/null || true
+                    sleep 1
+                    # If still running, force kill
+                    if kill -0 $pid 2>/dev/null; then
+                        kill -9 $pid 2>/dev/null || true
+                    fi
+                else
+                    print_warning "Skipping non-development process $pid ($cmd) on port $port"
+                fi
+            done
+        fi
+        
+        sleep 2
+        if check_port $port; then
+            print_error "Failed to free port $port. Please manually stop the process using this port."
+            print_error "You can check what's using the port with: lsof -i :$port"
+            exit 1
+        else
+            print_success "Successfully freed port $port"
+        fi
+    else
+        print_status "Port $port ($service_name) is available"
+    fi
+}
 
-if check_port 8000; then
-    print_warning "Port 8000 (backend) is already in use. Backend might already be running."
-fi
+# Kill any existing processes on the ports
+print_status "Checking and cleaning up ports..."
 
-if check_port 3000; then
-    print_warning "Port 3000 (frontend) is already in use. Frontend might already be running."
-fi
+# Check if Chrome might be using these ports
+for port in 8000 3000; do
+    chrome_pids=$(lsof -ti :$port 2>/dev/null | xargs -I {} ps -p {} -o comm= 2>/dev/null | grep -i chrome || true)
+    if [ -n "$chrome_pids" ]; then
+        print_warning "Chrome processes detected on port $port. This might cause Chrome sessions to be cleared."
+        print_warning "Consider closing Chrome or using different ports for development."
+    fi
+done
+
+kill_port 8000 "backend"
+kill_port 3000 "frontend"
 
 # Check if Python virtual environment exists
 if [ ! -d "apps/backend/venv" ]; then
@@ -93,13 +146,49 @@ echo ""
 # Create a function to handle cleanup on exit
 cleanup() {
     print_status "Shutting down development servers..."
-    # Kill background processes
-    jobs -p | xargs -r kill
+    # Kill background processes (our development servers)
+    jobs -p | xargs -r kill 2>/dev/null || true
+    
+    # Safely kill only development processes on our ports
+    for port in 8000 3000; do
+        local pids=$(lsof -ti :$port 2>/dev/null)
+        if [ -n "$pids" ]; then
+            for pid in $pids; do
+                local cmd=$(ps -p $pid -o comm= 2>/dev/null)
+                if [[ "$cmd" =~ (python|node|uvicorn|next|npm) ]]; then
+                    print_status "Stopping development process $pid ($cmd) on port $port"
+                    kill -TERM $pid 2>/dev/null || true
+                fi
+            done
+        fi
+    done
+    
+    print_success "Development servers stopped"
     exit 0
 }
 
 # Set up trap to handle Ctrl+C
 trap cleanup SIGINT SIGTERM
+
+# Load environment variables from env.dev
+if [ -f "env.dev" ]; then
+    print_status "Loading environment variables from env.dev..."
+    # Create a temporary .env file for the backend with only backend-relevant variables
+    cat > apps/backend/.env << EOF
+# Backend Configuration
+HOST=0.0.0.0
+PORT=8000
+DEBUG=true
+GOOGLE_AI_API_KEY=$(grep '^GOOGLE_AI_API_KEY=' env.dev | cut -d'=' -f2)
+FRONTEND_URL=$(grep '^FRONTEND_URL=' env.dev | cut -d'=' -f2)
+ALLOWED_ORIGINS=$(grep '^ALLOWED_ORIGINS=' env.dev | cut -d'=' -f2)
+MAX_FILE_SIZE=$(grep '^MAX_FILE_SIZE=' env.dev | cut -d'=' -f2)
+ALLOWED_IMAGE_TYPES=$(grep '^ALLOWED_IMAGE_TYPES=' env.dev | cut -d'=' -f2)
+EOF
+    print_success "Environment variables loaded"
+else
+    print_warning "env.dev file not found, using system environment variables"
+fi
 
 # Start backend in background
 print_status "Starting FastAPI backend on http://localhost:8000"

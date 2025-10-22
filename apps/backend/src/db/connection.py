@@ -25,7 +25,8 @@ class DatabaseConnection:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     prompt_text TEXT NOT NULL,
                     prompt_hash TEXT NOT NULL UNIQUE,
-                    total_uses INTEGER NOT NULL DEFAULT 1,
+                    total_uses INTEGER NOT NULL DEFAULT 0,
+                    total_fails INTEGER NOT NULL DEFAULT 0,
                     first_used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     last_used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     model TEXT,
@@ -35,6 +36,14 @@ class DatabaseConnection:
                     thumbnail_height INTEGER
                 )
             """)
+            
+            # Add total_fails column if it doesn't exist (for existing databases)
+            try:
+                conn.execute("ALTER TABLE prompts ADD COLUMN total_fails INTEGER NOT NULL DEFAULT 0")
+                logger.info("Added total_fails column to prompts table")
+            except sqlite3.OperationalError:
+                # Column already exists, ignore
+                pass
             
             # Create indexes
             conn.execute("CREATE INDEX IF NOT EXISTS idx_prompts_hash ON prompts (prompt_hash)")

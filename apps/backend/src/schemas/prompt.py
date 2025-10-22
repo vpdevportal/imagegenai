@@ -20,8 +20,9 @@ class PromptResponse(BaseModel):
     prompt_text: str
     prompt_hash: str
     total_uses: int
-    first_used_at: datetime
-    last_used_at: datetime
+    total_fails: int = 0  # Default to 0 for existing databases
+    first_used_at: Optional[datetime]
+    last_used_at: Optional[datetime]
     model: Optional[str]
     thumbnail_mime: Optional[str]
     thumbnail_width: Optional[int]
@@ -45,9 +46,12 @@ class PromptStats(BaseModel):
     """Schema for prompt statistics"""
     total_prompts: int
     total_uses: int
+    total_fails: int
     prompts_with_thumbnails: int
     most_popular_prompt: Optional[str] = None
     most_popular_uses: int = 0
+    most_failed_prompt: Optional[str] = None
+    most_failed_count: int = 0
 
 class PromptSearchRequest(BaseModel):
     """Schema for prompt search request"""
