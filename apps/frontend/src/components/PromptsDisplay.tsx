@@ -392,8 +392,8 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                 
                 {/* Failure count overlay */}
                 {prompt.total_fails > 0 && (
-                  <div className="absolute bottom-1 right-1 bg-red-600/80 text-white text-xs px-1 py-0.5 rounded-full">
-                    {prompt.total_fails} fails
+                  <div className="absolute bottom-1 left-1 bg-red-600/80 text-white text-xs px-1 py-0.5 rounded-full">
+                    {prompt.total_fails}
                   </div>
                 )}
               </div>
