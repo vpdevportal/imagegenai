@@ -240,7 +240,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
               Prompt Statistics
             </h3>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary-600">{stats.total_prompts}</div>
               <div className="text-sm text-gray-600">Total Prompts</div>
@@ -248,6 +248,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{stats.total_uses}</div>
               <div className="text-sm text-gray-600">Total Uses</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600">{stats.total_fails}</div>
+              <div className="text-sm text-gray-600">Total Failures</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{stats.prompts_with_thumbnails}</div>
@@ -385,6 +389,13 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                 <div className="absolute top-1 right-1 bg-black/70 text-white text-xs px-1 py-0.5 rounded-full">
                   {prompt.total_uses}
                 </div>
+                
+                {/* Failure count overlay */}
+                {prompt.total_fails > 0 && (
+                  <div className="absolute bottom-1 right-1 bg-red-600/80 text-white text-xs px-1 py-0.5 rounded-full">
+                    {prompt.total_fails} fails
+                  </div>
+                )}
               </div>
               
               {/* Content */}

@@ -24,8 +24,8 @@ class PromptRepository:
                     INSERT INTO prompts (
                         prompt_text, prompt_hash, model,
                         thumbnail_data, thumbnail_mime, thumbnail_width, thumbnail_height,
-                        total_uses
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        total_uses, total_fails
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     prompt.prompt_text,
                     prompt.prompt_hash,
@@ -34,7 +34,8 @@ class PromptRepository:
                     prompt.thumbnail_mime,
                     prompt.thumbnail_width,
                     prompt.thumbnail_height,
-                    prompt.total_uses
+                    prompt.total_uses,
+                    prompt.total_fails
                 ))
                 prompt.id = cursor.lastrowid
                 logger.info(f"Successfully created new prompt - ID: {prompt.id}, hash: {prompt.prompt_hash[:8]}..., total_uses: {prompt.total_uses}")
@@ -84,6 +85,31 @@ class PromptRepository:
                     
         except Exception as e:
             logger.error(f"Error in update for prompt - hash: {prompt.prompt_hash[:8]}..., error: {str(e)}")
+            raise
+
+    def increment_failures(self, prompt_hash: str) -> bool:
+        """Increment failure count for a prompt"""
+        logger.info(f"Incrementing failure count for prompt - hash: {prompt_hash[:8]}...")
+        
+        try:
+            with db_connection.get_connection() as conn:
+                cursor = conn.execute("""
+                    UPDATE prompts 
+                    SET total_fails = total_fails + 1,
+                        last_used_at = CURRENT_TIMESTAMP
+                    WHERE prompt_hash = ?
+                """, (prompt_hash,))
+                
+                if cursor.rowcount > 0:
+                    logger.info(f"Successfully incremented failure count - hash: {prompt_hash[:8]}..., rows affected: {cursor.rowcount}")
+                    conn.commit()
+                    return True
+                else:
+                    logger.warning(f"No prompt found to increment failures for hash: {prompt_hash}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Error incrementing failures for prompt - hash: {prompt_hash[:8]}..., error: {str(e)}")
             raise
     
     def get_by_id(self, prompt_id: int) -> Optional[Prompt]:
@@ -178,6 +204,10 @@ class PromptRepository:
             cursor = conn.execute("SELECT SUM(total_uses) FROM prompts")
             total_uses = cursor.fetchone()[0] or 0
             
+            # Total failures
+            cursor = conn.execute("SELECT SUM(total_fails) FROM prompts")
+            total_fails = cursor.fetchone()[0] or 0
+            
             # Prompts with thumbnails
             cursor = conn.execute("SELECT COUNT(*) FROM prompts WHERE thumbnail_data IS NOT NULL")
             prompts_with_thumbnails = cursor.fetchone()[0]
@@ -191,12 +221,25 @@ class PromptRepository:
             """)
             most_popular = cursor.fetchone()
             
+            # Most failed prompt
+            cursor = conn.execute("""
+                SELECT prompt_text, total_fails 
+                FROM prompts 
+                WHERE total_fails > 0
+                ORDER BY total_fails DESC 
+                LIMIT 1
+            """)
+            most_failed = cursor.fetchone()
+            
             return {
                 "total_prompts": total_prompts,
                 "total_uses": total_uses,
+                "total_fails": total_fails,
                 "prompts_with_thumbnails": prompts_with_thumbnails,
                 "most_popular_prompt": most_popular[0] if most_popular else None,
-                "most_popular_uses": most_popular[1] if most_popular else 0
+                "most_popular_uses": most_popular[1] if most_popular else 0,
+                "most_failed_prompt": most_failed[0] if most_failed else None,
+                "most_failed_count": most_failed[1] if most_failed else 0
             }
     
     def delete(self, prompt_id: int) -> bool:
@@ -224,6 +267,7 @@ class PromptRepository:
             prompt_text=row['prompt_text'],
             prompt_hash=row['prompt_hash'],
             total_uses=row['total_uses'],
+            total_fails=row.get('total_fails', 0),  # Handle existing databases without this column
             first_used_at=datetime.fromisoformat(row['first_used_at']) if row['first_used_at'] else None,
             last_used_at=datetime.fromisoformat(row['last_used_at']) if row['last_used_at'] else None,
             model=row['model'],

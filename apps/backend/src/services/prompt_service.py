@@ -64,6 +64,7 @@ class PromptService:
                 prompt_text=saved_prompt.prompt_text,
                 prompt_hash=saved_prompt.prompt_hash,
                 total_uses=saved_prompt.total_uses,
+                total_fails=saved_prompt.total_fails,
                 first_used_at=saved_prompt.first_used_at,
                 last_used_at=saved_prompt.last_used_at,
                 model=saved_prompt.model,
@@ -113,6 +114,7 @@ class PromptService:
                 prompt_text=saved_prompt.prompt_text,
                 prompt_hash=saved_prompt.prompt_hash,
                 total_uses=saved_prompt.total_uses,
+                total_fails=saved_prompt.total_fails,
                 first_used_at=saved_prompt.first_used_at,
                 last_used_at=saved_prompt.last_used_at,
                 model=saved_prompt.model,
@@ -247,6 +249,28 @@ class PromptService:
     def cleanup_old_prompts(self, days: int = 90) -> int:
         """Clean up old prompts without thumbnails"""
         return prompt_repository.cleanup_old(days)
+    
+    def track_failure(self, prompt_text: str) -> bool:
+        """Track a failure for a prompt"""
+        logger.info(f"Tracking failure for prompt - length: {len(prompt_text)}")
+        
+        try:
+            # Create prompt model to get hash
+            prompt = Prompt(prompt_text=prompt_text)
+            logger.debug(f"Prompt hash for failure tracking: {prompt.prompt_hash}")
+            
+            # Increment failure count
+            success = prompt_repository.increment_failures(prompt.prompt_hash)
+            if success:
+                logger.info(f"Successfully tracked failure for prompt - hash: {prompt.prompt_hash[:8]}...")
+            else:
+                logger.warning(f"Failed to track failure - prompt not found in database - hash: {prompt.prompt_hash[:8]}...")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Error tracking failure for prompt - error: {str(e)}", exc_info=True)
+            return False
     
     def _generate_thumbnail(
         self,
