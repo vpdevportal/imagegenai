@@ -76,8 +76,12 @@ class PromptToImageService:
             
             # Track failure for the prompt
             try:
-                self.prompt_service.track_failure(prompt)
-                logger.info("Tracked failure for prompt in image generation")
+                logger.info(f"Attempting to track failure for prompt: '{prompt[:50]}{'...' if len(prompt) > 50 else ''}'")
+                success = self.prompt_service.track_failure(prompt)
+                if success:
+                    logger.info("Successfully tracked failure for prompt in image generation")
+                else:
+                    logger.warning("Failed to track failure - prompt not found in database")
             except Exception as track_error:
                 logger.error(f"Failed to track failure: {track_error}")
             
