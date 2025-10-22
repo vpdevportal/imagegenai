@@ -303,6 +303,7 @@ class PromptService:
             prompt_text=prompt.prompt_text,
             prompt_hash=prompt.prompt_hash,
             total_uses=prompt.total_uses,
+            total_fails=prompt.total_fails,
             first_used_at=prompt.first_used_at,
             last_used_at=prompt.last_used_at,
             model=prompt.model,
