@@ -143,23 +143,9 @@ class ImageToPromptService:
             
         except HTTPException as e:
             logger.error(f"HTTP error in image to prompt generation - status: {e.status_code}, detail: {e.detail}")
-            # Track failure if we have a prompt
-            if 'prompt' in locals():
-                try:
-                    self.prompt_service.track_failure(prompt)
-                    logger.info("Tracked failure for prompt generation")
-                except Exception as track_error:
-                    logger.error(f"Failed to track failure: {track_error}")
             raise
         except Exception as e:
             logger.error(f"Unexpected error in image to prompt generation - error: {str(e)}", exc_info=True)
-            # Track failure if we have a prompt
-            if 'prompt' in locals():
-                try:
-                    self.prompt_service.track_failure(prompt)
-                    logger.info("Tracked failure for prompt generation")
-                except Exception as track_error:
-                    logger.error(f"Failed to track failure: {track_error}")
             raise HTTPException(status_code=500, detail=f"Error generating prompt: {str(e)}")
 
 

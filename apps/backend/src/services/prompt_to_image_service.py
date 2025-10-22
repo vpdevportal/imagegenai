@@ -73,11 +73,15 @@ class PromptToImageService:
             
         except Exception as e:
             logger.error(f"Image generation failed: {str(e)}", exc_info=True)
+            
+            # Track failure for the prompt
+            try:
+                self.prompt_service.track_failure(prompt)
+                logger.info("Tracked failure for prompt in image generation")
+            except Exception as track_error:
+                logger.error(f"Failed to track failure: {track_error}")
+            
             raise e
-            # raise HTTPException(
-            #     status_code=500,
-            #     detail="Image generation failed. Please try again later."
-            # )
 
 
 # Global service instance
