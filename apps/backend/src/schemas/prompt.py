@@ -20,7 +20,7 @@ class PromptResponse(BaseModel):
     prompt_text: str
     prompt_hash: str
     total_uses: int
-    total_fails: int
+    total_fails: int = 0  # Default to 0 for existing databases
     first_used_at: Optional[datetime]
     last_used_at: Optional[datetime]
     model: Optional[str]
