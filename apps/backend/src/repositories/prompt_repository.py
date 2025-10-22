@@ -267,7 +267,7 @@ class PromptRepository:
             prompt_text=row['prompt_text'],
             prompt_hash=row['prompt_hash'],
             total_uses=row['total_uses'],
-            total_fails=row.get('total_fails', 0),  # Handle existing databases without this column
+            total_fails=row['total_fails'] if 'total_fails' in row.keys() else 0,  # Handle existing databases without this column
             first_used_at=datetime.fromisoformat(row['first_used_at']) if row['first_used_at'] else None,
             last_used_at=datetime.fromisoformat(row['last_used_at']) if row['last_used_at'] else None,
             model=row['model'],
