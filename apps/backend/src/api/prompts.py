@@ -79,6 +79,18 @@ async def get_recent_prompts(
         logger.error(f"Failed to get recent prompts: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve recent prompts")
 
+@router.get("/most-failed", response_model=List[PromptResponse])
+async def get_most_failed_prompts(
+    limit: int = Query(50, ge=1, le=100, description="Maximum results"),
+    model: Optional[str] = Query(None, description="Filter by model")
+):
+    """Get most failed prompts"""
+    try:
+        return prompt_service.get_most_failed_prompts(limit, model)
+    except Exception as e:
+        logger.error(f"Failed to get most failed prompts: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve most failed prompts")
+
 @router.get("/health")
 async def health_check():
     """Health check for prompts API"""

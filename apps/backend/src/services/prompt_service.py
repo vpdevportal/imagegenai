@@ -187,6 +187,15 @@ class PromptService:
         prompts = prompt_repository.get_popular(limit, model)
         return [self._prompt_to_response(prompt) for prompt in prompts]
     
+    def get_most_failed_prompts(
+        self,
+        limit: int = 50,
+        model: Optional[str] = None
+    ) -> List[PromptResponse]:
+        """Get most failed prompts"""
+        prompts = prompt_repository.get_most_failed(limit, model)
+        return [self._prompt_to_response(prompt) for prompt in prompts]
+    
     def search_prompts(self, query: str, limit: int = 20) -> List[PromptResponse]:
         """Search prompts"""
         prompts = prompt_repository.search(query, limit)

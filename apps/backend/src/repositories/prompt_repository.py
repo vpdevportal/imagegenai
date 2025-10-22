@@ -173,6 +173,26 @@ class PromptRepository:
             
             return [self._row_to_prompt(row) for row in cursor.fetchall()]
     
+    def get_most_failed(self, limit: int = 50, model: Optional[str] = None) -> List[Prompt]:
+        """Get most failed prompts"""
+        with db_connection.get_connection() as conn:
+            if model:
+                cursor = conn.execute("""
+                    SELECT * FROM prompts 
+                    WHERE model = ? AND thumbnail_data IS NOT NULL AND total_fails > 0
+                    ORDER BY total_fails DESC, last_used_at DESC
+                    LIMIT ?
+                """, (model, limit))
+            else:
+                cursor = conn.execute("""
+                    SELECT * FROM prompts 
+                    WHERE thumbnail_data IS NOT NULL AND total_fails > 0
+                    ORDER BY total_fails DESC, last_used_at DESC
+                    LIMIT ?
+                """, (limit,))
+            
+            return [self._row_to_prompt(row) for row in cursor.fetchall()]
+    
     def search(self, query: str, limit: int = 20) -> List[Prompt]:
         """Search prompts by text"""
         search_term = f"%{query.lower()}%"

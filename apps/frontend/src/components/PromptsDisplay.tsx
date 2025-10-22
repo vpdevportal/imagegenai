@@ -8,13 +8,15 @@ import {
   EyeIcon,
   ChartBarIcon,
   XMarkIcon,
-  TrashIcon
+  TrashIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { 
   getPrompts, 
   getPopularPrompts, 
   getRecentPrompts, 
+  getMostFailedPrompts,
   searchPrompts, 
   getPromptStats,
   getPromptThumbnail,
@@ -35,7 +37,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState<'recent' | 'popular' | 'search'>('recent')
+  const [activeTab, setActiveTab] = useState<'recent' | 'popular' | 'most-failed' | 'search'>('recent')
   const [thumbnails, setThumbnails] = useState<Record<number, string>>({})
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set())
   
@@ -55,7 +57,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
     promptText: ''
   })
 
-  const loadPrompts = useCallback(async (tab: 'recent' | 'popular' | 'search' = 'recent') => {
+  const loadPrompts = useCallback(async (tab: 'recent' | 'popular' | 'most-failed' | 'search' = 'recent') => {
     setLoading(true)
     setError('')
     
@@ -66,6 +68,8 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
         fetchedPrompts = await getRecentPrompts(100) // Fetch more data for client-side pagination
       } else if (tab === 'popular') {
         fetchedPrompts = await getPopularPrompts(100) // Fetch more data for client-side pagination
+      } else if (tab === 'most-failed') {
+        fetchedPrompts = await getMostFailedPrompts(100) // Fetch more data for client-side pagination
       } else if (tab === 'search' && searchQuery.trim()) {
         fetchedPrompts = await searchPrompts(searchQuery.trim(), 100) // Fetch more data for client-side pagination
       }
@@ -317,6 +321,17 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
             Popular
           </button>
           <button
+            onClick={() => setActiveTab('most-failed')}
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+              activeTab === 'most-failed'
+                ? 'bg-white text-primary-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
+            Most Failed
+          </button>
+          <button
             onClick={() => setActiveTab('search')}
             className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'search'
@@ -348,7 +363,9 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
       ) : prompts.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-500 mb-2">
-            {activeTab === 'search' ? 'No prompts found' : 'No prompts available'}
+            {activeTab === 'search' ? 'No prompts found' : 
+             activeTab === 'most-failed' ? 'No failed prompts found' : 
+             'No prompts available'}
           </div>
           {activeTab === 'search' && (
             <button
