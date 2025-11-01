@@ -1,7 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
-import { PhotoIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { PhotoIcon, ArrowDownTrayIcon, BookmarkIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { savePrompt } from '@/lib/api'
+import { useToast } from '@/contexts/ToastContext'
 
 interface ImageData {
   id: string | number
@@ -18,6 +21,9 @@ interface GeneratedImagesProps {
 }
 
 export default function GeneratedImages({ images }: GeneratedImagesProps) {
+  const { addToast } = useToast()
+  const [savingIds, setSavingIds] = useState<Set<string | number>>(new Set())
+  const [savedIds, setSavedIds] = useState<Set<string | number>>(new Set())
 
   const handleDownload = (image: ImageData) => {
     try {
@@ -32,6 +38,40 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
       document.body.removeChild(link)
     } catch (error) {
       console.error('Download failed:', error)
+    }
+  }
+
+  const handleSavePrompt = async (image: ImageData) => {
+    if (savedIds.has(image.id) || savingIds.has(image.id)) {
+      return
+    }
+
+    setSavingIds(prev => new Set(prev).add(image.id))
+
+    try {
+      await savePrompt(image.prompt)
+      
+      setSavedIds(prev => new Set(prev).add(image.id))
+      addToast({
+        type: 'success',
+        title: 'Prompt Saved',
+        message: 'The prompt has been saved to your collection',
+        duration: 3000
+      })
+    } catch (error: any) {
+      console.error('Failed to save prompt:', error)
+      addToast({
+        type: 'error',
+        title: 'Save Failed',
+        message: error?.response?.data?.detail || 'Failed to save prompt. Please try again.',
+        duration: 4000
+      })
+    } finally {
+      setSavingIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(image.id)
+        return newSet
+      })
     }
   }
 
@@ -90,6 +130,20 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
                     </span>
                     <div className="flex space-x-2">
                       <button
+                        onClick={() => handleSavePrompt(image)}
+                        disabled={savingIds.has(image.id) || savedIds.has(image.id)}
+                        className="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={savedIds.has(image.id) ? 'Saved' : 'Save Prompt'}
+                      >
+                        {savingIds.has(image.id) ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : savedIds.has(image.id) ? (
+                          <CheckIcon className="h-4 w-4 text-white" />
+                        ) : (
+                          <BookmarkIcon className="h-4 w-4 text-white" />
+                        )}
+                      </button>
+                      <button
                         onClick={() => handleDownload(image)}
                         className="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
                         title="Download"
@@ -101,8 +155,22 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
                 </div>
               </div>
 
-              {/* Status badge and download button */}
+              {/* Status badge and action buttons */}
               <div className="absolute top-2 right-2 flex items-center space-x-2">
+                <button
+                  onClick={() => handleSavePrompt(image)}
+                  disabled={savingIds.has(image.id) || savedIds.has(image.id)}
+                  className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={savedIds.has(image.id) ? 'Saved' : 'Save Prompt'}
+                >
+                  {savingIds.has(image.id) ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
+                  ) : savedIds.has(image.id) ? (
+                    <CheckIcon className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <BookmarkIcon className="h-4 w-4 text-gray-700" />
+                  )}
+                </button>
                 <button
                   onClick={() => handleDownload(image)}
                   className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors shadow-sm"

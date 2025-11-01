@@ -2,11 +2,12 @@
 API endpoints for prompt management
 """
 import logging
-from fastapi import APIRouter, HTTPException, Query, Path
+from fastapi import APIRouter, HTTPException, Query, Path, Form
 from fastapi.responses import Response
 from typing import Optional, List
 
 from ..services.prompt_service import prompt_service
+from ..ai.prompt_to_image_generator import prompt_to_image_generator
 from ..schemas.prompt import (
     PromptResponse, PromptWithThumbnail, PromptListResponse, 
     PromptStats, PromptSearchRequest
@@ -192,6 +193,37 @@ async def delete_prompt(
     except Exception as e:
         logger.error(f"Failed to delete prompt {prompt_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete prompt")
+
+@router.post("/save", response_model=PromptResponse)
+async def save_prompt(
+    prompt: str = Form(..., description="Prompt text to save")
+):
+    """Save a prompt to the database with generated thumbnail"""
+    try:
+        # Always generate thumbnail from prompt text
+        logger.info(f"Generating thumbnail from prompt text")
+        thumbnail_data = None
+        try:
+            thumbnail_data, _ = prompt_to_image_generator.generate_from_text(prompt)
+            logger.info(f"Thumbnail generated successfully from prompt text")
+        except Exception as gen_error:
+            logger.warning(f"Failed to generate thumbnail from prompt text: {gen_error}")
+            # Continue without thumbnail - attempt_save_prompt handles None thumbnail_data
+        
+        # Save prompt using existing service logic
+        saved_prompt = prompt_service.attempt_save_prompt(prompt, thumbnail_data)
+        
+        if not saved_prompt:
+            raise HTTPException(status_code=500, detail="Failed to save prompt")
+        
+        logger.info(f"Prompt saved successfully - id: {saved_prompt.id}, total_uses: {saved_prompt.total_uses}")
+        return saved_prompt
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to save prompt: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to save prompt: {str(e)}")
 
 @router.post("/cleanup")
 async def cleanup_old_prompts(

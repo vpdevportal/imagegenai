@@ -59,15 +59,6 @@ class PromptToImageService:
             )
             logger.info(f"AI image generation completed - generated_size: {len(generated_image_data)} bytes, content_type: {content_type}")
             
-            # Save prompt to database with thumbnail
-            logger.debug("Attempting to save prompt to database")
-            generated_thumbnail_data, thumbnail_content_type = self.generator.generate_from_text(prompt)
-            saved_prompt = self.prompt_service.attempt_save_prompt(prompt, generated_thumbnail_data)
-            if saved_prompt:
-                logger.info(f"Prompt saved successfully - id: {saved_prompt.id}, total_uses: {saved_prompt.total_uses}")
-            else:
-                logger.warning("Failed to save prompt to database, continuing with response")
-            
             logger.info("Prompt to image generation completed successfully")
             return generated_image_data, content_type, reference_image_url
             
