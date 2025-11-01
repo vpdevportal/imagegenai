@@ -65,13 +65,13 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
       let fetchedPrompts: Prompt[] = []
       
       if (tab === 'recent') {
-        fetchedPrompts = await getRecentPrompts(100) // Fetch more data for client-side pagination
+        fetchedPrompts = await getRecentPrompts(10000) // Fetch all data for client-side pagination
       } else if (tab === 'popular') {
-        fetchedPrompts = await getPopularPrompts(100) // Fetch more data for client-side pagination
+        fetchedPrompts = await getPopularPrompts(10000) // Fetch all data for client-side pagination
       } else if (tab === 'most-failed') {
-        fetchedPrompts = await getMostFailedPrompts(100) // Fetch more data for client-side pagination
+        fetchedPrompts = await getMostFailedPrompts(10000) // Fetch all data for client-side pagination
       } else if (tab === 'search' && searchQuery.trim()) {
-        fetchedPrompts = await searchPrompts(searchQuery.trim(), 100) // Fetch more data for client-side pagination
+        fetchedPrompts = await searchPrompts(searchQuery.trim(), 10000) // Fetch all data for client-side pagination
       }
       
       setAllPrompts(fetchedPrompts)

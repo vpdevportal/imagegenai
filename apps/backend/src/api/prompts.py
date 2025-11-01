@@ -46,7 +46,7 @@ async def get_prompts(
 @router.get("/search", response_model=List[PromptResponse])
 async def search_prompts(
     query: str = Query(..., min_length=1, max_length=500, description="Search query"),
-    limit: int = Query(20, ge=1, le=100, description="Maximum results")
+    limit: int = Query(20, ge=1, le=10000, description="Maximum results")
 ):
     """Search prompts by text content"""
     try:
@@ -57,7 +57,7 @@ async def search_prompts(
 
 @router.get("/popular", response_model=List[PromptResponse])
 async def get_popular_prompts(
-    limit: int = Query(50, ge=1, le=100, description="Maximum results"),
+    limit: int = Query(50, ge=1, le=10000, description="Maximum results"),
     model: Optional[str] = Query(None, description="Filter by model")
 ):
     """Get most popular prompts"""
@@ -69,7 +69,7 @@ async def get_popular_prompts(
 
 @router.get("/recent", response_model=List[PromptResponse])
 async def get_recent_prompts(
-    limit: int = Query(50, ge=1, le=100, description="Maximum results"),
+    limit: int = Query(50, ge=1, le=10000, description="Maximum results"),
     model: Optional[str] = Query(None, description="Filter by model")
 ):
     """Get recently used prompts"""
@@ -81,7 +81,7 @@ async def get_recent_prompts(
 
 @router.get("/most-failed", response_model=List[PromptResponse])
 async def get_most_failed_prompts(
-    limit: int = Query(50, ge=1, le=100, description="Maximum results"),
+    limit: int = Query(50, ge=1, le=10000, description="Maximum results"),
     model: Optional[str] = Query(None, description="Filter by model")
 ):
     """Get most failed prompts"""
