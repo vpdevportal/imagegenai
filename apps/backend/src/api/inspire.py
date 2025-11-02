@@ -13,7 +13,7 @@ router = APIRouter(prefix="/inspire", tags=["inspire"])
 @router.post("/generate-prompt")
 async def generate_prompt_from_image(
     file: UploadFile = File(...),
-    style: str = "photorealistic"
+    style: str = "artistic"
 ):
     """
     Generate a prompt from an uploaded image

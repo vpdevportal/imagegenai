@@ -31,7 +31,7 @@ class ImageToPromptService:
     async def generate_prompt_from_image(
         self,
         file: UploadFile,
-        style: str = "photorealistic"
+        style: str = "artistic"
     ) -> dict:
         """
         Generate a prompt from an uploaded image

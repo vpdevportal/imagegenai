@@ -12,7 +12,7 @@ interface ImageToPromptFormProps {
 
 export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFormProps) {
   const [queue, setQueue] = useState<QueueItem[]>([])
-  const [style, setStyle] = useState('photorealistic')
+  const [style, setStyle] = useState('artistic')
   const [isProcessing, setIsProcessing] = useState(false)
   const [styles, setStyles] = useState<Array<{ value: string; label: string }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)

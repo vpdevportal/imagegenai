@@ -38,7 +38,7 @@ class ImageToPromptGenerator:
     async def generate_prompt_from_image(
         self, 
         image: Image.Image, 
-        style: str = "photorealistic"
+        style: str = "artistic"
     ) -> str:
         """
         Generate a descriptive prompt from an image using Gemini AI
