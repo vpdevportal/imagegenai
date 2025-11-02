@@ -24,7 +24,6 @@ class PromptToImageService:
     def __init__(self):
         self.generator = prompt_to_image_generator
         self.prompt_service = prompt_service
-        logger.info("Prompt to image service initialized")
     
     async def generate_image_from_prompt(
         self, 
@@ -44,27 +43,15 @@ class PromptToImageService:
         Raises:
             HTTPException: If generation fails
         """
-        logger.info(f"Starting prompt to image generation - prompt_length: {len(prompt)}, reference_image_filename: {reference_image.filename}, reference_image_size: {reference_image.size if hasattr(reference_image, 'size') else 'unknown'}")
-        
         try:
-            # Process reference image and get data URL
-            logger.debug("Processing reference image")
             reference_image_url = self.generator.process_reference_image(reference_image)
-            logger.info(f"Reference image processed successfully - url_length: {len(reference_image_url) if reference_image_url else 0}")
-            
-            # Generate the actual image using AI
-            logger.info("Starting AI image generation")
             generated_image_data, content_type = self.generator.generate_from_image_and_text(
                 reference_image, prompt
             )
-            logger.info(f"AI image generation completed - generated_size: {len(generated_image_data)} bytes, content_type: {content_type}")
-            
-            logger.info("Prompt to image generation completed successfully")
             return generated_image_data, content_type, reference_image_url
             
         except Exception as e:
             logger.error(f"Image generation failed: {str(e)}", exc_info=True)
-            # Note: Failure tracking is handled at the API level using the original prompt
             raise e
 
 

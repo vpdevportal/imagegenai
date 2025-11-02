@@ -201,13 +201,11 @@ async def save_prompt(
     """Save a prompt to the database with generated thumbnail"""
     try:
         # Always generate thumbnail from prompt text
-        logger.info(f"Generating thumbnail from prompt text")
         thumbnail_data = None
         try:
             thumbnail_data, _ = prompt_to_image_generator.generate_from_text(prompt)
-            logger.info(f"Thumbnail generated successfully from prompt text")
         except Exception as gen_error:
-            logger.warning(f"Failed to generate thumbnail from prompt text: {gen_error}")
+            logger.warning(f"Failed to generate thumbnail: {gen_error}")
             # Continue without thumbnail - attempt_save_prompt handles None thumbnail_data
         
         # Save prompt using existing service logic
@@ -216,7 +214,6 @@ async def save_prompt(
         if not saved_prompt:
             raise HTTPException(status_code=500, detail="Failed to save prompt")
         
-        logger.info(f"Prompt saved successfully - id: {saved_prompt.id}, total_uses: {saved_prompt.total_uses}")
         return saved_prompt
         
     except HTTPException:

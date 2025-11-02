@@ -18,23 +18,17 @@ async def generate_prompt_from_image(
     """
     Generate a prompt from an uploaded image
     """
-    logger.info(f"Starting prompt generation request - filename: {file.filename}, content_type: {file.content_type}, style: {style}")
-    
     try:
-        # Use the service to handle all the business logic
         result = await image_to_prompt_service.generate_prompt_from_image(
             file=file,
             style=style
         )
-        
-        logger.info(f"Prompt generation completed successfully - prompt_id: {result.get('prompt_id', 'N/A')}, saved_to_database: {result.get('saved_to_database', False)}")
         return JSONResponse(content=result)
         
-    except HTTPException as e:
-        logger.error(f"HTTP error during prompt generation - status: {e.status_code}, detail: {e.detail}")
+    except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Unexpected error during prompt generation - error: {str(e)}", exc_info=True)
+        logger.error(f"Error generating prompt: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error generating prompt: {str(e)}")
 
 @router.get("/styles")

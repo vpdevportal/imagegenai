@@ -26,7 +26,6 @@ class ImageToPromptService:
     def __init__(self):
         self.generator = image_to_prompt_generator
         self.prompt_service = prompt_service
-        logger.info("Image to prompt service initialized")
     
     async def generate_prompt_from_image(
         self,
@@ -46,60 +45,38 @@ class ImageToPromptService:
         Raises:
             HTTPException: If generation fails
         """
-        logger.info(f"Starting image to prompt generation - filename: {file.filename}, size: {file.size if hasattr(file, 'size') else 'unknown'}, style: {style}")
+        logger.info(f"Starting prompt generation - filename: {file.filename}, style: {style}")
         
         try:
             # Validate file type
-            logger.debug(f"Validating file type - content_type: {file.content_type}")
             if not file.content_type or not file.content_type.startswith('image/'):
-                logger.warning(f"Invalid file type received - content_type: {file.content_type}")
                 raise HTTPException(status_code=400, detail="File must be an image")
             
-            # Read the uploaded file
-            logger.debug("Reading uploaded file contents")
+            # Read and validate image
             contents = await file.read()
-            logger.info(f"File read successfully - size: {len(contents)} bytes")
-            
-            # Validate image
-            logger.debug("Validating and processing image")
             try:
                 image = Image.open(io.BytesIO(contents))
-                logger.info(f"Image opened successfully - mode: {image.mode}, size: {image.size}")
-                
-                # Convert to RGB if necessary
                 if image.mode != 'RGB':
-                    logger.debug(f"Converting image from {image.mode} to RGB")
                     image = image.convert('RGB')
-                    logger.info("Image converted to RGB successfully")
             except Exception as e:
-                logger.error(f"Failed to process image - error: {str(e)}")
                 raise HTTPException(status_code=400, detail=f"Invalid image file: {str(e)}")
             
             # Generate prompt from image using AI
-            logger.info("Starting AI prompt generation")
             prompt = await self.generator.generate_prompt_from_image(
                 image=image,
                 style=style
             )
-            logger.info(f"AI prompt generation completed - prompt length: {len(prompt)} characters")
             
             # Validate prompt length
             if len(prompt) > 1000:
-                logger.warning(f"Generated prompt exceeds 1000 characters ({len(prompt)}), truncating")
-                prompt = prompt[:1000].rsplit(' ', 1)[0]  # Truncate at last complete word
-                logger.info(f"Final prompt length after truncation: {len(prompt)} characters")
+                prompt = prompt[:1000].rsplit(' ', 1)[0]
             
-            # Generate a thumbnail for the uploaded image
-            logger.debug("Generating thumbnail for uploaded image")
+            # Generate thumbnail
             thumbnail_data = ThumbnailGenerator.generate_thumbnail_from_pil_image(image)
-            logger.info(f"Thumbnail generated successfully - size: {len(thumbnail_data)} bytes")
             
             # Save the prompt to the database
-            logger.debug("Attempting to save prompt to database")
             try:
-
                 if self.prompt_service.exists_by_text(prompt):
-                    logger.info("Prompt already exists in database")
                     return {
                         "success": False,
                         "message": "Prompt already exists in database",
@@ -111,16 +88,14 @@ class ImageToPromptService:
                         "saved_to_database": False
                     }
                 else:
-                    logger.info("Prompt does not exist in database")
                     saved_prompt = self.prompt_service.create_prompt(
                         prompt_text=prompt,
                         model=settings.gemini_model,
                         image_data=thumbnail_data
                     )
                     prompt_id = saved_prompt.id
-                    logger.info(f"Prompt saved to database successfully - prompt_id: {prompt_id}, total_uses: {saved_prompt.total_uses}")
             except Exception as e:
-                logger.error(f"Failed to save prompt to database - error: {str(e)}")
+                logger.error(f"Failed to save prompt to database: {str(e)}")
                 prompt_id = None
             
             result = {
@@ -133,14 +108,13 @@ class ImageToPromptService:
                 "saved_to_database": prompt_id is not None
             }
             
-            logger.info(f"Image to prompt generation completed successfully - saved_to_database: {prompt_id is not None}")
+            logger.info(f"Prompt generation completed - prompt_id: {prompt_id}, saved: {prompt_id is not None}")
             return result
             
-        except HTTPException as e:
-            logger.error(f"HTTP error in image to prompt generation - status: {e.status_code}, detail: {e.detail}")
+        except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Unexpected error in image to prompt generation - error: {str(e)}", exc_info=True)
+            logger.error(f"Error generating prompt: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail=f"Error generating prompt: {str(e)}")
 
 

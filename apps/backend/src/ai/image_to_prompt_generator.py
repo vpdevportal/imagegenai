@@ -31,9 +31,6 @@ class ImageToPromptGenerator:
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
         self.model = getattr(settings, 'gemini_model', DEFAULT_GEMINI_MODEL)
-                
-        logger.info("Image to prompt generator initialized")
-    
     
     async def generate_prompt_from_image(
         self, 
@@ -43,11 +40,7 @@ class ImageToPromptGenerator:
         """
         Generate a descriptive prompt from an image using Gemini AI
         """
-        logger.info(f"Starting AI prompt generation - image_size: {image.size}, mode: {image.mode}, style: {style}")
-        
         try:
-            # Create the prompt for the model based on style
-            logger.debug("Building style instructions")
             style_instructions = {
                 "photorealistic": "Focus on photorealistic details, high resolution, sharp focus, realistic lighting and textures",
                 "artistic": "Describe in an artistic way, focus on creative interpretation, expressive style, artistic elements",
@@ -57,16 +50,8 @@ class ImageToPromptGenerator:
                 "abstract": "Describe abstract elements, non-representational aspects, creative interpretation, artistic abstraction"
             }
             
-            # Always use detailed description
             detail_instruction = "Provide a detailed description including colors, composition, mood, and key elements"
-            
             style_instruction = style_instructions.get(style, style_instructions["photorealistic"])
-            
-            logger.debug(f"Selected style instruction: {style_instruction[:50]}...")
-            logger.debug(f"Selected detail instruction: {detail_instruction[:50]}...")
-            
-            # Create the prompt for Gemini
-            logger.debug("Constructing prompt content for Gemini")
             prompt_content = [
                 image,
                 f"""Describe this image focusing on creating a detailed prompt that will generate a similar image. 
@@ -97,21 +82,16 @@ class ImageToPromptGenerator:
             ]
             
             # Generate content using Gemini
-            logger.info(f"Calling Gemini API - model: {self.model}")
             response = self.client.models.generate_content(
                 model=self.model,
                 contents=[image, prompt_content],
             )
             
             generated_prompt = response.text.strip()
-            logger.info(f"Gemini API response received - prompt_length: {len(generated_prompt)} characters")
-            logger.debug(f"Generated prompt preview: {generated_prompt[:100]}...")
             
             # Validate and truncate if necessary
             if len(generated_prompt) > 1000:
-                logger.warning(f"Generated prompt exceeds 1000 characters ({len(generated_prompt)}), truncating to 1000")
-                generated_prompt = generated_prompt[:1000].rsplit(' ', 1)[0]  # Truncate at last complete word
-                logger.info(f"Truncated prompt length: {len(generated_prompt)} characters")
+                generated_prompt = generated_prompt[:1000].rsplit(' ', 1)[0]
             
             return generated_prompt
             
