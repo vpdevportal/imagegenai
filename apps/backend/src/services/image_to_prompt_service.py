@@ -46,7 +46,6 @@ class ImageToPromptService:
         Raises:
             HTTPException: If generation fails
         """
-        detail_level = "detailed"  # Always use 'detailed' detail level
         logger.info(f"Starting image to prompt generation - filename: {file.filename}, size: {file.size if hasattr(file, 'size') else 'unknown'}, style: {style}")
         
         try:
@@ -80,8 +79,7 @@ class ImageToPromptService:
             logger.info("Starting AI prompt generation")
             prompt = await self.generator.generate_prompt_from_image(
                 image=image,
-                style=style,
-                detail_level=detail_level
+                style=style
             )
             logger.info(f"AI prompt generation completed - prompt length: {len(prompt)} characters")
             
@@ -107,7 +105,6 @@ class ImageToPromptService:
                         "message": "Prompt already exists in database",
                         "prompt": prompt,
                         "style": style,
-                        "detail_level": detail_level,
                         "thumbnail": f"data:image/webp;base64,{base64.b64encode(thumbnail_data).decode('utf-8')}",
                         "original_filename": file.filename,
                         "prompt_id": None,
@@ -130,7 +127,6 @@ class ImageToPromptService:
                 "success": True,
                 "prompt": prompt,
                 "style": style,
-                "detail_level": detail_level,
                 "thumbnail": f"data:image/webp;base64,{base64.b64encode(thumbnail_data).decode('utf-8')}",
                 "original_filename": file.filename,
                 "prompt_id": prompt_id,

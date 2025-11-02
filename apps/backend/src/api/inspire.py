@@ -21,7 +21,7 @@ async def generate_prompt_from_image(
     logger.info(f"Starting prompt generation request - filename: {file.filename}, content_type: {file.content_type}, style: {style}")
     
     try:
-        # Use the service to handle all the business logic (detail_level is always 'detailed')
+        # Use the service to handle all the business logic
         result = await image_to_prompt_service.generate_prompt_from_image(
             file=file,
             style=style

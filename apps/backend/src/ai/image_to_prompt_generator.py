@@ -46,7 +46,7 @@ class ImageToPromptGenerator:
         logger.info(f"Starting AI prompt generation - image_size: {image.size}, mode: {image.mode}, style: {style}")
         
         try:
-            # Create the prompt for the model based on style (detail level is always 'detailed')
+            # Create the prompt for the model based on style
             logger.debug("Building style instructions")
             style_instructions = {
                 "photorealistic": "Focus on photorealistic details, high resolution, sharp focus, realistic lighting and textures",
