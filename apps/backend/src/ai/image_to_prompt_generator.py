@@ -43,12 +43,11 @@ class ImageToPromptGenerator:
         """
         Generate a descriptive prompt from an image using Gemini AI
         """
-        detail_level = "detailed"  # Always use 'detailed' detail level
         logger.info(f"Starting AI prompt generation - image_size: {image.size}, mode: {image.mode}, style: {style}")
         
         try:
-            # Create the prompt for the model based on style and detail level
-            logger.debug("Building style and detail level instructions")
+            # Create the prompt for the model based on style (detail level is always 'detailed')
+            logger.debug("Building style instructions")
             style_instructions = {
                 "photorealistic": "Focus on photorealistic details, high resolution, sharp focus, realistic lighting and textures",
                 "artistic": "Describe in an artistic way, focus on creative interpretation, expressive style, artistic elements",
@@ -58,14 +57,10 @@ class ImageToPromptGenerator:
                 "abstract": "Describe abstract elements, non-representational aspects, creative interpretation, artistic abstraction"
             }
             
-            detail_instructions = {
-                "simple": "Keep the description concise and simple, focus on main elements only",
-                "detailed": "Provide a detailed description including colors, composition, mood, and key elements",
-                "comprehensive": "Give a comprehensive description with intricate details, complex composition, professional quality"
-            }
+            # Always use detailed description
+            detail_instruction = "Provide a detailed description including colors, composition, mood, and key elements"
             
             style_instruction = style_instructions.get(style, style_instructions["photorealistic"])
-            detail_instruction = detail_instructions.get(detail_level, detail_instructions["detailed"])
             
             logger.debug(f"Selected style instruction: {style_instruction[:50]}...")
             logger.debug(f"Selected detail instruction: {detail_instruction[:50]}...")
