@@ -64,11 +64,7 @@ class PromptToImageService:
             
         except Exception as e:
             logger.error(f"Image generation failed: {str(e)}", exc_info=True)
-            
-            # Track failure for the prompt
-            logger.info(f"Tracking failure for prompt: '{prompt[:50]}{'...' if len(prompt) > 50 else ''}'")
-            self.prompt_service.track_failure(prompt)
-            
+            # Note: Failure tracking is handled at the API level using the original prompt
             raise e
 
 

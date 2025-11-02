@@ -115,17 +115,6 @@ async def generate_image(
         await image.seek(0)
         logger.debug("Reset image file pointer for generation")
         
-        # Track usage for the original prompt if it exists in database (don't create new prompts)
-        logger.debug("Tracking prompt usage for original prompt")
-        try:
-            if prompt_service.exists_by_text(prompt):
-                logger.info("Prompt exists, updating usage count")
-                prompt_service.update_prompt(prompt, settings.gemini_model)
-            else:
-                logger.debug("Prompt does not exist, skipping usage tracking (prompt not saved yet)")
-        except Exception as usage_error:
-            logger.warning(f"Failed to track prompt usage: {usage_error}")
-        
         # Append mobile camera modifier to prompt for authentic mobile camera look
         enhanced_prompt = f"{prompt}, taken with mobile camera, smartphone photo quality"
         logger.debug(f"Enhanced prompt with mobile camera modifier - original_length: {len(prompt)}, enhanced_length: {len(enhanced_prompt)}")
@@ -136,6 +125,17 @@ async def generate_image(
         )
         
         logger.info(f"Image generation completed - generated_size: {len(generated_image_data)} bytes, content_type: {content_type}")
+        
+        # Track usage for the original prompt if it exists in database (only on successful generation)
+        logger.debug("Tracking prompt usage for original prompt (successful generation)")
+        try:
+            if prompt_service.exists_by_text(prompt):
+                logger.info("Prompt exists, updating usage count")
+                prompt_service.update_prompt(prompt, settings.gemini_model)
+            else:
+                logger.debug("Prompt does not exist, skipping usage tracking (prompt not saved yet)")
+        except Exception as usage_error:
+            logger.warning(f"Failed to track prompt usage: {usage_error}")
         
         # Convert image data to base64 for JSON response
         logger.debug("Converting generated image to base64")
@@ -160,9 +160,27 @@ async def generate_image(
         
     except HTTPException as e:
         logger.error(f"HTTP error during image generation - status: {e.status_code}, detail: {e.detail}")
+        
+        # Track failure for the original prompt if it exists in database
+        try:
+            if prompt_service.exists_by_text(prompt):
+                logger.info(f"Tracking failure for prompt: '{prompt[:50]}{'...' if len(prompt) > 50 else ''}'")
+                prompt_service.track_failure(prompt)
+        except Exception as failure_error:
+            logger.warning(f"Failed to track prompt failure: {failure_error}")
+        
         raise e
     except Exception as e:
         logger.error(f"Unexpected error during image generation - error: {str(e)}", exc_info=True)
+        
+        # Track failure for the original prompt if it exists in database
+        try:
+            if prompt_service.exists_by_text(prompt):
+                logger.info(f"Tracking failure for prompt: '{prompt[:50]}{'...' if len(prompt) > 50 else ''}'")
+                prompt_service.track_failure(prompt)
+        except Exception as failure_error:
+            logger.warning(f"Failed to track prompt failure: {failure_error}")
+        
         raise HTTPException(
             status_code=500,
             detail=f"Internal server error: {str(e)}"
