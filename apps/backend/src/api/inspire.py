@@ -12,16 +12,14 @@ router = APIRouter(prefix="/inspire", tags=["inspire"])
 
 @router.post("/generate-prompt")
 async def generate_prompt_from_image(
-    file: UploadFile = File(...),
-    style: str = "artistic"
+    file: UploadFile = File(...)
 ):
     """
-    Generate a prompt from an uploaded image
+    Generate a prompt from an uploaded image (uses photorealistic style)
     """
     try:
         result = await image_to_prompt_service.generate_prompt_from_image(
-            file=file,
-            style=style
+            file=file
         )
         return JSONResponse(content=result)
         
@@ -30,22 +28,6 @@ async def generate_prompt_from_image(
     except Exception as e:
         logger.error(f"Error generating prompt: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error generating prompt: {str(e)}")
-
-@router.get("/styles")
-async def get_available_styles():
-    """
-    Get available prompt styles
-    """
-    return {
-        "styles": [
-            {"value": "photorealistic", "label": "Photorealistic"},
-            {"value": "artistic", "label": "Artistic"},
-            {"value": "minimalist", "label": "Minimalist"},
-            {"value": "vintage", "label": "Vintage"},
-            {"value": "modern", "label": "Modern"},
-            {"value": "abstract", "label": "Abstract"}
-        ]
-    }
 
 @router.get("/health")
 async def health_check():

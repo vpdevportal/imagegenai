@@ -29,15 +29,13 @@ class ImageToPromptService:
     
     async def generate_prompt_from_image(
         self,
-        file: UploadFile,
-        style: str = "artistic"
+        file: UploadFile
     ) -> dict:
         """
         Generate a prompt from an uploaded image
         
         Args:
             file: Uploaded image file
-            style: Style for prompt generation
             
         Returns:
             dict: Response containing prompt, thumbnail, and metadata
@@ -45,7 +43,7 @@ class ImageToPromptService:
         Raises:
             HTTPException: If generation fails
         """
-        logger.info(f"Starting prompt generation - filename: {file.filename}, style: {style}")
+        logger.info(f"Starting prompt generation - filename: {file.filename}")
         
         try:
             # Validate file type
@@ -63,8 +61,7 @@ class ImageToPromptService:
             
             # Generate prompt from image using AI
             prompt = await self.generator.generate_prompt_from_image(
-                image=image,
-                style=style
+                image=image
             )
             
             # Validate prompt length
@@ -81,7 +78,7 @@ class ImageToPromptService:
                         "success": False,
                         "message": "Prompt already exists in database",
                         "prompt": prompt,
-                        "style": style,
+                        "style": "photorealistic",
                         "thumbnail": f"data:image/webp;base64,{base64.b64encode(thumbnail_data).decode('utf-8')}",
                         "original_filename": file.filename,
                         "prompt_id": None,
@@ -101,7 +98,7 @@ class ImageToPromptService:
             result = {
                 "success": True,
                 "prompt": prompt,
-                "style": style,
+                "style": "photorealistic",
                 "thumbnail": f"data:image/webp;base64,{base64.b64encode(thumbnail_data).decode('utf-8')}",
                 "original_filename": file.filename,
                 "prompt_id": prompt_id,

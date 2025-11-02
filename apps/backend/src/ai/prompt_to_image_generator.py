@@ -98,12 +98,31 @@ class PromptToImageGenerator:
         # Process the response and return image data
         if response.candidates and len(response.candidates) > 0:
             candidate = response.candidates[0]
+            
+            # Check finish reason
+            if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
+                logger.warning(f"Candidate finish_reason: {candidate.finish_reason}")
+                if candidate.finish_reason not in [None, 'STOP']:
+                    error_msg = f"Generation stopped with reason: {candidate.finish_reason}"
+                    if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
+                        if hasattr(response.prompt_feedback, 'block_reason'):
+                            error_msg += f", Block reason: {response.prompt_feedback.block_reason}"
+                    logger.error(error_msg)
+                    raise HTTPException(status_code=400, detail=error_msg)
+            
             if candidate.content and candidate.content.parts:
-                for part in candidate.content.parts:
-                    if part.inline_data is not None:
+                for i, part in enumerate(candidate.content.parts):
+                    logger.debug(f"Part {i}: type={type(part).__name__}, has_inline_data={hasattr(part, 'inline_data') and part.inline_data is not None}")
+                    if hasattr(part, 'inline_data') and part.inline_data is not None:
                         image_data = part.inline_data.data
                         content_type = "image/png"  # Gemini typically returns PNG
+                        logger.debug(f"Found image data: {len(image_data)} bytes")
                         return image_data, content_type
+                
+                # If we get here, there were parts but no image data
+                logger.error(f"Response has {len(candidate.content.parts)} parts but no inline_data. Parts: {[type(p).__name__ for p in candidate.content.parts]}")
+            else:
+                logger.error("Candidate has no content or parts")
         else:
             # Log detailed error reasons when candidates are empty
             is_blocked, error_details = log_error_reason(response)
@@ -112,11 +131,12 @@ class PromptToImageGenerator:
                     status_code=400,
                     detail=f"Image generation was blocked due to content policy violations: {error_details}"
                 )
+            logger.error("Response has no candidates")
 
         logger.error("No image data found in Gemini response")
         raise HTTPException(
             status_code=500,
-            detail="Failed to generate image from reference: No image data found in response"
+            detail="Failed to generate image from reference: No image data found in response. The model may not have generated an image."
         )
     
     def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
@@ -142,12 +162,31 @@ class PromptToImageGenerator:
             # Process the response and return image data
             if response.candidates and len(response.candidates) > 0:
                 candidate = response.candidates[0]
+                
+                # Check finish reason
+                if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
+                    logger.warning(f"Candidate finish_reason: {candidate.finish_reason}")
+                    if candidate.finish_reason not in [None, 'STOP']:
+                        error_msg = f"Generation stopped with reason: {candidate.finish_reason}"
+                        if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
+                            if hasattr(response.prompt_feedback, 'block_reason'):
+                                error_msg += f", Block reason: {response.prompt_feedback.block_reason}"
+                        logger.error(error_msg)
+                        raise HTTPException(status_code=400, detail=error_msg)
+                
                 if candidate.content and candidate.content.parts:
-                    for part in candidate.content.parts:
-                        if part.inline_data is not None:
+                    for i, part in enumerate(candidate.content.parts):
+                        logger.debug(f"Part {i}: type={type(part).__name__}, has_inline_data={hasattr(part, 'inline_data') and part.inline_data is not None}")
+                        if hasattr(part, 'inline_data') and part.inline_data is not None:
                             image_data = part.inline_data.data
                             content_type = "image/png"  # Gemini typically returns PNG
+                            logger.debug(f"Found image data: {len(image_data)} bytes")
                             return image_data, content_type
+                    
+                    # If we get here, there were parts but no image data
+                    logger.error(f"Response has {len(candidate.content.parts)} parts but no inline_data. Parts: {[type(p).__name__ for p in candidate.content.parts]}")
+                else:
+                    logger.error("Candidate has no content or parts")
             else:
                 # Log detailed error reasons when candidates are empty
                 is_blocked, error_details = log_error_reason(response)
@@ -156,11 +195,12 @@ class PromptToImageGenerator:
                         status_code=400,
                         detail=f"Image generation was blocked due to content policy violations: {error_details}"
                     )
+                logger.error("Response has no candidates")
 
             logger.error("No image data found in Gemini response")
             raise HTTPException(
                 status_code=500,
-                detail="Failed to generate image from text: No image data found in response"
+                detail="Failed to generate image from text: No image data found in response. The model may not have generated an image."
             )
                 
         except Exception as e:
