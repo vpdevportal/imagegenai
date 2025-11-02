@@ -69,20 +69,31 @@ class ImageToPromptGenerator:
             logger.debug("Constructing prompt content for Gemini")
             prompt_content = [
                 image,
-                f"""Describe this image focusing on body features and physical characteristics relevant for generating a similar picture. 
+                f"""Describe this image focusing on creating a detailed prompt that will generate a similar image. 
                 {style_instruction}. {detail_instruction}.
                 
                 Focus specifically on:
+                - DRESS AND CLOTHING (MOST IMPORTANT): Provide extremely detailed description of the dress, outfit, or clothing:
+                  * Exact type of garment (dress, top, skirt, pants, etc.)
+                  * Color, pattern, and fabric texture
+                  * Cut, fit, and style (sleeveless, V-neck, A-line, etc.)
+                  * Fabric details (silk, cotton, denim, etc.) if visible
+                  * Length and silhouette of the clothing
+                - WEARABLES AND ACCESSORIES (VERY IMPORTANT): Provide detailed description of all wearable items for consistency:
+                  * Jewelry (necklaces, earrings, bracelets, rings, etc.) - describe type, material, color, style, and placement
+                  * Accessories (belts, bags, hats, scarves, watches, etc.) - describe exactly as seen
+                  * Shoes and footwear - describe type, color, style, heel height if applicable
+                  * Any decorative elements or accessories on clothing
+                  * Ensure all wearable items are described with enough detail to recreate them consistently
                 - Body type and physique
                 - Breast size and shape
                 - Facial features and expressions
                 - Hair color, length, and style
                 - Skin tone and texture
-                - Clothing and styling
                 - Pose and body positioning
                 - Overall attractiveness and appeal
                 
-                Make it a concise, descriptive prompt suitable for AI image generation. Keep the response under 1000 characters."""
+                Prioritize detailed clothing/dress and wearable items description above all else so that when this prompt is used to generate an image, it will recreate the same dress and wearables accurately and consistently. Make it a concise, descriptive prompt suitable for AI image generation. Keep the response under 1000 characters."""
             ]
             
             # Generate content using Gemini
