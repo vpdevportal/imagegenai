@@ -38,13 +38,13 @@ class ImageToPromptGenerator:
     async def generate_prompt_from_image(
         self, 
         image: Image.Image, 
-        style: str = "photorealistic",
-        detail_level: str = "detailed"
+        style: str = "photorealistic"
     ) -> str:
         """
         Generate a descriptive prompt from an image using Gemini AI
         """
-        logger.info(f"Starting AI prompt generation - image_size: {image.size}, mode: {image.mode}, style: {style}, detail_level: {detail_level}")
+        detail_level = "detailed"  # Always use 'detailed' detail level
+        logger.info(f"Starting AI prompt generation - image_size: {image.size}, mode: {image.mode}, style: {style}")
         
         try:
             # Create the prompt for the model based on style and detail level

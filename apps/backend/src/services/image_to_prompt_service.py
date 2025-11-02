@@ -31,8 +31,7 @@ class ImageToPromptService:
     async def generate_prompt_from_image(
         self,
         file: UploadFile,
-        style: str = "photorealistic",
-        detail_level: str = "detailed"
+        style: str = "photorealistic"
     ) -> dict:
         """
         Generate a prompt from an uploaded image
@@ -40,7 +39,6 @@ class ImageToPromptService:
         Args:
             file: Uploaded image file
             style: Style for prompt generation
-            detail_level: Detail level for prompt generation
             
         Returns:
             dict: Response containing prompt, thumbnail, and metadata
@@ -48,7 +46,8 @@ class ImageToPromptService:
         Raises:
             HTTPException: If generation fails
         """
-        logger.info(f"Starting image to prompt generation - filename: {file.filename}, size: {file.size if hasattr(file, 'size') else 'unknown'}, style: {style}, detail_level: {detail_level}")
+        detail_level = "detailed"  # Always use 'detailed' detail level
+        logger.info(f"Starting image to prompt generation - filename: {file.filename}, size: {file.size if hasattr(file, 'size') else 'unknown'}, style: {style}")
         
         try:
             # Validate file type

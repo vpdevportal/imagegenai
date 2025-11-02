@@ -13,20 +13,18 @@ router = APIRouter(prefix="/inspire", tags=["inspire"])
 @router.post("/generate-prompt")
 async def generate_prompt_from_image(
     file: UploadFile = File(...),
-    style: str = "photorealistic",
-    detail_level: str = "detailed"
+    style: str = "photorealistic"
 ):
     """
     Generate a prompt from an uploaded image
     """
-    logger.info(f"Starting prompt generation request - filename: {file.filename}, content_type: {file.content_type}, style: {style}, detail_level: {detail_level}")
+    logger.info(f"Starting prompt generation request - filename: {file.filename}, content_type: {file.content_type}, style: {style}")
     
     try:
-        # Use the service to handle all the business logic
+        # Use the service to handle all the business logic (detail_level is always 'detailed')
         result = await image_to_prompt_service.generate_prompt_from_image(
             file=file,
-            style=style,
-            detail_level=detail_level
+            style=style
         )
         
         logger.info(f"Prompt generation completed successfully - prompt_id: {result.get('prompt_id', 'N/A')}, saved_to_database: {result.get('saved_to_database', False)}")
@@ -52,11 +50,6 @@ async def get_available_styles():
             {"value": "vintage", "label": "Vintage"},
             {"value": "modern", "label": "Modern"},
             {"value": "abstract", "label": "Abstract"}
-        ],
-        "detail_levels": [
-            {"value": "simple", "label": "Simple"},
-            {"value": "detailed", "label": "Detailed"},
-            {"value": "comprehensive", "label": "Comprehensive"}
         ]
     }
 

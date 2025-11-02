@@ -74,7 +74,6 @@ export interface QueueItem {
   file: File
   preview: string
   style: string
-  detailLevel: string
   status: 'pending' | 'processing' | 'completed' | 'error'
   prompt?: string
   thumbnail?: string

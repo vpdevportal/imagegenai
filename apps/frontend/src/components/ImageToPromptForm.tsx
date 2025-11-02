@@ -13,10 +13,8 @@ interface ImageToPromptFormProps {
 export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFormProps) {
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [style, setStyle] = useState('photorealistic')
-  const [detailLevel, setDetailLevel] = useState('detailed')
   const [isProcessing, setIsProcessing] = useState(false)
   const [styles, setStyles] = useState<Array<{ value: string; label: string }>>([])
-  const [detailLevels, setDetailLevels] = useState<Array<{ value: string; label: string }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addToast } = useToast()
   const processingRef = useRef(false)
@@ -27,7 +25,6 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
       try {
         const data = await getInspireStyles()
         setStyles(data.styles)
-        setDetailLevels(data.detail_levels)
       } catch (error) {
         console.error('Error loading styles:', error)
         addToast({
@@ -57,7 +54,6 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
             file,
             preview: e.target?.result as string,
             style,
-            detailLevel,
             status: 'pending'
           })
           resolve()
@@ -111,8 +107,7 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
     try {
       const result = await generatePromptFromImage(
         pendingItem.file, 
-        pendingItem.style, 
-        pendingItem.detailLevel
+        pendingItem.style
       )
       
       if (result.success) {
@@ -202,43 +197,23 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
         )}
       </div>
 
-      {/* Style and Detail Level Selection (Global) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Style
-          </label>
-          <select
-            value={style}
-            onChange={(e) => setStyle(e.target.value)}
-            disabled={isProcessing}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
-          >
-            {styles.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Detail Level
-          </label>
-          <select
-            value={detailLevel}
-            onChange={(e) => setDetailLevel(e.target.value)}
-            disabled={isProcessing}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
-          >
-            {detailLevels.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Style Selection (Global) */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Style
+        </label>
+        <select
+          value={style}
+          onChange={(e) => setStyle(e.target.value)}
+          disabled={isProcessing}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+        >
+          {styles.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* File Upload Area */}
@@ -361,7 +336,7 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
                   </div>
                 </div>
                 <div className="text-xs text-gray-500">
-                  {item.style} · {item.detailLevel}
+                  {item.style}
                 </div>
                 {item.error && (
                   <div className="text-xs text-red-600 mt-1 truncate">

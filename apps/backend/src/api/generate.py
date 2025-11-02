@@ -7,6 +7,7 @@ import base64
 import logging
 
 from ..services.prompt_to_image_service import prompt_to_image_service
+from ..services.prompt_service import prompt_service
 from ..db.config import settings
 
 # Configure logging
@@ -114,8 +115,23 @@ async def generate_image(
         await image.seek(0)
         logger.debug("Reset image file pointer for generation")
         
+        # Track usage for the original prompt if it exists in database (don't create new prompts)
+        logger.debug("Tracking prompt usage for original prompt")
+        try:
+            if prompt_service.exists_by_text(prompt):
+                logger.info("Prompt exists, updating usage count")
+                prompt_service.update_prompt(prompt, settings.gemini_model)
+            else:
+                logger.debug("Prompt does not exist, skipping usage tracking (prompt not saved yet)")
+        except Exception as usage_error:
+            logger.warning(f"Failed to track prompt usage: {usage_error}")
+        
+        # Append mobile camera modifier to prompt for authentic mobile camera look
+        enhanced_prompt = f"{prompt}, taken with mobile camera, smartphone photo quality"
+        logger.debug(f"Enhanced prompt with mobile camera modifier - original_length: {len(prompt)}, enhanced_length: {len(enhanced_prompt)}")
+        
         generated_image_data, content_type, reference_image_url = await prompt_to_image_service.generate_image_from_prompt(
-            prompt=prompt,
+            prompt=enhanced_prompt,
             reference_image=image
         )
         
