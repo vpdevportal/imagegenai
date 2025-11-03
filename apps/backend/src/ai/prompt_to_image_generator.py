@@ -99,17 +99,7 @@ class PromptToImageGenerator:
         if response.candidates and len(response.candidates) > 0:
             candidate = response.candidates[0]
             
-            # Check finish reason
-            if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
-                logger.warning(f"Candidate finish_reason: {candidate.finish_reason}")
-                if candidate.finish_reason not in [None, 'STOP']:
-                    error_msg = f"Generation stopped with reason: {candidate.finish_reason}"
-                    if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
-                        if hasattr(response.prompt_feedback, 'block_reason'):
-                            error_msg += f", Block reason: {response.prompt_feedback.block_reason}"
-                    logger.error(error_msg)
-                    raise HTTPException(status_code=400, detail=error_msg)
-            
+            # First, try to extract image data if it exists
             if candidate.content and candidate.content.parts:
                 for i, part in enumerate(candidate.content.parts):
                     logger.debug(f"Part {i}: type={type(part).__name__}, has_inline_data={hasattr(part, 'inline_data') and part.inline_data is not None}")
@@ -117,12 +107,27 @@ class PromptToImageGenerator:
                         image_data = part.inline_data.data
                         content_type = "image/png"  # Gemini typically returns PNG
                         logger.debug(f"Found image data: {len(image_data)} bytes")
+                        # Log finish_reason for debugging but don't block if image exists
+                        if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
+                            logger.info(f"Image generated successfully with finish_reason: {candidate.finish_reason}")
                         return image_data, content_type
                 
                 # If we get here, there were parts but no image data
                 logger.error(f"Response has {len(candidate.content.parts)} parts but no inline_data. Parts: {[type(p).__name__ for p in candidate.content.parts]}")
             else:
                 logger.error("Candidate has no content or parts")
+            
+            # Only check finish_reason as error if no image data was found
+            if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
+                # Allow IMAGE_OTHER and STOP as valid finish reasons (IMAGE_OTHER is valid for image generation)
+                valid_finish_reasons = [None, 'STOP', 'IMAGE_OTHER']
+                if candidate.finish_reason not in valid_finish_reasons:
+                    error_msg = f"Generation stopped with reason: {candidate.finish_reason}"
+                    if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
+                        if hasattr(response.prompt_feedback, 'block_reason'):
+                            error_msg += f", Block reason: {response.prompt_feedback.block_reason}"
+                    logger.error(error_msg)
+                    raise HTTPException(status_code=400, detail=error_msg)
         else:
             # Log detailed error reasons when candidates are empty
             is_blocked, error_details = log_error_reason(response)

@@ -40,6 +40,7 @@ async def generate_variation(
         
         # Use provided prompt or default prompt for automatic variation
         variation_prompt = prompt_generator.variation_prompt(prompt)
+        logger.info(f"Variation prompt: {variation_prompt}")
         
         # Generate variation using existing service
         generated_image_data, content_type, reference_image_url = await prompt_to_image_service.generate_image_from_prompt(

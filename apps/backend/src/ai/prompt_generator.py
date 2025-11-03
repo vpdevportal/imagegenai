@@ -15,14 +15,16 @@ class PromptGenerator:
         
         Args:
             prompt: Optional user-provided prompt. If provided and not empty,
-                   returns the cleaned prompt. Otherwise, returns the default variation prompt.
+                   appends to the default variation prompt. Otherwise, returns the default variation prompt.
         
         Returns:
             str: The variation prompt to use
         """
+        default_prompt = "Generate a variation image keeping the same person, costume, and background, but change only the pose so that it feels like a different click of the same moment"
+        
         if prompt and prompt.strip():
-            return prompt.strip()
-        return "Generate a variation image keeping the same person, costume, and background, but change only the pose so that it feels like a different click of the same moment"
+            return f"{default_prompt}. {prompt.strip()}"
+        return default_prompt
     
     def image_to_prompt_template(self) -> str:
         """
