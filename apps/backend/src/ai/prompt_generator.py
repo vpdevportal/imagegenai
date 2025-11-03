@@ -33,17 +33,24 @@ class PromptGenerator:
         Returns:
             str: The template prompt text for image-to-prompt generation
         """
-        style_instruction = "Focus on photorealistic details, high resolution, sharp focus, realistic lighting and textures"
-        return f"""Generate a detailed AI image generation prompt from this image. {style_instruction}. Prioritize clothing and wearables for consistency.
+        style_instruction = "Focus on photorealistic details, realistic lighting and textures"
+            
+        detail_instruction = "Provide a detailed description including colors, composition, mood, and key elements"
 
-PRIORITY 1 - CLOTHING: Exact garment type, precise colors (primary, secondary, accent colors, gradients, patterns), color shades/tints, pattern details, fabric (silk/cotton/denim), cut/fit/style (sleeveless/V-neck/A-line), length, silhouette. Include neckline details and how it reveals or covers the chest area. Describe all colors accurately and in detail.
-PRIORITY 2 - CLEAVAGE & BREAST DETAILS: Describe cleavage visibility (visible/partially visible/covered), amount shown, breast size and shape, how the dress/clothing frames or reveals the chest area, exact positioning and prominence.
-PRIORITY 3 - WEARABLES: Jewelry (type, material, color, style, placement), accessories (belts/bags/hats/scarves/watches), shoes (type, color, style, heel height), decorative elements.
-PRIORITY 4 - MOOD & CONTEXT: Exact mood (sensual/elegant/casual/professional/playful/romantic), context/setting (indoor/outdoor/location), lighting atmosphere, emotional tone, interaction/activity, overall vibe and feeling.
-PRIORITY 5 - FACE PRESERVATION: Describe facial features in extreme detail to preserve the original face - face shape, eye shape/color, eyebrow shape/thickness, nose shape, lip shape/size, chin/jawline, cheekbones, facial structure, unique facial characteristics. Do not include makeup details. The face must look like the original person with only necessary adjustments to match the overall image style and mood. Capture all distinctive facial features that make the person recognizable.
-ALSO INCLUDE: Body type/physique, hair (color/length/style), skin tone/texture, pose/positioning, overall appeal.
-
-Output a single concise prompt under 1000 characters suitable for AI image generation. Ensure clothing, cleavage/breast details, mood, context, and especially facial features are described accurately for faithful recreation. The generated image must preserve the original face appearance."""
+        return f"""Describe this image focusing on body features and physical characteristics relevant for generating a similar picture. 
+                {style_instruction}. {detail_instruction}.
+                
+                Focus specifically on:
+                - Body type and physique
+                - Breast size and shape
+                - Facial features and expressions
+                - Hair color, length, and style
+                - Skin tone and texture
+                - Clothing and styling
+                - Pose and body positioning
+                - Overall attractiveness and appeal
+                
+                Make it a concise, descriptive prompt suitable for AI image generation. Keep the response under 1000 characters."""
 
 
 # Global instance
