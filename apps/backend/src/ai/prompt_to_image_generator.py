@@ -231,6 +231,108 @@ class PromptToImageGenerator:
                 detail=error_message
             )
     
+    def generate_from_multiple_images_and_text(self, image_files: list, prompt: str) -> Tuple[bytes, str]:
+        """
+        Generate an image using multiple reference images and text prompt
+        
+        Args:
+            image_files: List of uploaded image files (mandatory)
+            prompt: Text prompt for image generation
+            
+        Returns:
+            Tuple[bytes, str]: (image_data, content_type)
+            
+        Raises:
+            HTTPException: If generation fails
+        """
+        try:
+            # Read and process all uploaded images
+            reference_images = []
+            for image_file in image_files:
+                image_content = image_file.file.read()
+                image_file.file.seek(0)  # Reset file pointer
+                reference_image = Image.open(BytesIO(image_content))
+                reference_images.append(reference_image)
+            
+            # Generate the image using Gemini with multiple images
+            contents = [prompt] + reference_images
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=contents,
+            )
+
+            # Process the response and return image data
+            if response.candidates and len(response.candidates) > 0:
+                candidate = response.candidates[0]
+                
+                # First, try to extract image data if it exists
+                if candidate.content and candidate.content.parts:
+                    for i, part in enumerate(candidate.content.parts):
+                        logger.debug(f"Part {i}: type={type(part).__name__}, has_inline_data={hasattr(part, 'inline_data') and part.inline_data is not None}")
+                        if hasattr(part, 'inline_data') and part.inline_data is not None:
+                            image_data = part.inline_data.data
+                            content_type = "image/png"  # Gemini typically returns PNG
+                            logger.debug(f"Found image data: {len(image_data)} bytes")
+                            # Log finish_reason for debugging but don't block if image exists
+                            if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
+                                logger.info(f"Image generated successfully with finish_reason: {candidate.finish_reason}")
+                            return image_data, content_type
+                    
+                    # If we get here, there were parts but no image data
+                    logger.error(f"Response has {len(candidate.content.parts)} parts but no inline_data. Parts: {[type(p).__name__ for p in candidate.content.parts]}")
+                else:
+                    logger.error("Candidate has no content or parts")
+                
+                # Only check finish_reason as error if no image data was found
+                if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
+                    # Allow IMAGE_OTHER and STOP as valid finish reasons (IMAGE_OTHER is valid for image generation)
+                    valid_finish_reasons = [None, 'STOP', 'IMAGE_OTHER']
+                    if candidate.finish_reason not in valid_finish_reasons:
+                        error_msg = f"Generation stopped with reason: {candidate.finish_reason}"
+                        if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
+                            if hasattr(response.prompt_feedback, 'block_reason'):
+                                error_msg += f", Block reason: {response.prompt_feedback.block_reason}"
+                        logger.error(error_msg)
+                        raise HTTPException(status_code=400, detail=error_msg)
+            else:
+                # Log detailed error reasons when candidates are empty
+                is_blocked, error_details = log_error_reason(response)
+                if is_blocked:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Image generation was blocked due to content policy violations: {error_details}"
+                    )
+                logger.error("Response has no candidates")
+
+            logger.error("No image data found in Gemini response")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to generate image from multiple references: No image data found in response. The model may not have generated an image."
+            )
+                
+        except Exception as e:
+            logger.error(f"Failed to generate image from multiple images: {str(e)}", exc_info=True)
+            # Extract clean error message from Google API errors
+            error_message = "Image generation failed. Please try again later."
+            if hasattr(e, 'details') and isinstance(e.details, dict):
+                if 'message' in e.details:
+                    error_message = e.details['message']
+            elif hasattr(e, 'message'):
+                error_message = e.message
+            elif str(e).startswith('503'):
+                error_message = "The service is currently unavailable."
+            elif str(e).startswith('400'):
+                error_message = "Invalid request. Please check your input."
+            elif str(e).startswith('401'):
+                error_message = "Authentication failed. Please check your API key."
+            elif str(e).startswith('429'):
+                error_message = "Rate limit exceeded. Please try again later."
+            
+            raise HTTPException(
+                status_code=500,
+                detail=error_message
+            )
+    
     def process_reference_image(self, image_file) -> str:
         """
         Process uploaded reference image and return as data URL

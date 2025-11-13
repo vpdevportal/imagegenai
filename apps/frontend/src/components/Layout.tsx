@@ -5,7 +5,8 @@ import {
   ListBulletIcon,
   ChartBarIcon,
   LightBulbIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  ArrowsRightLeftIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -20,6 +21,7 @@ export default function Layout({ children }: LayoutProps) {
   const navigation = [
     { name: 'Generate', href: '/generate', icon: SparklesIcon, current: pathname === '/generate' },
     { name: 'Variations', href: '/variations', icon: ArrowPathIcon, current: pathname === '/variations' },
+    { name: 'Fusion', href: '/fusion', icon: ArrowsRightLeftIcon, current: pathname === '/fusion' },
     { name: 'Inspire', href: '/inspire', icon: LightBulbIcon, current: pathname === '/inspire' },
     { name: 'Prompts', href: '/prompts', icon: ListBulletIcon, current: pathname === '/prompts' },
     { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, current: pathname === '/analytics' },

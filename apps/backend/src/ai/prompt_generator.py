@@ -51,6 +51,15 @@ class PromptGenerator:
                 - Overall attractiveness and appeal
                 
                 Make it a concise, descriptive prompt suitable for AI image generation. Keep the response under 1000 characters."""
+    
+    def fusion_prompt(self) -> str:
+        """
+        Generate a prompt for fusing two people together into a natural, casual photo
+        
+        Returns:
+            str: The fusion prompt to use
+        """
+        return "You are given TWO separate images, each containing ONE person. Your task is to create a NEW image that shows BOTH people together in the same photo. IMPORTANT: You must combine both people from the two images into a single scene - do NOT just return one of the original images. Create a casual, natural photo showing both people together in a realistic moment. The image should look like it was taken with a mobile camera, showing them in a relaxed, authentic pose together. CRITICAL: Preserve the exact faces from BOTH images with maximum accuracy - keep all facial features, expressions, skin tone, hair, and distinctive characteristics exactly as they appear in the original images. Both people must appear together in the final image, merged naturally into one scene that feels like a candid moment. The photo should have natural lighting, casual composition, and feel like a spontaneous mobile camera capture with realistic quality and atmosphere. Make sure BOTH people are visible together in the final result."
 
 
 # Global instance
