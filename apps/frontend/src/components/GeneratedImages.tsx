@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { PhotoIcon, ArrowDownTrayIcon, BookmarkIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { PhotoIcon, ArrowDownTrayIcon, BookmarkIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { savePrompt } from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -18,9 +18,10 @@ interface ImageData {
 
 interface GeneratedImagesProps {
   images: ImageData[]
+  onDelete?: (imageId: string | number) => void
 }
 
-export default function GeneratedImages({ images }: GeneratedImagesProps) {
+export default function GeneratedImages({ images, onDelete }: GeneratedImagesProps) {
   const { addToast } = useToast()
   const [savingIds, setSavingIds] = useState<Set<string | number>>(new Set())
   const [savedIds, setSavedIds] = useState<Set<string | number>>(new Set())
@@ -30,7 +31,8 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
       // Create a temporary link to download the image
       const link = document.createElement('a')
       link.href = image.imageUrl || image.modifiedImageUrl || '/placeholder-image.jpg'
-      const timestamp = Math.floor(Date.now() / 1000) // Current time in seconds from epoch
+      // Use the image's creation timestamp for consistent naming
+      const timestamp = new Date(image.createdAt).getTime()
       link.download = `image-${timestamp}.png`
       link.target = '_blank'
       document.body.appendChild(link)
@@ -38,6 +40,71 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
       document.body.removeChild(link)
     } catch (error) {
       console.error('Download failed:', error)
+    }
+  }
+
+  const handleDownloadAll = async () => {
+    if (images.length === 0) return
+
+    try {
+      // Download each image with a small delay to avoid browser blocking
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i]
+        const imageUrl = image.imageUrl || image.modifiedImageUrl
+        
+        if (!imageUrl || imageUrl === '/placeholder-image.jpg') {
+          continue
+        }
+
+        // Fetch the image as a blob
+        const response = await fetch(imageUrl)
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        
+        // Create download link
+        const link = document.createElement('a')
+        link.href = url
+        const timestamp = new Date(image.createdAt).getTime()
+        link.download = `image-${i + 1}-${timestamp}.png`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        // Clean up the blob URL
+        window.URL.revokeObjectURL(url)
+        
+        // Small delay between downloads to avoid browser blocking
+        if (i < images.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300))
+        }
+      }
+
+      addToast({
+        type: 'success',
+        title: 'Download Started',
+        message: `Downloading ${images.length} image(s)...`,
+        duration: 3000
+      })
+    } catch (error) {
+      console.error('Download all failed:', error)
+      addToast({
+        type: 'error',
+        title: 'Download Failed',
+        message: 'Failed to download all images. Please try again.',
+        duration: 4000
+      })
+    }
+  }
+
+  const handleDelete = (image: ImageData) => {
+    if (onDelete) {
+      onDelete(image.id)
+      addToast({
+        type: 'success',
+        title: 'Image Deleted',
+        message: 'The image has been removed from your collection',
+        duration: 2000
+      })
     }
   }
 
@@ -94,9 +161,21 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
 
   return (
     <div className="card">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Created Images ({images.length})
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">
+          Created Images ({images.length})
+        </h3>
+        {images.length > 0 && (
+          <button
+            onClick={handleDownloadAll}
+            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-600 to-blue-600 text-white text-sm font-medium rounded-md hover:from-primary-700 hover:to-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            title="Download all images"
+          >
+            <ArrowDownTrayIcon className="h-4 w-4" />
+            <span>Download All</span>
+          </button>
+        )}
+      </div>
       
       <div className="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto">
         {images.map((image) => (
@@ -150,6 +229,15 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
                       >
                         <ArrowDownTrayIcon className="h-4 w-4 text-white" />
                       </button>
+                      {onDelete && (
+                        <button
+                          onClick={() => handleDelete(image)}
+                          className="p-1 rounded-full bg-red-500/80 hover:bg-red-600/80 transition-colors"
+                          title="Delete Image"
+                        >
+                          <TrashIcon className="h-4 w-4 text-white" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -178,6 +266,15 @@ export default function GeneratedImages({ images }: GeneratedImagesProps) {
                 >
                   <ArrowDownTrayIcon className="h-4 w-4 text-gray-700" />
                 </button>
+                {onDelete && (
+                  <button
+                    onClick={() => handleDelete(image)}
+                    className="p-1.5 rounded-full bg-red-500/90 hover:bg-red-600 transition-colors shadow-sm"
+                    title="Delete Image"
+                  >
+                    <TrashIcon className="h-4 w-4 text-white" />
+                  </button>
+                )}
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                   image.status === 'completed' 
                     ? 'bg-green-100 text-green-800' 

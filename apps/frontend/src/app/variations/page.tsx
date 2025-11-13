@@ -12,6 +12,10 @@ export default function VariationsPage() {
     setImages(prev => [newVariation, ...prev])
   }
 
+  const handleDeleteImage = (imageId: string | number) => {
+    setImages(prev => prev.filter(img => img.id !== imageId))
+  }
+
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -27,7 +31,7 @@ export default function VariationsPage() {
           
           {/* Generated Variations */}
           <div className="order-1 lg:order-2">
-            <GeneratedImages images={images} />
+            <GeneratedImages images={images} onDelete={handleDeleteImage} />
           </div>
         </div>
       </div>
