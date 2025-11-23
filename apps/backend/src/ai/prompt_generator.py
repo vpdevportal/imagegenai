@@ -37,18 +37,16 @@ class PromptGenerator:
             
         detail_instruction = "Provide a detailed description including colors, composition, mood, and key elements"
 
-        return f"""Describe this image focusing on body features and physical characteristics relevant for generating a similar picture. 
-                {style_instruction}. {detail_instruction}.
+        return f"""Describe this image focusing on physical characteristics relevant for generating a similar realistic mobile photo. 
+                {style_instruction}. {detail_instruction}. Emphasize a natural, candid, handheld mobile camera look with realistic exposure, slight sensor noise, natural skin tones, and authentic ambient lighting. Avoid studio perfection.
                 
                 Focus specifically on:
                 - Body type and physique
                 - Breast size and shape
-                - Facial features and expressions
-                - Hair color, length, and style
-                - Skin tone and texture
-                - Clothing and styling
-                - Pose and body positioning
-                - Overall attractiveness and appeal
+                - Facial features and expressions (preserve identity)
+                - Clothing and styling (colors, fabric, fit)
+                - Pose, body positioning, and framing
+                - Overall realism and natural appeal (mobile camera quality)
                 
                 Make it a concise, descriptive prompt suitable for AI image generation. Keep the response under 1000 characters."""
     
