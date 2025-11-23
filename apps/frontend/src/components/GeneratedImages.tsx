@@ -65,7 +65,7 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
         const link = document.createElement('a')
         link.href = url
         const timestamp = new Date(image.createdAt).getTime()
-        link.download = `image-${i + 1}-${timestamp}.png`
+        link.download = `image-${timestamp}.png`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)

@@ -12,6 +12,7 @@ from typing import Tuple
 from fastapi import HTTPException, UploadFile
 
 from ..ai.prompt_to_image_generator import prompt_to_image_generator
+from ..ai.prompt_generator import prompt_generator
 from .prompt_service import prompt_service
 from ..db.config import settings
 
@@ -52,6 +53,43 @@ class PromptToImageService:
             
         except Exception as e:
             logger.error(f"Image generation failed: {str(e)}", exc_info=True)
+            raise e
+    
+    async def generate_fusion_from_images(
+        self, 
+        image1: UploadFile,
+        image2: UploadFile
+    ) -> Tuple[bytes, str, str]:
+        """
+        Generate a fusion image from two reference images
+        
+        Args:
+            image1: First uploaded image file
+            image2: Second uploaded image file
+            
+        Returns:
+            Tuple[bytes, str, str]: (image_data, content_type, reference_image_url)
+            
+        Raises:
+            HTTPException: If generation fails
+        """
+        try:
+            # Process first image as reference image URL (for response)
+            reference_image_url = self.generator.process_reference_image(image1)
+            
+            # Reset file pointers
+            image1.file.seek(0)
+            image2.file.seek(0)
+            
+            # Generate fusion using multiple images
+            generated_image_data, content_type = self.generator.generate_from_multiple_images_and_text(
+                [image1, image2], 
+                prompt_generator.fusion_prompt()
+            )
+            return generated_image_data, content_type, reference_image_url
+            
+        except Exception as e:
+            logger.error(f"Fusion generation failed: {str(e)}", exc_info=True)
             raise e
 
 
