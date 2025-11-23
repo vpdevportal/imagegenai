@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { SparklesIcon, PhotoIcon, ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { generateVariation } from '@/lib/api'
+import { generateVariation } from '@/services/api'
 
 interface ImageVariationFormProps {
   onVariationGenerated: (variation: any) => void

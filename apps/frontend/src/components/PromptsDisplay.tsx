@@ -21,7 +21,7 @@ import {
   getPromptStats,
   getPromptThumbnail,
   deletePrompt
-} from '@/lib/api'
+} from '@/services/api'
 import { Prompt, PromptStats, PromptListResponse } from '@/types'
 import ConfirmationDialog from './ConfirmationDialog'
 import { useToast } from '@/contexts/ToastContext'

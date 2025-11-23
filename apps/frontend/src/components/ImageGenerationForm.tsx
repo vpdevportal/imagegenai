@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { SparklesIcon, PhotoIcon, ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { generateImage } from '@/lib/api'
+import { generateImage } from '@/services/api'
 
 interface ImageGenerationFormProps {
   onImageGenerated: (image: any) => void

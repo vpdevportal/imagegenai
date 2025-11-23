@@ -91,6 +91,45 @@ class PromptToImageService:
         except Exception as e:
             logger.error(f"Fusion generation failed: {str(e)}", exc_info=True)
             raise e
+    
+    async def generate_teleport(
+        self,
+        background_image: UploadFile,
+        person_image: UploadFile
+    ) -> Tuple[bytes, str, str]:
+        """
+        Generate an image by teleporting a person into a new background
+        
+        Args:
+            background_image: Image to use as background (second image)
+            person_image: Image containing the person (first image - primary)
+            
+        Returns:
+            Tuple[bytes, str, str]: (image_data, content_type, reference_image_url)
+            
+        Raises:
+            HTTPException: If generation fails
+        """
+        try:
+            # Process background image as reference image URL (for response)
+            reference_image_url = self.generator.process_reference_image(background_image)
+            
+            # Reset file pointers
+            background_image.file.seek(0)
+            person_image.file.seek(0)
+            
+            # Generate using multiple images
+            # Note: The order matters - person image is first (primary), background is second
+            # This tells the AI to modify the person's background with the new background
+            generated_image_data, content_type = self.generator.generate_from_multiple_images_and_text(
+                [person_image, background_image], 
+                prompt_generator.teleport_prompt()
+            )
+            return generated_image_data, content_type, reference_image_url
+            
+        except Exception as e:
+            logger.error(f"Teleport generation failed: {str(e)}", exc_info=True)
+            raise e
 
 
 # Global service instance

@@ -1,30 +1,30 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { ArrowsRightLeftIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { GlobeAmericasIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { generateFusion } from '@/services/api'
+import { generateTeleport } from '@/services/api'
 
-interface ImageFusionFormProps {
-  onFusionGenerated: (fusion: any) => void
+interface ImageTeleportFormProps {
+  onTeleportGenerated: (result: any) => void
   isGenerating: boolean
   setIsGenerating: (value: boolean) => void
 }
 
-export default function ImageFusionForm({ 
-  onFusionGenerated, 
-  isGenerating, 
+export default function ImageTeleportForm({
+  onTeleportGenerated,
+  isGenerating,
   setIsGenerating
-}: ImageFusionFormProps) {
-  const [selectedFile1, setSelectedFile1] = useState<File | null>(null)
-  const [selectedFile2, setSelectedFile2] = useState<File | null>(null)
-  const [previewUrl1, setPreviewUrl1] = useState<string | null>(null)
-  const [previewUrl2, setPreviewUrl2] = useState<string | null>(null)
+}: ImageTeleportFormProps) {
+  const [backgroundFile, setBackgroundFile] = useState<File | null>(null)
+  const [personFile, setPersonFile] = useState<File | null>(null)
+  const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null)
+  const [personPreview, setPersonPreview] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [dragActive1, setDragActive1] = useState(false)
-  const [dragActive2, setDragActive2] = useState(false)
-  const fileInputRef1 = useRef<HTMLInputElement>(null)
-  const fileInputRef2 = useRef<HTMLInputElement>(null)
+  const [dragActiveBg, setDragActiveBg] = useState(false)
+  const [dragActivePerson, setDragActivePerson] = useState(false)
+  const bgInputRef = useRef<HTMLInputElement>(null)
+  const personInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (file: File, setFile: (f: File | null) => void, setPreview: (url: string | null) => void, preview: string | null) => {
     if (!file.type.startsWith('image/')) {
@@ -62,25 +62,25 @@ export default function ImageFusionForm({
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-    
+
     const file = e.dataTransfer.files?.[0]
     if (file) {
       handleFileSelect(file, setFile, setPreview, preview)
     }
   }
 
-  const clearImage = (imageNum: 1 | 2) => {
-    if (imageNum === 1) {
-      setSelectedFile1(null)
-      if (previewUrl1) {
-        URL.revokeObjectURL(previewUrl1)
-        setPreviewUrl1(null)
+  const clearImage = (type: 'background' | 'person') => {
+    if (type === 'background') {
+      setBackgroundFile(null)
+      if (backgroundPreview) {
+        URL.revokeObjectURL(backgroundPreview)
+        setBackgroundPreview(null)
       }
     } else {
-      setSelectedFile2(null)
-      if (previewUrl2) {
-        URL.revokeObjectURL(previewUrl2)
-        setPreviewUrl2(null)
+      setPersonFile(null)
+      if (personPreview) {
+        URL.revokeObjectURL(personPreview)
+        setPersonPreview(null)
       }
     }
     setError('')
@@ -89,36 +89,36 @@ export default function ImageFusionForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     setError('')
-    
-    if (!selectedFile1) {
-      setError('Please select the first image')
+
+    if (!personFile) {
+      setError('Please select a person image')
       return
     }
 
-    if (!selectedFile2) {
-      setError('Please select the second image')
+    if (!backgroundFile) {
+      setError('Please select a background image')
       return
     }
 
     setIsGenerating(true)
 
     try {
-      const response = await generateFusion(selectedFile1, selectedFile2)
-      
-      onFusionGenerated({
+      const response = await generateTeleport(personFile, backgroundFile)
+
+      onTeleportGenerated({
         id: response.id,
-        prompt: response.prompt || 'Fusion of two people',
+        prompt: response.prompt || 'Teleport person to new background',
         imageUrl: response.generated_image_url,
         referenceImageUrl: response.reference_image_url,
         status: response.status,
         createdAt: response.created_at,
-        type: 'fusion'
+        type: 'teleport'
       })
     } catch (err: any) {
-      console.error('Image fusion error:', err)
-      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to generate image fusion. Please try again.'
+      console.error('Teleport error:', err)
+      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to generate teleport image. Please try again.'
       setError(errorMessage)
     } finally {
       setIsGenerating(false)
@@ -126,41 +126,42 @@ export default function ImageFusionForm({
   }
 
   const renderUploadArea = (
-    imageNum: 1 | 2,
+    type: 'background' | 'person',
     selectedFile: File | null,
     previewUrl: string | null,
     dragActive: boolean,
     setDragActive: (active: boolean) => void,
-    fileInputRef: React.RefObject<HTMLInputElement>
+    fileInputRef: React.RefObject<HTMLInputElement>,
+    label: string,
+    description: string
   ) => {
     return (
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Person {imageNum} Image
+          {label}
         </label>
         <div
           onDragEnter={(e) => handleDrag(e, setDragActive)}
           onDragLeave={(e) => handleDrag(e, setDragActive)}
           onDragOver={(e) => handleDrag(e, setDragActive)}
           onDrop={(e) => {
-            if (imageNum === 1) {
-              handleDrop(e, setSelectedFile1, setPreviewUrl1, previewUrl1, setDragActive1)
+            if (type === 'background') {
+              handleDrop(e, setBackgroundFile, setBackgroundPreview, backgroundPreview, setDragActiveBg)
             } else {
-              handleDrop(e, setSelectedFile2, setPreviewUrl2, previewUrl2, setDragActive2)
+              handleDrop(e, setPersonFile, setPersonPreview, personPreview, setDragActivePerson)
             }
           }}
           onClick={() => !isGenerating && fileInputRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            dragActive
+          className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive
               ? 'border-purple-500 bg-purple-50'
               : 'border-gray-300 hover:border-purple-400'
-          } ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            } ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         >
           {previewUrl ? (
             <div className="relative w-full h-48 mb-4">
               <Image
                 src={previewUrl}
-                alt={`Preview ${imageNum}`}
+                alt={`${type} preview`}
                 fill
                 className="object-contain rounded-lg"
               />
@@ -169,7 +170,7 @@ export default function ImageFusionForm({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    clearImage(imageNum)
+                    clearImage(type)
                   }}
                   className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
                 >
@@ -181,7 +182,7 @@ export default function ImageFusionForm({
             <>
               <PhotoIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-sm text-gray-600 mb-2">
-                Click to upload or drag and drop
+                {description}
               </p>
               <p className="text-xs text-gray-500">
                 PNG, JPG, GIF up to 10MB
@@ -195,10 +196,10 @@ export default function ImageFusionForm({
             onChange={(e) => {
               const file = e.target.files?.[0]
               if (file) {
-                if (imageNum === 1) {
-                  handleFileSelect(file, setSelectedFile1, setPreviewUrl1, previewUrl1)
+                if (type === 'background') {
+                  handleFileSelect(file, setBackgroundFile, setBackgroundPreview, backgroundPreview)
                 } else {
-                  handleFileSelect(file, setSelectedFile2, setPreviewUrl2, previewUrl2)
+                  handleFileSelect(file, setPersonFile, setPersonPreview, personPreview)
                 }
               }
             }}
@@ -213,16 +214,34 @@ export default function ImageFusionForm({
   return (
     <div className="card">
       <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-        <ArrowsRightLeftIcon className="h-5 w-5 mr-2 text-purple-600" />
-        Fuse Two People Together
+        <GlobeAmericasIcon className="h-5 w-5 mr-2 text-purple-600" />
+        Replace Person's Background
       </h3>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* First Image Upload */}
-        {renderUploadArea(1, selectedFile1, previewUrl1, dragActive1, setDragActive1, fileInputRef1)}
+        {/* Person Image Upload */}
+        {renderUploadArea(
+          'person',
+          personFile,
+          personPreview,
+          dragActivePerson,
+          setDragActivePerson,
+          personInputRef,
+          '1. Person Image',
+          'Upload the image containing the person (this will be the primary image)'
+        )}
 
-        {/* Second Image Upload */}
-        {renderUploadArea(2, selectedFile2, previewUrl2, dragActive2, setDragActive2, fileInputRef2)}
+        {/* Background Image Upload */}
+        {renderUploadArea(
+          'background',
+          backgroundFile,
+          backgroundPreview,
+          dragActiveBg,
+          setDragActiveBg,
+          bgInputRef,
+          '2. Background Scene',
+          'Upload the background image to replace the person\'s current background'
+        )}
 
         {/* Error Message */}
         {error && (
@@ -234,7 +253,7 @@ export default function ImageFusionForm({
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={!selectedFile1 || !selectedFile2 || isGenerating}
+          disabled={!personFile || !backgroundFile || isGenerating}
           className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-4 rounded-md hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center"
         >
           {isGenerating ? (
@@ -243,12 +262,12 @@ export default function ImageFusionForm({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Generating Fusion...
+              Teleporting...
             </>
           ) : (
             <>
-              <ArrowsRightLeftIcon className="h-5 w-5 mr-2" />
-              Generate Fusion
+              <GlobeAmericasIcon className="h-5 w-5 mr-2" />
+              Teleport Person
             </>
           )}
         </button>
@@ -256,4 +275,3 @@ export default function ImageFusionForm({
     </div>
   )
 }
-
