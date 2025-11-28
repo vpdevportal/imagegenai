@@ -57,29 +57,23 @@ check_port() {
     fi
 }
 
-# Function to kill processes on a port (safer version)
 kill_port() {
     local port=$1
     local service_name=$2
     if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
-        print_warning "Port $port ($service_name) is in use. Attempting to identify and kill only development processes..."
+        print_warning "Port $port ($service_name) is in use. Killing process..."
         
         # Get process info for processes using the port
         local pids=$(lsof -ti :$port 2>/dev/null)
         if [ -n "$pids" ]; then
             for pid in $pids; do
-                # Check if it's a development process (python, node, uvicorn, next)
                 local cmd=$(ps -p $pid -o comm= 2>/dev/null)
-                if [[ "$cmd" =~ (python|node|uvicorn|next|npm) ]]; then
-                    print_status "Killing development process $pid ($cmd) on port $port"
-                    kill -TERM $pid 2>/dev/null || true
-                    sleep 1
-                    # If still running, force kill
-                    if kill -0 $pid 2>/dev/null; then
-                        kill -9 $pid 2>/dev/null || true
-                    fi
-                else
-                    print_warning "Skipping non-development process $pid ($cmd) on port $port"
+                print_status "Killing process $pid ($cmd) on port $port"
+                kill -TERM $pid 2>/dev/null || true
+                sleep 1
+                # If still running, force kill
+                if kill -0 $pid 2>/dev/null; then
+                    kill -9 $pid 2>/dev/null || true
                 fi
             done
         fi

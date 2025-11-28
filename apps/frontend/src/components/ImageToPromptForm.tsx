@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { SparklesIcon, ArrowPathIcon, XMarkIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
-import { generatePromptFromImage } from '@/lib/api'
+import { generatePromptFromImage } from '@/services/api'
 import { useToast } from '@/contexts/ToastContext'
 import { QueueItem } from '@/types'
 

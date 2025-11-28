@@ -81,11 +81,8 @@ async def generate_image(
         # Reset file pointer for service
         await image.seek(0)
         
-        # Append mobile camera modifier to prompt for authentic mobile camera look
-        enhanced_prompt = f"{prompt}, taken with mobile camera, smartphone photo quality"
-        
         generated_image_data, content_type, reference_image_url = await prompt_to_image_service.generate_image_from_prompt(
-            prompt=enhanced_prompt,
+            prompt=prompt,
             reference_image=image
         )
         

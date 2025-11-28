@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { PhotoIcon, ArrowDownTrayIcon, BookmarkIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline'
-import { savePrompt } from '@/lib/api'
+import { savePrompt } from '@/services/api'
 import { useToast } from '@/contexts/ToastContext'
 
 interface ImageData {

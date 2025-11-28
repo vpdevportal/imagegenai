@@ -4,6 +4,7 @@ from .prompts import router as prompts_router
 from .inspire import router as inspire_router
 from .variations import router as variations_router
 from .fusion import router as fusion_router
+from .teleport import router as teleport_router
 
 # Create main API router
 api_router = APIRouter(prefix="/api", tags=["api"])
@@ -14,6 +15,7 @@ api_router.include_router(prompts_router)
 api_router.include_router(inspire_router)
 api_router.include_router(variations_router)
 api_router.include_router(fusion_router)
+api_router.include_router(teleport_router)
 
 # Health check endpoint
 @api_router.get("/health")
@@ -40,6 +42,7 @@ async def root():
             "inspire": "/api/inspire",
             "variations": "/api/variations",
             "fusion": "/api/fusion",
+            "teleport": "/api/teleport",
             "docs": "/api/docs"
         }
     }

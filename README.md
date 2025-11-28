@@ -83,7 +83,7 @@ imagegenai/
    npm run start-dev
    
    # Or using the shell script directly
-   ./start-dev.sh
+   ./start.sh
    
    # Or start individually:
    npm run backend:dev  # Backend on http://localhost:8000

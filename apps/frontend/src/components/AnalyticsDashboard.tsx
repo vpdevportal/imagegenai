@@ -9,7 +9,7 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon
 } from '@heroicons/react/24/outline'
-import { getPromptStats } from '@/lib/api'
+import { getPromptStats } from '@/services/api'
 import { PromptStats } from '@/types'
 
 export default function AnalyticsDashboard() {

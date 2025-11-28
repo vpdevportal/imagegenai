@@ -256,35 +256,64 @@ class PromptToImageGenerator:
             
             # Generate the image using Gemini with multiple images
             contents = [prompt] + reference_images
+            logger.info(f"Generating image with {len(reference_images)} reference images and prompt: {prompt[:100]}...")
+            
             response = self.client.models.generate_content(
                 model=self.model,
                 contents=contents,
             )
 
+            # Log response structure for debugging
+            logger.info(f"Response received. Has candidates: {hasattr(response, 'candidates') and response.candidates is not None}")
+            if hasattr(response, 'candidates') and response.candidates:
+                logger.info(f"Number of candidates: {len(response.candidates)}")
+            
             # Process the response and return image data
             if response.candidates and len(response.candidates) > 0:
                 candidate = response.candidates[0]
+                logger.info(f"Candidate has content: {candidate.content is not None}")
                 
                 # First, try to extract image data if it exists
                 if candidate.content and candidate.content.parts:
+                    logger.info(f"Candidate has {len(candidate.content.parts)} parts")
                     for i, part in enumerate(candidate.content.parts):
-                        logger.debug(f"Part {i}: type={type(part).__name__}, has_inline_data={hasattr(part, 'inline_data') and part.inline_data is not None}")
-                        if hasattr(part, 'inline_data') and part.inline_data is not None:
+                        part_type = type(part).__name__
+                        has_inline = hasattr(part, 'inline_data') and part.inline_data is not None
+                        has_text = hasattr(part, 'text') and part.text
+                        logger.info(f"Part {i}: type={part_type}, has_inline_data={has_inline}, has_text={has_text}")
+                        
+                        # Log text content if present
+                        if has_text:
+                            logger.info(f"Part {i} text content: {part.text[:200]}")
+                        
+                        if has_inline:
                             image_data = part.inline_data.data
                             content_type = "image/png"  # Gemini typically returns PNG
-                            logger.debug(f"Found image data: {len(image_data)} bytes")
+                            logger.info(f"Found image data: {len(image_data)} bytes")
                             # Log finish_reason for debugging but don't block if image exists
                             if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
                                 logger.info(f"Image generated successfully with finish_reason: {candidate.finish_reason}")
                             return image_data, content_type
                     
                     # If we get here, there were parts but no image data
-                    logger.error(f"Response has {len(candidate.content.parts)} parts but no inline_data. Parts: {[type(p).__name__ for p in candidate.content.parts]}")
+                    logger.warning(f"Response has {len(candidate.content.parts)} parts but no inline_data. Parts: {[type(p).__name__ for p in candidate.content.parts]}")
+                    
+                    # Check if there's text explaining why no image was generated
+                    text_responses = []
+                    for part in candidate.content.parts:
+                        if hasattr(part, 'text') and part.text:
+                            text_responses.append(part.text)
+                    
+                    if text_responses:
+                        error_detail = "The AI model returned a text response instead of an image: " + " ".join(text_responses)
+                        logger.error(error_detail)
+                        raise HTTPException(status_code=400, detail=error_detail)
                 else:
-                    logger.error("Candidate has no content or parts")
+                    logger.warning("Candidate has no content or parts")
                 
                 # Only check finish_reason as error if no image data was found
                 if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
+                    logger.info(f"Finish reason: {candidate.finish_reason}")
                     # Allow IMAGE_OTHER and STOP as valid finish reasons (IMAGE_OTHER is valid for image generation)
                     valid_finish_reasons = [None, 'STOP', 'IMAGE_OTHER']
                     if candidate.finish_reason not in valid_finish_reasons:
@@ -306,10 +335,13 @@ class PromptToImageGenerator:
 
             logger.error("No image data found in Gemini response")
             raise HTTPException(
-                status_code=500,
-                detail="Failed to generate image from multiple references: No image data found in response. The model may not have generated an image."
+                status_code=400,
+                detail="The AI model could not generate an image for this request. This feature may not be supported for multi-image composition tasks. Please try using simpler images or a different approach."
             )
                 
+        except HTTPException:
+            # Re-raise HTTP exceptions as-is
+            raise
         except Exception as e:
             logger.error(f"Failed to generate image from multiple images: {str(e)}", exc_info=True)
             # Extract clean error message from Google API errors
