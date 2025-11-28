@@ -37,18 +37,27 @@ class PromptGenerator:
             
         detail_instruction = "Provide a detailed description including colors, composition, mood, and key elements"
 
-        return f"""Describe this image focusing on physical characteristics relevant for generating a similar realistic mobile photo. 
+        return f"""Generate a rich, detailed description of this image that will be used WITH the reference image to create variations. Start your response with "USE THIS WITH THE REFERENCE IMAGE:" followed by the description.
+                
                 {style_instruction}. {detail_instruction}. Emphasize a natural, candid, handheld mobile camera look with realistic exposure, slight sensor noise, natural skin tones, and authentic ambient lighting. Avoid studio perfection.
                 
-                Focus specifically on:
-                - Body type and physique
-                - Breast size and shape
-                - Facial features and expressions (preserve identity)
-                - Clothing and styling (colors, fabric, fit)
-                - Pose, body positioning, and framing
-                - Overall realism and natural appeal (mobile camera quality)
+                IMPORTANT: Body type, build, and proportions will be automatically preserved from the reference image - do NOT describe them. Provide comprehensive details for the following modifiable aspects:
                 
-                Make it a concise, descriptive prompt suitable for AI image generation. Keep the response under 1000 characters."""
+                Format your response with the following labeled sections (use the exact labels shown):
+                                
+                FACE: [Provide detailed description of facial features to preserve: eye color and shape, nose structure, lip fullness and color, face shape, skin tone and texture, expressions, distinctive features, and identity characteristics]
+                
+                CLOTHING: [Provide detailed description of clothing: specific garment types, exact colors and patterns, fabric textures and materials, fit (tight/loose/fitted), how much it reveals body shapes and curves (degree of revelation), how it emphasizes silhouette and contours, accessories, and overall fashion aesthetic]
+                
+                POSE: [Provide detailed description of the pose: specific body positioning, arm and leg placement, head angle and tilt, camera angle (eye-level/low/high), shot framing (close-up/mid/full), and overall composition]
+                
+                BREAST: [Provide detailed description of the desired breast size (small/medium/large/etc.) and shape - this can be modified from the reference image]
+
+                BACKGROUND: [Provide detailed description of the setting: indoor/outdoor, specific location type, colors and lighting, environmental elements, depth and focus, and overall atmosphere]
+                
+                CAMERA: [Provide detailed description of the mobile camera characteristics: lighting quality (natural/artificial/mixed), exposure level, color temperature, sharpness, any natural blur or bokeh effects]
+                \
+                Be thorough and specific in each section. Keep the total response under 1000 characters. Each section should be on a new line with its label."""
     
     def fusion_prompt(self) -> str:
         """
