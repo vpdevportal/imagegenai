@@ -11,13 +11,14 @@ const getApiBaseUrl = () => {
     return '/api'
   }
   
-  // Server-side: use environment variable if set, otherwise localhost
+  // Server-side: use environment variable if set, otherwise 127.0.0.1
+  // Using 127.0.0.1 instead of localhost forces IPv4 and avoids IPv6 connection issues
   // This is for SSR/SSG scenarios (if any)
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL
   }
   
-  return 'http://localhost:8000/api'
+  return 'http://127.0.0.1:8000/api'
 }
 
 // Normalize image URLs to use relative paths to avoid local network permission issues
