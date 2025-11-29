@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { PhotoIcon, ArrowDownTrayIcon, BookmarkIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline'
-import { savePrompt } from '@/services/api'
+import { savePrompt, normalizeImageUrl } from '@/services/api'
 import { useToast } from '@/contexts/ToastContext'
 
 interface ImageData {
@@ -28,9 +28,12 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
 
   const handleDownload = (image: ImageData) => {
     try {
+      // Normalize the image URL to avoid local network permission issues
+      const imageUrl = normalizeImageUrl(image.imageUrl || image.modifiedImageUrl)
+      
       // Create a temporary link to download the image
       const link = document.createElement('a')
-      link.href = image.imageUrl || image.modifiedImageUrl || '/placeholder-image.jpg'
+      link.href = imageUrl
       // Use the image's creation timestamp for consistent naming
       const timestamp = new Date(image.createdAt).getTime()
       link.download = `image-${timestamp}.png`
@@ -50,13 +53,13 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
       // Download each image with a small delay to avoid browser blocking
       for (let i = 0; i < images.length; i++) {
         const image = images[i]
-        const imageUrl = image.imageUrl || image.modifiedImageUrl
+        const imageUrl = normalizeImageUrl(image.imageUrl || image.modifiedImageUrl)
         
         if (!imageUrl || imageUrl === '/placeholder-image.jpg') {
           continue
         }
 
-        // Fetch the image as a blob
+        // Fetch the image as a blob - normalized URL ensures it goes through Next.js proxy
         const response = await fetch(imageUrl)
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
@@ -186,7 +189,7 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
             {/* Generated Image */}
             <div className="relative w-full bg-[#0a1929]" style={{ minHeight: '300px' }}>
               <Image
-                src={image.modifiedImageUrl || image.imageUrl || '/placeholder-image.jpg'}
+                src={normalizeImageUrl(image.modifiedImageUrl || image.imageUrl) || '/placeholder-image.jpg'}
                 alt={image.prompt}
                 width={800}
                 height={800}
