@@ -1,36 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import ImageGenerationForm from '@/components/ImageGenerationForm'
-import GeneratedImages from '@/components/GeneratedImages'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
-  const [images, setImages] = useState<any[]>([])
-  const [isGenerating, setIsGenerating] = useState(false)
+  const router = useRouter()
 
-  const handleImageGenerated = (newImage: any) => {
-    setImages(prev => [newImage, ...prev])
-  }
+  useEffect(() => {
+    router.replace('/generate')
+  }, [router])
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Image Generation Form */}
-          <div className="order-2 lg:order-1">
-            <ImageGenerationForm 
-              onImageGenerated={handleImageGenerated}
-              isGenerating={isGenerating}
-              setIsGenerating={setIsGenerating}
-            />
-          </div>
-          
-          {/* Generated Images */}
-          <div className="order-1 lg:order-2">
-            <GeneratedImages images={images} />
-          </div>
-        </div>
-      </div>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-500 border-t-transparent"></div>
     </div>
   )
 }
