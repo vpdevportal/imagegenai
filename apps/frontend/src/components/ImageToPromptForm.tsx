@@ -164,12 +164,7 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-2 rounded-lg shadow-lg">
-            <SparklesIcon className="h-5 w-5 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold gradient-text">Upload Images</h2>
-        </div>
+        <h2 className="text-lg font-semibold text-gray-100">Upload Images</h2>
         {queue.length > 0 && (
           <button
             onClick={clearQueue}
@@ -185,21 +180,19 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
       <div className="mb-6">
         <div
           onClick={() => !isProcessing && fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
+          className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
             isProcessing 
-              ? 'opacity-50 cursor-not-allowed border-gray-700' 
-              : 'border-gray-700 hover:border-purple-500 hover:bg-purple-900/20 cursor-pointer'
+              ? 'opacity-50 cursor-not-allowed border-[#2a3441]' 
+              : 'border-[#2a3441] hover:border-teal-500/50 hover:bg-[#1a2332]/40 cursor-pointer'
           }`}
         >
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-2xl w-20 h-20 mx-auto mb-4 flex items-center justify-center shadow-lg">
-            <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-            </svg>
-          </div>
-          <p className="text-sm font-semibold text-gray-300 mb-2">
+          <svg className="mx-auto h-12 w-12 text-gray-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+          </svg>
+          <p className="text-sm text-gray-300 mb-1">
             Click to upload images (multiple selection supported)
           </p>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-500">
             PNG, JPG, GIF up to 10MB each
           </p>
         </div>
@@ -217,30 +210,30 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
 
       {/* Queue Status */}
       {queue.length > 0 && (
-        <div className="mb-6 p-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
+        <div className="mb-6 p-4 bg-[#1a2332]/50 rounded-xl border border-[#2a3441]/50">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-gray-300">Queue Status</h3>
             {isProcessing && (
-              <div className="flex items-center text-purple-400">
+              <div className="flex items-center text-teal-400">
                 <ArrowPathIcon className="h-4 w-4 animate-spin mr-2" />
                 <span className="text-xs font-medium">Processing...</span>
               </div>
             )}
           </div>
           <div className="grid grid-cols-4 gap-2 text-center text-xs">
-            <div className="bg-gray-700/50 rounded-lg px-2 py-2 border border-gray-600/50">
+            <div className="bg-[#1a2332]/50 rounded-lg px-2 py-2 border border-[#2a3441]">
               <div className="font-semibold text-gray-200">{pendingCount}</div>
               <div className="text-gray-400">Pending</div>
             </div>
-            <div className="bg-blue-900/50 rounded-lg px-2 py-2 border border-blue-700/50">
-              <div className="font-semibold text-blue-300">{processingCount}</div>
-              <div className="text-blue-400">Processing</div>
+            <div className="bg-teal-900/30 rounded-lg px-2 py-2 border border-teal-700/30">
+              <div className="font-semibold text-teal-300">{processingCount}</div>
+              <div className="text-teal-400">Processing</div>
             </div>
-            <div className="bg-green-900/50 rounded-lg px-2 py-2 border border-green-700/50">
+            <div className="bg-green-900/30 rounded-lg px-2 py-2 border border-green-700/30">
               <div className="font-semibold text-green-300">{completedCount}</div>
               <div className="text-green-400">Completed</div>
             </div>
-            <div className="bg-red-900/50 rounded-lg px-2 py-2 border border-red-700/50">
+            <div className="bg-red-900/30 rounded-lg px-2 py-2 border border-red-700/30">
               <div className="font-semibold text-red-300">{errorCount}</div>
               <div className="text-red-400">Failed</div>
             </div>
@@ -254,15 +247,15 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
           {queue.map((item) => (
             <div
               key={item.id}
-              className={`border-2 rounded-xl p-3 flex items-center space-x-3 transition-all duration-300 ${
-                item.status === 'processing' ? 'border-purple-500/50 bg-purple-900/20' :
+              className={`border-2 rounded-lg p-3 flex items-center space-x-3 transition-all duration-200 ${
+                item.status === 'processing' ? 'border-teal-500/50 bg-teal-900/20' :
                 item.status === 'completed' ? 'border-green-500/50 bg-green-900/20' :
                 item.status === 'error' ? 'border-red-500/50 bg-red-900/20' :
-                'border-gray-700 bg-gray-800/50'
+                'border-[#2a3441] bg-[#1a2332]/40'
               }`}
             >
               {/* Thumbnail */}
-              <div className="w-16 h-16 flex-shrink-0 relative bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
+              <div className="w-16 h-16 flex-shrink-0 relative bg-[#0a1929] rounded-lg overflow-hidden border border-[#2a3441]">
                 <img
                   src={item.preview}
                   alt="Preview"
@@ -283,7 +276,7 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
                       </span>
                     )}
                     {item.status === 'processing' && (
-                      <span className="text-xs text-purple-300 px-2 py-0.5 bg-purple-900/50 rounded-lg border border-purple-700/50 flex items-center">
+                      <span className="text-xs text-teal-300 px-2 py-0.5 bg-teal-900/50 rounded-lg border border-teal-700/50 flex items-center">
                         <ArrowPathIcon className="h-3 w-3 animate-spin mr-1" />
                         Processing
                       </span>
