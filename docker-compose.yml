@@ -9,10 +9,10 @@ services:
     env_file:
       - ./env.dev
     volumes:
-      - ./apps/backend:/app/backend
-      - ./apps/frontend:/app/frontend
-      - /app/frontend/node_modules
-      - /app/frontend/.next
+      - ./apps/backend:/app/apps/backend
+      - ./apps/frontend:/app/apps/frontend
+      - /app/apps/frontend/node_modules
+      - /app/apps/frontend/.next
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health", "&&", "curl", "-f", "http://localhost:3000"]
