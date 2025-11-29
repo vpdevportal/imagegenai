@@ -134,18 +134,24 @@ class PromptRepository:
             return row is not None
     
     def get_recent(self, limit: int = 50, model: Optional[str] = None) -> List[Prompt]:
-        """Get recent prompts"""
+        """Get recent prompts (excludes thumbnail_data BLOB for performance)"""
         with db_connection.get_connection() as conn:
             if model:
                 cursor = conn.execute("""
-                    SELECT * FROM prompts 
+                    SELECT id, prompt_text, prompt_hash, total_uses, total_fails,
+                           first_used_at, last_used_at, model,
+                           thumbnail_mime, thumbnail_width, thumbnail_height
+                    FROM prompts 
                     WHERE model = ? AND thumbnail_data IS NOT NULL
                     ORDER BY last_used_at DESC
                     LIMIT ?
                 """, (model, limit))
             else:
                 cursor = conn.execute("""
-                    SELECT * FROM prompts 
+                    SELECT id, prompt_text, prompt_hash, total_uses, total_fails,
+                           first_used_at, last_used_at, model,
+                           thumbnail_mime, thumbnail_width, thumbnail_height
+                    FROM prompts 
                     WHERE thumbnail_data IS NOT NULL
                     ORDER BY last_used_at DESC
                     LIMIT ?
@@ -154,18 +160,24 @@ class PromptRepository:
             return [self._row_to_prompt(row) for row in cursor.fetchall()]
     
     def get_popular(self, limit: int = 50, model: Optional[str] = None) -> List[Prompt]:
-        """Get popular prompts"""
+        """Get popular prompts (excludes thumbnail_data BLOB for performance)"""
         with db_connection.get_connection() as conn:
             if model:
                 cursor = conn.execute("""
-                    SELECT * FROM prompts 
+                    SELECT id, prompt_text, prompt_hash, total_uses, total_fails,
+                           first_used_at, last_used_at, model,
+                           thumbnail_mime, thumbnail_width, thumbnail_height
+                    FROM prompts 
                     WHERE model = ? AND thumbnail_data IS NOT NULL
                     ORDER BY total_uses DESC, last_used_at DESC
                     LIMIT ?
                 """, (model, limit))
             else:
                 cursor = conn.execute("""
-                    SELECT * FROM prompts 
+                    SELECT id, prompt_text, prompt_hash, total_uses, total_fails,
+                           first_used_at, last_used_at, model,
+                           thumbnail_mime, thumbnail_width, thumbnail_height
+                    FROM prompts 
                     WHERE thumbnail_data IS NOT NULL
                     ORDER BY total_uses DESC, last_used_at DESC
                     LIMIT ?
@@ -174,18 +186,24 @@ class PromptRepository:
             return [self._row_to_prompt(row) for row in cursor.fetchall()]
     
     def get_most_failed(self, limit: int = 50, model: Optional[str] = None) -> List[Prompt]:
-        """Get most failed prompts"""
+        """Get most failed prompts (excludes thumbnail_data BLOB for performance)"""
         with db_connection.get_connection() as conn:
             if model:
                 cursor = conn.execute("""
-                    SELECT * FROM prompts 
+                    SELECT id, prompt_text, prompt_hash, total_uses, total_fails,
+                           first_used_at, last_used_at, model,
+                           thumbnail_mime, thumbnail_width, thumbnail_height
+                    FROM prompts 
                     WHERE model = ? AND thumbnail_data IS NOT NULL AND total_fails > 0
                     ORDER BY total_fails DESC, last_used_at DESC
                     LIMIT ?
                 """, (model, limit))
             else:
                 cursor = conn.execute("""
-                    SELECT * FROM prompts 
+                    SELECT id, prompt_text, prompt_hash, total_uses, total_fails,
+                           first_used_at, last_used_at, model,
+                           thumbnail_mime, thumbnail_width, thumbnail_height
+                    FROM prompts 
                     WHERE thumbnail_data IS NOT NULL AND total_fails > 0
                     ORDER BY total_fails DESC, last_used_at DESC
                     LIMIT ?
@@ -194,11 +212,14 @@ class PromptRepository:
             return [self._row_to_prompt(row) for row in cursor.fetchall()]
     
     def search(self, query: str, limit: int = 20) -> List[Prompt]:
-        """Search prompts by text"""
+        """Search prompts by text (excludes thumbnail_data BLOB for performance)"""
         search_term = f"%{query.lower()}%"
         with db_connection.get_connection() as conn:
             cursor = conn.execute("""
-                SELECT * FROM prompts 
+                SELECT id, prompt_text, prompt_hash, total_uses, total_fails,
+                       first_used_at, last_used_at, model,
+                       thumbnail_mime, thumbnail_width, thumbnail_height
+                FROM prompts 
                 WHERE LOWER(prompt_text) LIKE ?
                 ORDER BY total_uses DESC, last_used_at DESC
                 LIMIT ?
@@ -282,19 +303,49 @@ class PromptRepository:
     
     def _row_to_prompt(self, row) -> Prompt:
         """Convert database row to Prompt model"""
+        # Handle cases where thumbnail_data might not be in the SELECT (for performance)
+        # sqlite3.Row supports 'in' operator to check for key existence
+        row_keys = row.keys()
+        
+        # Helper to safely get value from row
+        def safe_get(key, default=None):
+            if key in row_keys:
+                try:
+                    value = row[key]
+                    return value if value is not None else default
+                except (KeyError, IndexError):
+                    return default
+            return default
+        
+        thumbnail_data = safe_get('thumbnail_data')
+        
+        first_used_at = safe_get('first_used_at')
+        if first_used_at:
+            try:
+                first_used_at = datetime.fromisoformat(first_used_at)
+            except (ValueError, TypeError):
+                first_used_at = None
+        
+        last_used_at = safe_get('last_used_at')
+        if last_used_at:
+            try:
+                last_used_at = datetime.fromisoformat(last_used_at)
+            except (ValueError, TypeError):
+                last_used_at = None
+        
         return Prompt(
             id=row['id'],
             prompt_text=row['prompt_text'],
             prompt_hash=row['prompt_hash'],
             total_uses=row['total_uses'],
-            total_fails=row['total_fails'],  # Column exists, so no need for conditional check
-            first_used_at=datetime.fromisoformat(row['first_used_at']) if row['first_used_at'] else None,
-            last_used_at=datetime.fromisoformat(row['last_used_at']) if row['last_used_at'] else None,
-            model=row['model'],
-            thumbnail_data=row['thumbnail_data'],
-            thumbnail_mime=row['thumbnail_mime'],
-            thumbnail_width=row['thumbnail_width'],
-            thumbnail_height=row['thumbnail_height']
+            total_fails=safe_get('total_fails', 0),
+            first_used_at=first_used_at,
+            last_used_at=last_used_at,
+            model=safe_get('model'),
+            thumbnail_data=thumbnail_data,
+            thumbnail_mime=safe_get('thumbnail_mime'),
+            thumbnail_width=safe_get('thumbnail_width'),
+            thumbnail_height=safe_get('thumbnail_height')
         )
 
 # Global repository instance
