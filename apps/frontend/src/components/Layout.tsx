@@ -30,24 +30,24 @@ export default function Layout({ children }: LayoutProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
       {/* Header with Navigation */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="glass-effect sticky top-0 z-40 border-b border-[#2a3441]/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/generate" className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-primary-600 to-blue-600 p-2 rounded-lg">
-                <SparklesIcon className="h-6 w-6 text-white" />
+            <Link href="/generate" className="flex items-center space-x-3 group">
+              <div className="bg-gradient-to-r from-teal-500 to-cyan-600 p-2.5 rounded-lg shadow-md group-hover:shadow-lg transition-all duration-200">
+                <SparklesIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">ImageGenAI</h1>
+                <h1 className="text-xl font-bold text-gray-100">ImageGenAI</h1>
                 <p className="text-xs text-gray-500">AI-Powered Image Generation</p>
               </div>
             </Link>
 
             {/* Navigation Tabs */}
-            <nav className="hidden md:flex space-x-1">
+            <nav className="hidden md:flex space-x-2">
               {navigation.map((item) => {
                 const Icon = item.icon
                 return (
@@ -69,7 +69,7 @@ export default function Layout({ children }: LayoutProps) {
               <select
                 value={pathname}
                 onChange={(e) => window.location.href = e.target.value}
-                className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+                className="input-field text-sm"
               >
                 {navigation.map((item) => (
                   <option key={item.href} value={item.href}>
@@ -83,22 +83,22 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main className="flex-1 relative z-10">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-auto">
+      <footer className="glass-effect border-t border-[#2a3441]/50 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="bg-gradient-to-r from-primary-600 to-blue-600 p-1 rounded">
+              <div className="bg-gradient-to-r from-teal-500 to-cyan-600 p-1.5 rounded">
                 <SparklesIcon className="h-4 w-4 text-white" />
               </div>
-              <span className="text-sm text-gray-600">ImageGenAI</span>
+              <span className="text-sm text-gray-400">ImageGenAI</span>
             </div>
             <div className="text-sm text-gray-500">
-              © 2024 ImageGenAI. Built with FastAPI and Next.js
+              Powered by AI
             </div>
           </div>
         </div>
