@@ -3,10 +3,9 @@ Configuration settings for the ImageGenAI application
 """
 
 import os
-import json
-from typing import Optional, Union, Any
+from typing import Optional, Union
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator, field_serializer
+from pydantic import field_validator
 
 from ..constants import (
     DEFAULT_GEMINI_MODEL,
@@ -57,35 +56,10 @@ class Settings(BaseSettings):
     
     @field_validator('allowed_image_types', mode='before')
     @classmethod
-    def parse_allowed_image_types(cls, v: Any) -> Any:
-        """Parse allowed_image_types from various formats"""
-        if isinstance(v, list):
-            return v
+    def parse_allowed_image_types(cls, v):
         if isinstance(v, str):
-            # Strip whitespace first
-            v = v.strip()
-            # Remove surrounding brackets if present but malformed
-            if v.startswith('[') and v.endswith(']'):
-                # Try to parse as JSON
-                try:
-                    parsed = json.loads(v)
-                    if isinstance(parsed, list):
-                        return parsed
-                except (json.JSONDecodeError, ValueError) as e:
-                    # If JSON parsing fails, try to extract values manually
-                    # Remove brackets and split by comma
-                    content = v[1:-1].strip()
-                    if content:
-                        items = [item.strip().strip('"').strip("'") for item in content.split(',') if item.strip()]
-                        if items:
-                            return items
-            # Try comma-separated format
-            if ',' in v:
-                return [item.strip().strip('"').strip("'") for item in v.split(',') if item.strip()]
-            # If single value, return as list
-            if v:
-                return [v.strip().strip('"').strip("'")]
-        return v or DEFAULT_ALLOWED_IMAGE_TYPES
+            return [item.strip() for item in v.split(',') if item.strip()]
+        return v
     
     model_config = SettingsConfigDict(
         env_file=".env",
