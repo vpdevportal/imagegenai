@@ -49,14 +49,14 @@ wait\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Expose ports
-# PORT is the main entry point (frontend) - set by Coolify
+# Port 3000 is the default main entry point (frontend) - can be overridden by PORT env var
 # Port 8000 is for backend API (internal)
-EXPOSE ${PORT:-3000} 8000
+EXPOSE 3000 8000
 
 # Health check - check both frontend and backend
-# Frontend port uses PORT env var, backend is always 8000
+# Frontend port uses PORT env var (defaults to 3000), backend is always 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health && curl -f http://localhost:${PORT:-3000} || exit 1
+    CMD sh -c "curl -f http://localhost:8000/api/health && curl -f http://localhost:${PORT:-3000} || exit 1"
 
 # Start both services
 CMD ["/app/start.sh"]
