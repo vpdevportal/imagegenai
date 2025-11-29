@@ -162,7 +162,7 @@ export default function ImageGenerationForm({
 
   return (
     <div className="card">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+      <h3 className="text-lg font-semibold text-gray-100 mb-6">
         Generate New Image
       </h3>
       
@@ -178,10 +178,10 @@ export default function ImageGenerationForm({
         <div>
           {!previewUrl ? (
             <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer ${
                 dragActive 
-                  ? 'border-primary-500 bg-primary-50' 
-                  : 'border-gray-300 hover:border-primary-400'
+                  ? 'border-teal-500 bg-[#1a2332]/80' 
+                  : 'border-[#2a3441] hover:border-teal-500/50 hover:bg-[#1a2332]/40'
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -189,13 +189,16 @@ export default function ImageGenerationForm({
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
             >
-              <PhotoIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-sm text-gray-600 mb-2">
+              <PhotoIcon className="mx-auto h-12 w-12 text-gray-500 mb-3" />
+              <p className="text-sm text-gray-300 mb-1">
                 Click to upload a reference image
               </p>
               <p className="text-xs text-gray-500">
                 PNG, JPG, GIF up to 10MB
               </p>
+              {dragActive && (
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 animate-pulse"></div>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -206,19 +209,19 @@ export default function ImageGenerationForm({
             </div>
           ) : (
             /* Preview Area */
-            <div className="relative">
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className="w-full h-auto max-h-96 object-contain rounded-lg"
-              />
+            <div className="relative group">
+              <div className="rounded-lg overflow-hidden border border-[#2a3441]">
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="w-full h-auto max-h-96 object-contain"
+                />
+              </div>
               <button
                 onClick={clearImage}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                className="absolute top-2 right-2 bg-red-500/90 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors shadow-lg"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <XMarkIcon className="h-4 w-4" />
               </button>
             </div>
           )}
@@ -226,7 +229,7 @@ export default function ImageGenerationForm({
 
         {/* Prompt Input */}
         <div>
-          <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="prompt" className="block text-sm font-medium text-gray-300 mb-2">
             Describe how you want to use the reference image
           </label>
           <textarea
@@ -239,11 +242,11 @@ export default function ImageGenerationForm({
             rows={4}
           />
           <div className="flex justify-between items-center mt-1">
-            <span className={`text-xs ${prompt.length > 1000 ? 'text-red-600' : prompt.length > 800 ? 'text-yellow-600' : 'text-gray-500'}`}>
+            <span className={`text-xs ${prompt.length > 1000 ? 'text-red-400' : 'text-gray-500'}`}>
               {prompt.length}/1000 characters
             </span>
             {prompt.length > 1000 && (
-              <span className="text-xs text-red-600 font-medium">
+              <span className="text-xs text-red-400">
                 Prompt too long!
               </span>
             )}
@@ -251,21 +254,21 @@ export default function ImageGenerationForm({
         </div>
 
         {error && (
-          <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+          <div className="text-red-300 text-sm bg-red-900/20 border border-red-500/30 rounded-lg p-3">
             {error}
           </div>
         )}
 
         {/* Retry Progress */}
         {isGenerating && retryAttempt > 0 && (
-          <div className="text-blue-600 text-sm bg-blue-50 p-3 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="text-teal-300 text-sm bg-teal-900/20 border border-teal-500/30 rounded-lg p-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-teal-400 border-t-transparent"></div>
               <span>Retrying... Attempt {retryAttempt} of {maxRetries}</span>
             </div>
-            <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
+            <div className="w-full bg-teal-900/30 rounded-full h-2 overflow-hidden">
               <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                className="bg-gradient-to-r from-teal-500 to-cyan-600 h-2 rounded-full transition-all duration-500" 
                 style={{ width: `${(retryAttempt / maxRetries) * 100}%` }}
               ></div>
             </div>
@@ -282,7 +285,7 @@ export default function ImageGenerationForm({
         >
           {isGenerating ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
               <span>
                 {retryAttempt > 0 ? `Retrying... (${retryAttempt}/${maxRetries})` : 'Generating...'}
               </span>

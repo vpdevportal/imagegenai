@@ -137,7 +137,7 @@ export default function ImageTeleportForm({
   ) => {
     return (
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-semibold text-gray-300 mb-2">
           {label}
         </label>
         <div
@@ -152,9 +152,9 @@ export default function ImageTeleportForm({
             }
           }}
           onClick={() => !isGenerating && fileInputRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive
-              ? 'border-purple-500 bg-purple-50'
-              : 'border-gray-300 hover:border-purple-400'
+          className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${dragActive
+              ? 'border-teal-500 bg-[#1a2332]/80'
+              : 'border-[#2a3441] hover:border-teal-500/50 hover:bg-[#1a2332]/40'
             } ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         >
           {previewUrl ? (
@@ -172,7 +172,7 @@ export default function ImageTeleportForm({
                     e.stopPropagation()
                     clearImage(type)
                   }}
-                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                  className="absolute top-2 right-2 p-2 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-full hover:from-red-600 hover:to-pink-700 transition-all duration-300 shadow-lg"
                 >
                   <XMarkIcon className="h-5 w-5" />
                 </button>
@@ -180,11 +180,11 @@ export default function ImageTeleportForm({
             </div>
           ) : (
             <>
-              <PhotoIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-sm text-gray-600 mb-2">
+              <PhotoIcon className="mx-auto h-12 w-12 text-gray-500 mb-3" />
+              <p className="text-sm font-semibold text-gray-300 mb-2">
                 {description}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-400">
                 PNG, JPG, GIF up to 10MB
               </p>
             </>
@@ -213,8 +213,7 @@ export default function ImageTeleportForm({
 
   return (
     <div className="card">
-      <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-        <GlobeAmericasIcon className="h-5 w-5 mr-2 text-purple-600" />
+      <h3 className="text-lg font-semibold text-gray-100 mb-6">
         Replace Person&apos;s Background
       </h3>
 
@@ -245,8 +244,8 @@ export default function ImageTeleportForm({
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+            <p className="text-sm text-red-300">{error}</p>
           </div>
         )}
 
@@ -254,7 +253,7 @@ export default function ImageTeleportForm({
         <button
           type="submit"
           disabled={!personFile || !backgroundFile || isGenerating}
-          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-4 rounded-md hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center"
+          className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
         >
           {isGenerating ? (
             <>
