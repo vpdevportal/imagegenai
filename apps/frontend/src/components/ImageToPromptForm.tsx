@@ -313,16 +313,14 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
                     <ArrowPathIcon className="h-4 w-4" />
                   </button>
                 )}
-                {(item.status === 'pending' || item.status === 'error' || item.status === 'completed') && (
-                  <button
-                    onClick={() => removeFromQueue(item.id)}
-                    disabled={item.status === 'processing'}
-                    className="p-1 text-red-600 hover:text-red-700 rounded hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Remove"
-                  >
-                    <XMarkIcon className="h-4 w-4" />
-                  </button>
-                )}
+                <button
+                  onClick={() => removeFromQueue(item.id)}
+                  disabled={item.status === 'processing'}
+                  className="p-1 text-red-600 hover:text-red-700 rounded hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Remove"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
               </div>
             </div>
           ))}
