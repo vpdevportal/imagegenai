@@ -1,7 +1,25 @@
 import axios from 'axios'
 import { Prompt, PromptListResponse, PromptStats } from '@/types'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+// Use relative URL in production (works with Next.js rewrites) or fallback to env/localhost
+// This prevents local network permission prompts when deployed
+const getApiBaseUrl = () => {
+  // If NEXT_PUBLIC_API_URL is explicitly set, use it
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+  
+  // In browser (client-side), use relative URL to leverage Next.js rewrites
+  // This avoids local network permission issues when deployed
+  if (typeof window !== 'undefined') {
+    return '/api'
+  }
+  
+  // Server-side fallback (shouldn't happen in this client-side code, but just in case)
+  return 'http://localhost:8000/api'
+}
+
+const API_BASE_URL = getApiBaseUrl()
 
 // Create axios instance with default config
 const api = axios.create({
