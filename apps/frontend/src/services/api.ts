@@ -4,19 +4,56 @@ import { Prompt, PromptListResponse, PromptStats } from '@/types'
 // Use relative URL in production (works with Next.js rewrites) or fallback to env/localhost
 // This prevents local network permission prompts when deployed
 const getApiBaseUrl = () => {
-  // If NEXT_PUBLIC_API_URL is explicitly set, use it
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL
-  }
-  
-  // In browser (client-side), use relative URL to leverage Next.js rewrites
+  // In browser (client-side), always use relative URL to leverage Next.js rewrites
   // This avoids local network permission issues when deployed
+  // The rewrite in next.config.js handles proxying to the backend
   if (typeof window !== 'undefined') {
     return '/api'
   }
   
-  // Server-side fallback (shouldn't happen in this client-side code, but just in case)
+  // Server-side: use environment variable if set, otherwise localhost
+  // This is for SSR/SSG scenarios (if any)
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+  
   return 'http://localhost:8000/api'
+}
+
+// Normalize image URLs to use relative paths to avoid local network permission issues
+// Converts absolute localhost/internal URLs to relative URLs that go through Next.js proxy
+export const normalizeImageUrl = (url: string | undefined | null): string => {
+  if (!url || url === '/placeholder-image.jpg') {
+    return '/placeholder-image.jpg'
+  }
+
+  // If already relative, return as-is
+  if (url.startsWith('/')) {
+    return url
+  }
+
+  try {
+    const urlObj = new URL(url, typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+    
+    // If it's a localhost or same-origin URL, convert to relative path
+    // This ensures it goes through Next.js proxy instead of direct backend access
+    if (urlObj.hostname === 'localhost' || 
+        urlObj.hostname === '127.0.0.1' || 
+        (typeof window !== 'undefined' && urlObj.hostname === window.location.hostname)) {
+      // If it's an API endpoint, ensure it starts with /api
+      if (urlObj.pathname.startsWith('/api/')) {
+        return urlObj.pathname + urlObj.search
+      }
+      // Otherwise, return the pathname
+      return urlObj.pathname + urlObj.search
+    }
+    
+    // For external URLs, return as-is (they're safe)
+    return url
+  } catch (e) {
+    // If URL parsing fails, assume it's already relative or return as-is
+    return url
+  }
 }
 
 const API_BASE_URL = getApiBaseUrl()
@@ -166,10 +203,12 @@ export const getPromptStats = async (): Promise<PromptStats> => {
 }
 
 export const getPromptThumbnail = async (promptId: number): Promise<string> => {
+  // Ensure we use relative URL to avoid local network permission issues
   const response = await api.get(`/prompts/${promptId}/thumbnail`, {
     responseType: 'blob'
   })
 
+  // Create blob URL from the response - this is safe and doesn't trigger network permissions
   return URL.createObjectURL(response.data)
 }
 

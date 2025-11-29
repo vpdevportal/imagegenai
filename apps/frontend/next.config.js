@@ -6,12 +6,15 @@ const nextConfig = {
   // Proxy API requests to backend - works in both dev and production
   // This allows frontend to use relative URLs like '/api' which get proxied to backend
   async rewrites() {
-    // Always proxy /api/* requests to the backend running on port 8000
-    // This is especially useful in production when both services are in the same container
+    // Use environment variable for backend URL, fallback to localhost for development
+    // In production (Coolify), both services run in the same container, so localhost:8000 works
+    // The rewrite happens server-side, so it doesn't trigger browser local network permissions
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
+    
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8000/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
       },
     ]
   },
