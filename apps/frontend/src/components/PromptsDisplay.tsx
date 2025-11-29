@@ -237,33 +237,33 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
     <div className="space-y-6">
       {/* Header with Stats */}
       {stats && (
-        <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg p-4">
+        <div className="bg-gradient-to-r from-indigo-900/30 to-purple-900/30 rounded-xl p-4 border border-gray-700/50">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-              <ChartBarIcon className="h-5 w-5 mr-2 text-primary-600" />
+            <h3 className="text-lg font-semibold text-gray-200 flex items-center">
+              <ChartBarIcon className="h-5 w-5 mr-2 text-indigo-400" />
               Prompt Statistics
             </h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary-600">{stats.total_prompts}</div>
-              <div className="text-sm text-gray-600">Total Prompts</div>
+              <div className="text-2xl font-bold text-indigo-400">{stats.total_prompts}</div>
+              <div className="text-sm text-gray-400">Total Prompts</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.total_uses}</div>
-              <div className="text-sm text-gray-600">Total Uses</div>
+              <div className="text-2xl font-bold text-blue-400">{stats.total_uses}</div>
+              <div className="text-sm text-gray-400">Total Uses</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{stats.total_fails}</div>
-              <div className="text-sm text-gray-600">Total Failures</div>
+              <div className="text-2xl font-bold text-red-400">{stats.total_fails}</div>
+              <div className="text-sm text-gray-400">Total Failures</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{stats.prompts_with_thumbnails}</div>
-              <div className="text-sm text-gray-600">With Thumbnails</div>
+              <div className="text-2xl font-bold text-green-400">{stats.prompts_with_thumbnails}</div>
+              <div className="text-sm text-gray-400">With Thumbnails</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.most_popular_uses}</div>
-              <div className="text-sm text-gray-600">Most Popular Uses</div>
+              <div className="text-2xl font-bold text-purple-400">{stats.most_popular_uses}</div>
+              <div className="text-sm text-gray-400">Most Popular Uses</div>
             </div>
           </div>
         </div>
@@ -284,12 +284,12 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                 setActiveTab('search')
               }
             }}
-            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="input-field pl-10 pr-10"
           />
           {searchQuery && (
             <button
               onClick={clearSearch}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
@@ -297,13 +297,13 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+        <div className="flex space-x-1 bg-gray-800/50 p-1 rounded-xl border border-gray-700/50">
           <button
             onClick={() => setActiveTab('recent')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
               activeTab === 'recent'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
             }`}
           >
             <ClockIcon className="h-4 w-4 mr-2" />
@@ -311,10 +311,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
           </button>
           <button
             onClick={() => setActiveTab('popular')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
               activeTab === 'popular'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
             }`}
           >
             <FireIcon className="h-4 w-4 mr-2" />
@@ -322,10 +322,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
           </button>
           <button
             onClick={() => setActiveTab('most-failed')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
               activeTab === 'most-failed'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
             }`}
           >
             <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
@@ -333,10 +333,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
           </button>
           <button
             onClick={() => setActiveTab('search')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
               activeTab === 'search'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
             }`}
           >
             <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
@@ -348,21 +348,21 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
       {/* Prompts Grid */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
         </div>
       ) : error ? (
         <div className="text-center py-12">
-          <div className="text-red-600 mb-2">{error}</div>
+          <div className="text-red-400 mb-2 font-medium">{error}</div>
           <button
             onClick={() => loadPrompts(activeTab)}
-            className="text-primary-600 hover:text-primary-700 font-medium"
+            className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
           >
             Try again
           </button>
         </div>
       ) : prompts.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-gray-500 mb-2">
+          <div className="text-gray-400 mb-2 font-medium">
             {activeTab === 'search' ? 'No prompts found' : 
              activeTab === 'most-failed' ? 'No failed prompts found' : 
              'No prompts available'}
@@ -370,7 +370,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
           {activeTab === 'search' && (
             <button
               onClick={clearSearch}
-              className="text-primary-600 hover:text-primary-700 font-medium"
+              className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
             >
               Clear search
             </button>
@@ -382,10 +382,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
             <div
               key={prompt.id}
               onClick={() => handlePromptClick(prompt)}
-              className="bg-white rounded-lg border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer group flex h-20 overflow-hidden"
+              className="bg-gray-800/50 rounded-xl border-2 border-gray-700/50 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-300 cursor-pointer group flex h-20 overflow-hidden"
             >
               {/* Thumbnail */}
-              <div className="w-20 h-20 flex-shrink-0 relative bg-gray-100 rounded-l-lg overflow-hidden border-r border-gray-200">
+              <div className="w-20 h-20 flex-shrink-0 relative bg-gray-900 rounded-l-xl overflow-hidden border-r border-gray-700/50">
                 {thumbnails[prompt.id] ? (
                   <Image
                     src={thumbnails[prompt.id]}
@@ -417,21 +417,21 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
               
               {/* Content */}
               <div className="flex-1 px-3 py-2 flex flex-col justify-between">
-                <p className="text-xs text-gray-900 line-clamp-2 leading-tight">
+                <p className="text-xs text-gray-200 line-clamp-2 leading-tight font-medium">
                   {prompt.prompt_text}
                 </p>
-                <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
                   <span>{formatDate(prompt.last_used_at)}</span>
                   <div className="flex items-center space-x-2">
                     {prompt.model && (
-                      <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">
+                      <span className="bg-gray-700/50 px-1.5 py-0.5 rounded-lg text-xs border border-gray-600/50">
                         {prompt.model}
                       </span>
                     )}
                     <button
                       onClick={(e) => handleDeletePrompt(prompt.id, e)}
                       disabled={deletingIds.has(prompt.id)}
-                      className="text-red-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       title="Delete prompt"
                     >
                       {deletingIds.has(prompt.id) ? (
@@ -450,8 +450,8 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
 
       {/* Pagination Controls */}
       {!loading && !error && prompts.length > 0 && totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 px-4 py-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center text-sm text-gray-700">
+        <div className="flex items-center justify-between mt-6 px-4 py-3 bg-gray-800/50 rounded-xl border border-gray-700/50">
+          <div className="flex items-center text-sm text-gray-300">
             <span>
               Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} prompts
             </span>
@@ -462,7 +462,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="px-3 py-1 text-sm font-medium text-gray-300 bg-gray-700/50 border border-gray-600/50 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-700/50 transition-colors"
             >
               Previous
             </button>
@@ -485,10 +485,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`px-3 py-1 text-sm font-medium rounded-md ${
+                    className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
                       currentPage === pageNum
-                        ? 'bg-primary-600 text-white'
-                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                        : 'text-gray-300 bg-gray-700/50 border border-gray-600/50 hover:bg-gray-700'
                     }`}
                   >
                     {pageNum}
@@ -501,7 +501,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="px-3 py-1 text-sm font-medium text-gray-300 bg-gray-700/50 border border-gray-600/50 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-700/50 transition-colors"
             >
               Next
             </button>

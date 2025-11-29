@@ -147,11 +147,11 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
     return (
       <div className="card">
         <div className="text-center py-12">
-          <PhotoIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <PhotoIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-300 mb-2">
             No images created yet
           </h3>
-          <p className="text-gray-500">
+          <p className="text-gray-500 text-sm">
             Generate new images or modify existing ones using the form on the left
           </p>
         </div>
@@ -162,13 +162,13 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-gray-100">
           Created Images ({images.length})
         </h3>
         {images.length > 0 && (
           <button
             onClick={handleDownloadAll}
-            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-600 to-blue-600 text-white text-sm font-medium rounded-md hover:from-primary-700 hover:to-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            className="btn-secondary flex items-center space-x-2 text-sm"
             title="Download all images"
           >
             <ArrowDownTrayIcon className="h-4 w-4" />
@@ -181,10 +181,10 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
         {images.map((image) => (
           <div
             key={image.id}
-            className="relative group bg-gray-100 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+            className="relative group bg-[#1a2332]/40 rounded-lg overflow-hidden border border-[#2a3441] hover:border-teal-500/30 transition-all duration-200"
           >
             {/* Generated Image */}
-            <div className="relative w-full" style={{ minHeight: '300px' }}>
+            <div className="relative w-full bg-[#0a1929]" style={{ minHeight: '300px' }}>
               <Image
                 src={image.modifiedImageUrl || image.imageUrl || '/placeholder-image.jpg'}
                 alt={image.prompt}
@@ -198,24 +198,24 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
               />
               
               {/* Overlay with actions */}
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200">
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <p className="text-white text-sm mb-2 line-clamp-2">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/60 to-transparent">
+                  <p className="text-white text-sm font-medium mb-3 line-clamp-2 drop-shadow-lg">
                     {image.prompt}
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-200">
+                    <span className="text-xs text-gray-200 font-medium">
                       {new Date(image.createdAt).toLocaleDateString()}
                     </span>
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleSavePrompt(image)}
                         disabled={savingIds.has(image.id) || savedIds.has(image.id)}
-                        className="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-110 active:scale-95 shadow-lg"
                         title={savedIds.has(image.id) ? 'Saved' : 'Save Prompt'}
                       >
                         {savingIds.has(image.id) ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                         ) : savedIds.has(image.id) ? (
                           <CheckIcon className="h-4 w-4 text-white" />
                         ) : (
@@ -224,7 +224,7 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
                       </button>
                       <button
                         onClick={() => handleDownload(image)}
-                        className="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                        className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 transform hover:scale-110 active:scale-95 shadow-lg"
                         title="Download"
                       >
                         <ArrowDownTrayIcon className="h-4 w-4 text-white" />
@@ -232,7 +232,7 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
                       {onDelete && (
                         <button
                           onClick={() => handleDelete(image)}
-                          className="p-1 rounded-full bg-red-500/80 hover:bg-red-600/80 transition-colors"
+                          className="p-2 rounded-xl bg-gradient-to-r from-red-500/80 to-pink-600/80 hover:from-red-600 hover:to-pink-700 backdrop-blur-sm transition-all duration-300 transform hover:scale-110 active:scale-95 shadow-lg"
                           title="Delete Image"
                         >
                           <TrashIcon className="h-4 w-4 text-white" />
@@ -244,41 +244,41 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
               </div>
 
               {/* Status badge and action buttons */}
-              <div className="absolute top-2 right-2 flex items-center space-x-2">
+              <div className="absolute top-4 right-4 flex items-center space-x-2 opacity-100 group-hover:opacity-0 transition-opacity duration-300">
                 <button
                   onClick={() => handleSavePrompt(image)}
                   disabled={savingIds.has(image.id) || savedIds.has(image.id)}
-                  className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 rounded-xl bg-gray-800/95 backdrop-blur-sm hover:bg-gray-700 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-110 active:scale-95"
                   title={savedIds.has(image.id) ? 'Saved' : 'Save Prompt'}
                 >
                   {savingIds.has(image.id) ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-indigo-400 border-t-transparent"></div>
                   ) : savedIds.has(image.id) ? (
-                    <CheckIcon className="h-4 w-4 text-green-600" />
+                    <CheckIcon className="h-4 w-4 text-green-400" />
                   ) : (
-                    <BookmarkIcon className="h-4 w-4 text-gray-700" />
+                    <BookmarkIcon className="h-4 w-4 text-indigo-400" />
                   )}
                 </button>
                 <button
                   onClick={() => handleDownload(image)}
-                  className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors shadow-sm"
+                  className="p-2 rounded-xl bg-gray-800/95 backdrop-blur-sm hover:bg-gray-700 transition-all duration-300 shadow-lg transform hover:scale-110 active:scale-95"
                   title="Download Image"
                 >
-                  <ArrowDownTrayIcon className="h-4 w-4 text-gray-700" />
+                  <ArrowDownTrayIcon className="h-4 w-4 text-indigo-400" />
                 </button>
                 {onDelete && (
                   <button
                     onClick={() => handleDelete(image)}
-                    className="p-1.5 rounded-full bg-red-500/90 hover:bg-red-600 transition-colors shadow-sm"
+                    className="p-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 transition-all duration-300 shadow-lg transform hover:scale-110 active:scale-95"
                     title="Delete Image"
                   >
                     <TrashIcon className="h-4 w-4 text-white" />
                   </button>
                 )}
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                <span className={`px-3 py-1.5 text-xs font-semibold rounded-full shadow-md backdrop-blur-sm ${
                   image.status === 'completed' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-yellow-100 text-yellow-800'
+                    ? 'bg-gradient-to-r from-green-900/80 to-emerald-900/80 text-green-300 border border-green-700/50' 
+                    : 'bg-gradient-to-r from-yellow-900/80 to-amber-900/80 text-yellow-300 border border-yellow-700/50'
                 }`}>
                   {image.type === 'modification' ? 'Modified' : 'Generated'}
                 </span>

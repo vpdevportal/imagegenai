@@ -30,65 +30,67 @@ const Toast: React.FC<{ toast: ToastType }> = ({ toast }) => {
   const getBackgroundColor = () => {
     switch (toast.type) {
       case 'success':
-        return 'bg-green-50 border-green-200'
+        return 'bg-green-900/30 border-green-700/50'
       case 'error':
-        return 'bg-red-50 border-red-200'
+        return 'bg-red-900/30 border-red-700/50'
       case 'warning':
-        return 'bg-yellow-50 border-yellow-200'
+        return 'bg-yellow-900/30 border-yellow-700/50'
       case 'info':
       default:
-        return 'bg-blue-50 border-blue-200'
+        return 'bg-blue-900/30 border-blue-700/50'
     }
   }
 
   const getTitleColor = () => {
     switch (toast.type) {
       case 'success':
-        return 'text-green-800'
+        return 'text-green-300'
       case 'error':
-        return 'text-red-800'
+        return 'text-red-300'
       case 'warning':
-        return 'text-yellow-800'
+        return 'text-yellow-300'
       case 'info':
       default:
-        return 'text-blue-800'
+        return 'text-blue-300'
     }
   }
 
   const getMessageColor = () => {
     switch (toast.type) {
       case 'success':
-        return 'text-green-700'
+        return 'text-green-400'
       case 'error':
-        return 'text-red-700'
+        return 'text-red-400'
       case 'warning':
-        return 'text-yellow-700'
+        return 'text-yellow-400'
       case 'info':
       default:
-        return 'text-blue-700'
+        return 'text-blue-400'
     }
   }
 
   return (
-    <div className={`w-80 max-w-sm ${getBackgroundColor()} border rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden`}>
-      <div className="p-4">
+    <div className={`w-80 max-w-sm ${getBackgroundColor()} border-2 rounded-2xl shadow-2xl pointer-events-auto backdrop-blur-sm overflow-hidden transform transition-all duration-300 hover:scale-[1.02]`}>
+      <div className="p-5">
         <div className="flex items-start">
           <div className="flex-shrink-0">
-            {getIcon()}
+            <div className="p-2 rounded-xl bg-gray-800/50 backdrop-blur-sm">
+              {getIcon()}
+            </div>
           </div>
           <div className="ml-3 flex-1 pt-0.5 min-w-0">
-            <p className={`text-sm font-medium ${getTitleColor()}`}>
+            <p className={`text-sm font-semibold ${getTitleColor()}`}>
               {toast.title}
             </p>
             {toast.message && (
-              <p className={`mt-1 text-sm ${getMessageColor()}`}>
+              <p className={`mt-1.5 text-sm ${getMessageColor()}`}>
                 {toast.message}
               </p>
             )}
           </div>
           <div className="ml-4 flex-shrink-0 flex">
             <button
-              className={`rounded-md inline-flex ${getTitleColor()} hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+              className={`rounded-xl inline-flex p-1.5 ${getTitleColor()} hover:bg-gray-800/50 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform hover:scale-110 active:scale-95`}
               onClick={() => removeToast(toast.id)}
             >
               <span className="sr-only">Close</span>
