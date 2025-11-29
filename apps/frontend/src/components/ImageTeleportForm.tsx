@@ -215,7 +215,7 @@ export default function ImageTeleportForm({
     <div className="card">
       <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
         <GlobeAmericasIcon className="h-5 w-5 mr-2 text-purple-600" />
-        Replace Person's Background
+        Replace Person&apos;s Background
       </h3>
 
       <form onSubmit={handleSubmit} className="space-y-6">
