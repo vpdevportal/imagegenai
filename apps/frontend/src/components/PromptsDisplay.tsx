@@ -237,20 +237,20 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
     <div className="space-y-6">
       {/* Header with Stats */}
       {stats && (
-        <div className="bg-gradient-to-r from-indigo-900/30 to-purple-900/30 rounded-xl p-4 border border-gray-700/50">
+        <div className="bg-[#1a2332]/50 rounded-xl p-4 border border-[#2a3441]/50">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold text-gray-200 flex items-center">
-              <ChartBarIcon className="h-5 w-5 mr-2 text-indigo-400" />
+              <ChartBarIcon className="h-5 w-5 mr-2 text-teal-400" />
               Prompt Statistics
             </h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-indigo-400">{stats.total_prompts}</div>
+              <div className="text-2xl font-bold text-teal-400">{stats.total_prompts}</div>
               <div className="text-sm text-gray-400">Total Prompts</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400">{stats.total_uses}</div>
+              <div className="text-2xl font-bold text-cyan-400">{stats.total_uses}</div>
               <div className="text-sm text-gray-400">Total Uses</div>
             </div>
             <div className="text-center">
@@ -262,7 +262,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
               <div className="text-sm text-gray-400">With Thumbnails</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400">{stats.most_popular_uses}</div>
+              <div className="text-2xl font-bold text-teal-400">{stats.most_popular_uses}</div>
               <div className="text-sm text-gray-400">Most Popular Uses</div>
             </div>
           </div>
@@ -297,13 +297,13 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 bg-gray-800/50 p-1 rounded-xl border border-gray-700/50">
+        <div className="flex space-x-1 bg-[#1a2332]/50 p-1 rounded-xl border border-[#2a3441]/50">
           <button
             onClick={() => setActiveTab('recent')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
               activeTab === 'recent'
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
             }`}
           >
             <ClockIcon className="h-4 w-4 mr-2" />
@@ -311,10 +311,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
           </button>
           <button
             onClick={() => setActiveTab('popular')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
               activeTab === 'popular'
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
             }`}
           >
             <FireIcon className="h-4 w-4 mr-2" />
@@ -322,10 +322,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
           </button>
           <button
             onClick={() => setActiveTab('most-failed')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
               activeTab === 'most-failed'
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
             }`}
           >
             <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
@@ -333,10 +333,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
           </button>
           <button
             onClick={() => setActiveTab('search')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
               activeTab === 'search'
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
             }`}
           >
             <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
@@ -348,14 +348,14 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
       {/* Prompts Grid */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-500 border-t-transparent"></div>
         </div>
       ) : error ? (
         <div className="text-center py-12">
           <div className="text-red-400 mb-2 font-medium">{error}</div>
           <button
             onClick={() => loadPrompts(activeTab)}
-            className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+            className="text-teal-400 hover:text-teal-300 font-semibold transition-colors"
           >
             Try again
           </button>
@@ -370,7 +370,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
           {activeTab === 'search' && (
             <button
               onClick={clearSearch}
-              className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+              className="text-teal-400 hover:text-teal-300 font-semibold transition-colors"
             >
               Clear search
             </button>
@@ -382,10 +382,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
             <div
               key={prompt.id}
               onClick={() => handlePromptClick(prompt)}
-              className="bg-gray-800/50 rounded-xl border-2 border-gray-700/50 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-300 cursor-pointer group flex h-20 overflow-hidden"
+              className="bg-[#1a2332]/40 rounded-lg border border-[#2a3441] hover:border-teal-500/30 hover:shadow-md transition-all duration-200 cursor-pointer group flex h-20 overflow-hidden"
             >
               {/* Thumbnail */}
-              <div className="w-20 h-20 flex-shrink-0 relative bg-gray-900 rounded-l-xl overflow-hidden border-r border-gray-700/50">
+              <div className="w-20 h-20 flex-shrink-0 relative bg-[#0a1929] rounded-l-lg overflow-hidden border-r border-[#2a3441]">
                 {thumbnails[prompt.id] ? (
                   <Image
                     src={thumbnails[prompt.id]}
@@ -424,7 +424,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                   <span>{formatDate(prompt.last_used_at)}</span>
                   <div className="flex items-center space-x-2">
                     {prompt.model && (
-                      <span className="bg-gray-700/50 px-1.5 py-0.5 rounded-lg text-xs border border-gray-600/50">
+                      <span className="bg-[#1a2332] px-1.5 py-0.5 rounded-lg text-xs border border-[#2a3441]">
                         {prompt.model}
                       </span>
                     )}
@@ -435,7 +435,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                       title="Delete prompt"
                     >
                       {deletingIds.has(prompt.id) ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-400 border-t-transparent"></div>
                       ) : (
                         <TrashIcon className="h-4 w-4" />
                       )}
@@ -450,7 +450,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
 
       {/* Pagination Controls */}
       {!loading && !error && prompts.length > 0 && totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 px-4 py-3 bg-gray-800/50 rounded-xl border border-gray-700/50">
+        <div className="flex items-center justify-between mt-6 px-4 py-3 bg-[#1a2332]/50 rounded-xl border border-[#2a3441]/50">
           <div className="flex items-center text-sm text-gray-300">
             <span>
               Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} prompts
@@ -462,7 +462,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1 text-sm font-medium text-gray-300 bg-gray-700/50 border border-gray-600/50 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-700/50 transition-colors"
+              className="px-3 py-1 text-sm font-medium text-gray-300 bg-[#1a2332] border border-[#2a3441] rounded-lg hover:bg-[#1a2332]/80 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1a2332] transition-colors"
             >
               Previous
             </button>
@@ -487,8 +487,8 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                     onClick={() => handlePageChange(pageNum)}
                     className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
                       currentPage === pageNum
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
-                        : 'text-gray-300 bg-gray-700/50 border border-gray-600/50 hover:bg-gray-700'
+                        ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+                        : 'text-gray-300 bg-[#1a2332] border border-[#2a3441] hover:bg-[#1a2332]/80'
                     }`}
                   >
                     {pageNum}
@@ -501,7 +501,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm font-medium text-gray-300 bg-gray-700/50 border border-gray-600/50 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-700/50 transition-colors"
+              className="px-3 py-1 text-sm font-medium text-gray-300 bg-[#1a2332] border border-[#2a3441] rounded-lg hover:bg-[#1a2332]/80 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1a2332] transition-colors"
             >
               Next
             </button>
