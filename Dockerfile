@@ -1,4 +1,4 @@
-# Single Dockerfile for ImageGenAI
+# Single Dockerfile for ImageGenAI with Turbo optimization
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -15,23 +15,30 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
 
-# Install Python dependencies
-COPY apps/backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies first (better caching)
+COPY apps/backend/requirements.txt ./apps/backend/requirements.txt
+RUN pip install --no-cache-dir -r apps/backend/requirements.txt
 
-# Copy backend code
-COPY apps/backend/ ./backend/
+# Copy package files for dependency installation (better layer caching)
+COPY package.json package-lock.json turbo.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/backend/package.json ./apps/backend/
+COPY apps/frontend/package.json ./apps/frontend/
 
-# Copy frontend code
-COPY apps/frontend/ ./frontend/
+# Install all Node.js dependencies at root level (workspace dependencies)
+RUN npm ci --prefer-offline --no-audit
 
-# Install frontend dependencies and build for production
-WORKDIR /app/frontend
-RUN npm install
+# Copy shared package source files (needed for Turbo build)
+COPY packages/shared/ ./packages/shared/
+
+# Copy Python backend code
+COPY apps/backend/ ./apps/backend/
+
+# Copy frontend code (node_modules already installed, .dockerignore excludes it)
+COPY apps/frontend/ ./apps/frontend/
+
+# Build using Turbo (leverages caching and parallelization)
 RUN npm run build
-
-# Go back to app root
-WORKDIR /app
 
 # Create startup script for production
 # Frontend uses PORT env var (set by Coolify), defaults to 3000
@@ -41,9 +48,9 @@ set -e\n\
 # Use PORT env var for frontend (Coolify sets this), default to 3000\n\
 FRONTEND_PORT=${PORT:-3000}\n\
 # Start backend API on port 8000 (internal)\n\
-cd /app/backend && uvicorn main:app --host 0.0.0.0 --port 8000 &\n\
+cd /app/apps/backend && uvicorn main:app --host 0.0.0.0 --port 8000 &\n\
 # Start frontend in production mode using PORT env var\n\
-cd /app/frontend && PORT=$FRONTEND_PORT npm run start &\n\
+cd /app/apps/frontend && PORT=$FRONTEND_PORT npm run start &\n\
 # Wait for both processes\n\
 wait\n\
 ' > /app/start.sh && chmod +x /app/start.sh
