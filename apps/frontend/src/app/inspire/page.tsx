@@ -28,12 +28,12 @@ export default function InspirePage() {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Image to Prompt Form */}
-          <div className="order-2 lg:order-1">
+          <div className="order-1 lg:order-1">
             <ImageToPromptForm onPromptGenerated={handlePromptGenerated} />
           </div>
           
           {/* Generated Prompts */}
-          <div className="order-1 lg:order-2">
+          <div className="order-2 lg:order-2">
             <div className="card">
               <h3 className="text-lg font-semibold text-gray-100 mb-4">Generated Prompts</h3>
               

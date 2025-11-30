@@ -21,7 +21,7 @@ export default function TeleportPage() {
             <div className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Image Teleport Form */}
-                    <div className="order-2 lg:order-1">
+                    <div className="order-1 lg:order-1">
                         <ImageTeleportForm
                             onTeleportGenerated={handleTeleportGenerated}
                             isGenerating={isGenerating}
@@ -30,7 +30,7 @@ export default function TeleportPage() {
                     </div>
 
                     {/* Generated Teleports */}
-                    <div className="order-1 lg:order-2">
+                    <div className="order-2 lg:order-2">
                         <GeneratedImages images={images} onDelete={handleDeleteImage} />
                     </div>
                 </div>
