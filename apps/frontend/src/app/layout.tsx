@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: 'ImageGenAI - AI-Powered Image Generation',
   description: 'Generate stunning images using artificial intelligence',
   keywords: ['AI', 'image generation', 'artificial intelligence', 'creativity'],
+  icons: {
+    icon: '/icon.svg',
+  },
 }
 
 export default function RootLayout({
