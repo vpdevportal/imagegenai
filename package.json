@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Monorepo for ImageGenAI with FastAPI backend and Next.js frontend",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
