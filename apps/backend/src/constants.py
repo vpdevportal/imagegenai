@@ -6,7 +6,7 @@ and make maintenance easier.
 """
 
 # AI Model Configuration
-DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-image-preview"
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-image"
 
 # Application Configuration
 APP_NAME = "ImageGenAI"
