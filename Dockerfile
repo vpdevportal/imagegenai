@@ -38,7 +38,8 @@ COPY apps/backend/ ./apps/backend/
 COPY apps/frontend/ ./apps/frontend/
 
 # Build using Turbo (leverages caching and parallelization)
-RUN npm run build
+# Filter to only build apps, excluding root package to avoid loop detection
+RUN npx turbo run build --filter='./apps/*'
 
 # Create startup script for production
 # Frontend uses PORT env var (set by Coolify), defaults to 3000
