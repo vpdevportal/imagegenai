@@ -66,9 +66,16 @@ class PromptToImageService:
             )
             return generated_image_data, content_type, reference_image_url
             
+        except HTTPException:
+            # Re-raise HTTPExceptions as-is (they already have proper status codes and messages)
+            raise
         except Exception as e:
             logger.error(f"Image generation failed: {str(e)}", exc_info=True)
-            raise e
+            # Convert unexpected exceptions to HTTPException
+            raise HTTPException(
+                status_code=500,
+                detail=f"Image generation failed: {str(e)}"
+            )
     
     async def generate_fusion_from_images(
         self, 
@@ -106,9 +113,16 @@ class PromptToImageService:
             )
             return generated_image_data, content_type, reference_image_url
             
+        except HTTPException:
+            # Re-raise HTTPExceptions as-is (they already have proper status codes and messages)
+            raise
         except Exception as e:
             logger.error(f"Fusion generation failed: {str(e)}", exc_info=True)
-            raise e
+            # Convert unexpected exceptions to HTTPException
+            raise HTTPException(
+                status_code=500,
+                detail=f"Fusion generation failed: {str(e)}"
+            )
     
     async def generate_teleport(
         self,
@@ -148,9 +162,16 @@ class PromptToImageService:
             )
             return generated_image_data, content_type, reference_image_url
             
+        except HTTPException:
+            # Re-raise HTTPExceptions as-is (they already have proper status codes and messages)
+            raise
         except Exception as e:
             logger.error(f"Teleport generation failed: {str(e)}", exc_info=True)
-            raise e
+            # Convert unexpected exceptions to HTTPException
+            raise HTTPException(
+                status_code=500,
+                detail=f"Teleport generation failed: {str(e)}"
+            )
 
 
 # Global service instance
