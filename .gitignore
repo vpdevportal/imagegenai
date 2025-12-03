@@ -11,13 +11,13 @@ build/
 .turbo/
 
 # Environment variables
-.env
-.env.*
+# Note: .env is kept in repo for team sharing (contains example keys)
+# For production deployments, override with actual environment variables or use a secure secret manager
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-env.dev
+.env.*.local
 
 # Logs
 npm-debug.log*
