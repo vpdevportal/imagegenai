@@ -168,9 +168,20 @@ trap cleanup SIGINT SIGTERM
 if [ -f ".env" ]; then
     print_status "Loading environment variables from .env..."
     # Export all variables from .env to make them available to backend
-    # Skip comments and empty lines
+    # Skip comments and empty lines, then export each variable
     set -a  # Automatically export all variables
-    source <(grep -v '^#' .env | grep -v '^$' | grep '=')
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip comments (lines starting with #) and empty lines
+        case "$line" in
+            \#*|'') continue ;;
+        esac
+        # Only process lines that contain an equals sign
+        case "$line" in
+            *=*)
+                export "$line"
+                ;;
+        esac
+    done < .env
     set +a  # Stop automatically exporting
     print_success "Environment variables loaded from .env"
 else
