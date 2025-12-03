@@ -31,7 +31,8 @@ class ImageGenerationResponse(BaseModel):
 @router.post("/", response_model=ImageGenerationResponse)
 async def generate_image(
     prompt: str = Form(...),
-    image: UploadFile = File(...)
+    image: UploadFile = File(...),
+    provider: Optional[str] = Form(None)
 ):
     """
     Generate image from text prompt with reference image
@@ -39,10 +40,12 @@ async def generate_image(
     This endpoint requires both a text prompt and a reference image
     to generate new images. The reference image is mandatory.
     
-    In a real implementation, this would integrate with AI services like 
-    OpenAI DALL-E, Stability AI, etc.
+    Args:
+        prompt: Text prompt for image generation
+        image: Reference image file
+        provider: AI provider to use (gemini, replicate, stability, huggingface). Defaults to gemini.
     """
-    logger.info(f"Starting image generation - prompt_length: {len(prompt)}, filename: {image.filename}")
+    logger.info(f"Starting image generation - prompt_length: {len(prompt)}, filename: {image.filename}, provider: {provider or 'gemini'}")
     
     try:
         # Validate prompt
@@ -83,13 +86,15 @@ async def generate_image(
         
         generated_image_data, content_type, reference_image_url = await prompt_to_image_service.generate_image_from_prompt(
             prompt=prompt,
-            reference_image=image
+            reference_image=image,
+            provider=provider
         )
         
         # Track usage for the original prompt if it exists in database (only on successful generation)
         try:
             if prompt_service.exists_by_text(prompt):
-                prompt_service.update_prompt(prompt, settings.gemini_model)
+                model_name = provider or getattr(settings, 'gemini_model', 'gemini-2.5-flash-image')
+                prompt_service.update_prompt(prompt, model_name)
         except Exception as usage_error:
             logger.warning(f"Failed to track prompt usage: {usage_error}")
         

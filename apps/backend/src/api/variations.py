@@ -17,18 +17,20 @@ router = APIRouter(prefix="/variations", tags=["variations"])
 @router.post("/generate")
 async def generate_variation(
     file: UploadFile = File(...),
-    prompt: Optional[str] = Form(None)
+    prompt: Optional[str] = Form(None),
+    provider: Optional[str] = Form(None)
 ):
     """
-    Generate a variation of an uploaded image using Gemini image editing
+    Generate a variation of an uploaded image using AI image editing
     
     Args:
         file: Uploaded image file (required)
         prompt: Optional text prompt describing the desired variation
                 If not provided, generates an automatic variation
+        provider: AI provider to use (gemini, replicate, stability, huggingface). Defaults to gemini.
     """
     has_prompt = prompt is not None and prompt.strip() != '' if prompt else False
-    logger.info(f"Starting image variation request - filename: {file.filename}, has_prompt: {has_prompt}")
+    logger.info(f"Starting image variation request - filename: {file.filename}, has_prompt: {has_prompt}, provider: {provider or 'gemini'}")
     
     try:
         # Validate file
@@ -45,7 +47,8 @@ async def generate_variation(
         # Generate variation using existing service
         generated_image_data, content_type, reference_image_url = await prompt_to_image_service.generate_image_from_prompt(
             prompt=variation_prompt,
-            reference_image=file
+            reference_image=file,
+            provider=provider
         )
         
         # Convert image data to base64 for JSON response

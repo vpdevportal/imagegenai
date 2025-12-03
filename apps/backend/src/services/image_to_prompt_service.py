@@ -7,12 +7,12 @@ Uses the AI generator classes for the actual AI operations.
 
 import logging
 import base64
-from typing import Tuple
+from typing import Tuple, Optional
 from fastapi import HTTPException, UploadFile
 from PIL import Image
 import io
 
-from ..ai.image_to_prompt_generator import image_to_prompt_generator
+from ..ai.factory import PromptGeneratorFactory
 from ..utils.thumbnail import ThumbnailGenerator
 from .prompt_service import prompt_service
 from ..db.config import settings
@@ -24,18 +24,32 @@ class ImageToPromptService:
     """Service for handling image to prompt generation business logic"""
     
     def __init__(self):
-        self.generator = image_to_prompt_generator
         self.prompt_service = prompt_service
+    
+    def _get_generator(self, provider: Optional[str] = None):
+        """
+        Get the appropriate prompt generator instance based on provider
+        
+        Args:
+            provider: Provider name (defaults to gemini if not specified)
+            
+        Returns:
+            BasePromptGenerator: Generator instance
+        """
+        provider = provider or getattr(settings, 'default_ai_provider', 'gemini')
+        return PromptGeneratorFactory.create(provider)
     
     async def generate_prompt_from_image(
         self,
-        file: UploadFile
+        file: UploadFile,
+        provider: Optional[str] = None
     ) -> dict:
         """
         Generate a prompt from an uploaded image
         
         Args:
             file: Uploaded image file
+            provider: AI provider to use (defaults to gemini)
             
         Returns:
             dict: Response containing prompt, thumbnail, and metadata
@@ -43,7 +57,7 @@ class ImageToPromptService:
         Raises:
             HTTPException: If generation fails
         """
-        logger.info(f"Starting prompt generation - filename: {file.filename}")
+        logger.info(f"Starting prompt generation - filename: {file.filename}, provider: {provider or 'gemini'}")
         
         try:
             # Validate file type
@@ -59,8 +73,9 @@ class ImageToPromptService:
             except Exception as e:
                 raise HTTPException(status_code=400, detail=f"Invalid image file: {str(e)}")
             
-            # Generate prompt from image using AI
-            prompt = await self.generator.generate_prompt_from_image(
+            # Get generator and generate prompt from image using AI
+            generator = self._get_generator(provider)
+            prompt = await generator.generate_prompt_from_image(
                 image=image
             )
             
@@ -85,9 +100,11 @@ class ImageToPromptService:
                         "saved_to_database": False
                     }
                 else:
+                    # Use provider name or default model name for database
+                    model_name = provider or getattr(settings, 'gemini_model', 'gemini-2.5-flash-image')
                     saved_prompt = self.prompt_service.create_prompt(
                         prompt_text=prompt,
-                        model=settings.gemini_model,
+                        model=model_name,
                         image_data=thumbnail_data
                     )
                     prompt_id = saved_prompt.id

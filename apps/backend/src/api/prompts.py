@@ -7,7 +7,8 @@ from fastapi.responses import Response
 from typing import Optional, List
 
 from ..services.prompt_service import prompt_service
-from ..ai.prompt_to_image_generator import prompt_to_image_generator
+from ..ai.factory import ImageGeneratorFactory
+from ..db.config import settings
 from ..schemas.prompt import (
     PromptResponse, PromptWithThumbnail, PromptListResponse, 
     PromptStats, PromptSearchRequest
@@ -203,7 +204,10 @@ async def save_prompt(
         # Always generate thumbnail from prompt text
         thumbnail_data = None
         try:
-            thumbnail_data, _ = prompt_to_image_generator.generate_from_text(prompt)
+            # Use default provider for thumbnail generation
+            default_provider = getattr(settings, 'default_ai_provider', 'gemini')
+            generator = ImageGeneratorFactory.create(default_provider)
+            thumbnail_data, _ = generator.generate_from_text(prompt)
         except Exception as gen_error:
             logger.warning(f"Failed to generate thumbnail: {gen_error}")
             # Continue without thumbnail - attempt_save_prompt handles None thumbnail_data

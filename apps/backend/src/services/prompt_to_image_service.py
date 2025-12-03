@@ -8,10 +8,10 @@ Uses the AI generator classes for the actual AI operations.
 import logging
 import tempfile
 import os
-from typing import Tuple
+from typing import Tuple, Optional
 from fastapi import HTTPException, UploadFile
 
-from ..ai.prompt_to_image_generator import prompt_to_image_generator
+from ..ai.factory import ImageGeneratorFactory
 from ..ai.prompt_generator import prompt_generator
 from .prompt_service import prompt_service
 from ..db.config import settings
@@ -23,13 +23,26 @@ class PromptToImageService:
     """Service for handling prompt to image generation business logic"""
     
     def __init__(self):
-        self.generator = prompt_to_image_generator
         self.prompt_service = prompt_service
+    
+    def _get_generator(self, provider: Optional[str] = None):
+        """
+        Get the appropriate generator instance based on provider
+        
+        Args:
+            provider: Provider name (defaults to gemini if not specified)
+            
+        Returns:
+            BaseImageGenerator: Generator instance
+        """
+        provider = provider or getattr(settings, 'default_ai_provider', 'gemini')
+        return ImageGeneratorFactory.create(provider)
     
     async def generate_image_from_prompt(
         self, 
         prompt: str, 
-        reference_image: UploadFile
+        reference_image: UploadFile,
+        provider: Optional[str] = None
     ) -> Tuple[bytes, str, str]:
         """
         Generate an image from a text prompt and reference image
@@ -37,6 +50,7 @@ class PromptToImageService:
         Args:
             prompt: Text prompt for image generation
             reference_image: Uploaded reference image file
+            provider: AI provider to use (defaults to gemini)
             
         Returns:
             Tuple[bytes, str, str]: (image_data, content_type, reference_image_url)
@@ -45,8 +59,9 @@ class PromptToImageService:
             HTTPException: If generation fails
         """
         try:
-            reference_image_url = self.generator.process_reference_image(reference_image)
-            generated_image_data, content_type = self.generator.generate_from_image_and_text(
+            generator = self._get_generator(provider)
+            reference_image_url = generator.process_reference_image(reference_image)
+            generated_image_data, content_type = generator.generate_from_image_and_text(
                 reference_image, prompt
             )
             return generated_image_data, content_type, reference_image_url
@@ -58,7 +73,8 @@ class PromptToImageService:
     async def generate_fusion_from_images(
         self, 
         image1: UploadFile,
-        image2: UploadFile
+        image2: UploadFile,
+        provider: Optional[str] = None
     ) -> Tuple[bytes, str, str]:
         """
         Generate a fusion image from two reference images
@@ -66,6 +82,7 @@ class PromptToImageService:
         Args:
             image1: First uploaded image file
             image2: Second uploaded image file
+            provider: AI provider to use (defaults to gemini)
             
         Returns:
             Tuple[bytes, str, str]: (image_data, content_type, reference_image_url)
@@ -74,15 +91,16 @@ class PromptToImageService:
             HTTPException: If generation fails
         """
         try:
+            generator = self._get_generator(provider)
             # Process first image as reference image URL (for response)
-            reference_image_url = self.generator.process_reference_image(image1)
+            reference_image_url = generator.process_reference_image(image1)
             
             # Reset file pointers
             image1.file.seek(0)
             image2.file.seek(0)
             
             # Generate fusion using multiple images
-            generated_image_data, content_type = self.generator.generate_from_multiple_images_and_text(
+            generated_image_data, content_type = generator.generate_from_multiple_images_and_text(
                 [image1, image2], 
                 prompt_generator.fusion_prompt()
             )
@@ -95,7 +113,8 @@ class PromptToImageService:
     async def generate_teleport(
         self,
         background_image: UploadFile,
-        person_image: UploadFile
+        person_image: UploadFile,
+        provider: Optional[str] = None
     ) -> Tuple[bytes, str, str]:
         """
         Generate an image by teleporting a person into a new background
@@ -103,6 +122,7 @@ class PromptToImageService:
         Args:
             background_image: Image to use as background (second image)
             person_image: Image containing the person (first image - primary)
+            provider: AI provider to use (defaults to gemini)
             
         Returns:
             Tuple[bytes, str, str]: (image_data, content_type, reference_image_url)
@@ -111,8 +131,9 @@ class PromptToImageService:
             HTTPException: If generation fails
         """
         try:
+            generator = self._get_generator(provider)
             # Process background image as reference image URL (for response)
-            reference_image_url = self.generator.process_reference_image(background_image)
+            reference_image_url = generator.process_reference_image(background_image)
             
             # Reset file pointers
             background_image.file.seek(0)
@@ -121,7 +142,7 @@ class PromptToImageService:
             # Generate using multiple images
             # Note: The order matters - person image is first (primary), background is second
             # This tells the AI to modify the person's background with the new background
-            generated_image_data, content_type = self.generator.generate_from_multiple_images_and_text(
+            generated_image_data, content_type = generator.generate_from_multiple_images_and_text(
                 [person_image, background_image], 
                 prompt_generator.teleport_prompt()
             )

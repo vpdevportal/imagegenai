@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from typing import Optional
 from fastapi.responses import JSONResponse
 import uuid
 from datetime import datetime
@@ -16,7 +17,8 @@ router = APIRouter(prefix="/teleport", tags=["teleport"])
 @router.post("/generate")
 async def generate_teleport(
     background_image: UploadFile = File(...),
-    person_image: UploadFile = File(...)
+    person_image: UploadFile = File(...),
+    provider: Optional[str] = Form(None)
 ):
     """
     Generate an image by teleporting a person into a new background
@@ -24,8 +26,9 @@ async def generate_teleport(
     Args:
         background_image: The new background image (first image)
         person_image: The image containing the person (second image)
+        provider: AI provider to use (gemini, replicate, stability, huggingface). Defaults to gemini.
     """
-    logger.info(f"Starting teleport request - background: {background_image.filename}, person: {person_image.filename}")
+    logger.info(f"Starting teleport request - background: {background_image.filename}, person: {person_image.filename}, provider: {provider or 'gemini'}")
     
     try:
         # Validate both files
@@ -48,7 +51,8 @@ async def generate_teleport(
         # Generate using service
         generated_image_data, content_type, reference_image_url = await prompt_to_image_service.generate_teleport(
             background_image=background_image,
-            person_image=person_image
+            person_image=person_image,
+            provider=provider
         )
         
         # Convert image data to base64 for JSON response

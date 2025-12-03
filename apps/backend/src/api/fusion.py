@@ -16,7 +16,8 @@ router = APIRouter(prefix="/fusion", tags=["fusion"])
 @router.post("/generate")
 async def generate_fusion(
     image1: UploadFile = File(...),
-    image2: UploadFile = File(...)
+    image2: UploadFile = File(...),
+    provider: Optional[str] = Form(None)
 ):
     """
     Generate a fusion image by merging two people from separate images
@@ -24,8 +25,9 @@ async def generate_fusion(
     Args:
         image1: First uploaded image file (required)
         image2: Second uploaded image file (required)
+        provider: AI provider to use (gemini, replicate, stability, huggingface). Defaults to gemini.
     """
-    logger.info(f"Starting image fusion request - image1: {image1.filename}, image2: {image2.filename}")
+    logger.info(f"Starting image fusion request - image1: {image1.filename}, image2: {image2.filename}, provider: {provider or 'gemini'}")
     
     try:
         # Validate both files
@@ -48,7 +50,8 @@ async def generate_fusion(
         # Generate fusion using service
         generated_image_data, content_type, reference_image_url = await prompt_to_image_service.generate_fusion_from_images(
             image1=image1,
-            image2=image2
+            image2=image2,
+            provider=provider
         )
         
         # Convert image data to base64 for JSON response

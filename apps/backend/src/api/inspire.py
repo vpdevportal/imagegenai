@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from typing import Optional
 from fastapi.responses import JSONResponse
 import logging
 
@@ -12,14 +13,20 @@ router = APIRouter(prefix="/inspire", tags=["inspire"])
 
 @router.post("/generate-prompt")
 async def generate_prompt_from_image(
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    provider: Optional[str] = Form(None)
 ):
     """
     Generate a prompt from an uploaded image (uses photorealistic style)
+    
+    Args:
+        file: Uploaded image file
+        provider: AI provider to use (currently only gemini is supported). Defaults to gemini.
     """
     try:
         result = await image_to_prompt_service.generate_prompt_from_image(
-            file=file
+            file=file,
+            provider=provider
         )
         return JSONResponse(content=result)
         
