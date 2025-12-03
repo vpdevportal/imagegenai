@@ -7,10 +7,16 @@ import {
   LightBulbIcon,
   ArrowPathIcon,
   ArrowsRightLeftIcon,
-  GlobeAmericasIcon
+  GlobeAmericasIcon,
+  ChevronDownIcon,
+  CpuChipIcon,
+  ServerIcon,
+  CloudIcon
 } from '@heroicons/react/24/outline'
+import { Listbox, Transition } from '@headlessui/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useProvider } from '@/contexts/ProviderContext'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -18,6 +24,15 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const pathname = usePathname()
+  const { provider, setProvider, availableProviders } = useProvider()
+
+  // Provider icons mapping
+  const providerIcons = {
+    gemini: SparklesIcon,
+    replicate: CpuChipIcon,
+    stability: ServerIcon,
+    huggingface: CloudIcon,
+  }
 
   const navigation = [
     { name: 'Generate', href: '/generate', icon: SparklesIcon, current: pathname === '/generate' },
@@ -64,19 +79,139 @@ export default function Layout({ children }: LayoutProps) {
               })}
             </nav>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <select
-                value={pathname}
-                onChange={(e) => window.location.href = e.target.value}
-                className="input-field text-sm"
-              >
-                {navigation.map((item) => (
-                  <option key={item.href} value={item.href}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+            {/* Provider Selector and Mobile Menu */}
+            <div className="flex items-center space-x-3">
+              {/* Provider Dropdown - Desktop */}
+              <div className="hidden md:block">
+                <Listbox value={provider} onChange={setProvider}>
+                  <div className="relative">
+                    <Listbox.Button className="relative w-full min-w-[140px] cursor-pointer rounded-lg bg-[#1a1f2e] border border-[#2a3441] py-2 pl-3 pr-10 text-left text-sm text-gray-100 shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 hover:border-teal-500/50 transition-all duration-200">
+                      <span className="flex items-center truncate">
+                        {(() => {
+                          const Icon = providerIcons[provider as keyof typeof providerIcons] || SparklesIcon
+                          return (
+                            <>
+                              <Icon className="h-4 w-4 mr-2 flex-shrink-0 text-teal-400" />
+                              <span>{provider.charAt(0).toUpperCase() + provider.slice(1)}</span>
+                            </>
+                          )
+                        })()}
+                      </span>
+                      <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                        <ChevronDownIcon className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                      </span>
+                    </Listbox.Button>
+                    <Transition
+                      as="div"
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                      className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-[#1a1f2e] border border-[#2a3441] py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    >
+                      <Listbox.Options>
+                        {availableProviders.map((p) => {
+                          const Icon = providerIcons[p as keyof typeof providerIcons] || SparklesIcon
+                          return (
+                            <Listbox.Option
+                              key={p}
+                              value={p}
+                              className={({ active }) =>
+                                `relative cursor-pointer select-none py-2 pl-3 pr-4 ${
+                                  active ? 'bg-[#2a3441] text-teal-400' : 'text-gray-100'
+                                }`
+                              }
+                            >
+                              {({ selected }) => (
+                                <div className="flex items-center">
+                                  <Icon className="h-4 w-4 mr-2 flex-shrink-0 text-teal-400" />
+                                  <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                                  </span>
+                                  {selected && (
+                                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-teal-400">
+                                      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </Listbox.Option>
+                          )
+                        })}
+                      </Listbox.Options>
+                    </Transition>
+                  </div>
+                </Listbox>
+              </div>
+
+              {/* Mobile menu button */}
+              <div className="md:hidden flex items-center space-x-2">
+                <Listbox value={provider} onChange={setProvider}>
+                  <div className="relative">
+                    <Listbox.Button className="relative w-full min-w-[100px] cursor-pointer rounded-lg bg-[#1a1f2e] border border-[#2a3441] py-1.5 pl-2 pr-8 text-left text-xs text-gray-100 shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500">
+                      <span className="flex items-center truncate">
+                        {(() => {
+                          const Icon = providerIcons[provider as keyof typeof providerIcons] || SparklesIcon
+                          return (
+                            <>
+                              <Icon className="h-3 w-3 mr-1.5 flex-shrink-0 text-teal-400" />
+                              <span className="truncate">{provider.charAt(0).toUpperCase() + provider.slice(1)}</span>
+                            </>
+                          )
+                        })()}
+                      </span>
+                      <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-1.5">
+                        <ChevronDownIcon className="h-3 w-3 text-gray-400" aria-hidden="true" />
+                      </span>
+                    </Listbox.Button>
+                    <Transition
+                      as="div"
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                      className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-[#1a1f2e] border border-[#2a3441] py-1 text-xs shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    >
+                      <Listbox.Options>
+                        {availableProviders.map((p) => {
+                          const Icon = providerIcons[p as keyof typeof providerIcons] || SparklesIcon
+                          return (
+                            <Listbox.Option
+                              key={p}
+                              value={p}
+                              className={({ active }) =>
+                                `relative cursor-pointer select-none py-1.5 pl-2 pr-4 ${
+                                  active ? 'bg-[#2a3441] text-teal-400' : 'text-gray-100'
+                                }`
+                              }
+                            >
+                              {({ selected }) => (
+                                <div className="flex items-center">
+                                  <Icon className="h-3 w-3 mr-1.5 flex-shrink-0 text-teal-400" />
+                                  <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                                  </span>
+                                </div>
+                              )}
+                            </Listbox.Option>
+                          )
+                        })}
+                      </Listbox.Options>
+                    </Transition>
+                  </div>
+                </Listbox>
+                <select
+                  value={pathname}
+                  onChange={(e) => window.location.href = e.target.value}
+                  className="input-field text-sm"
+                >
+                  {navigation.map((item) => (
+                    <option key={item.href} value={item.href}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
