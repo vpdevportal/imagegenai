@@ -136,8 +136,9 @@ async def generate_image(
         except Exception:
             pass
         
+        # Only log full traceback, but return user-friendly message
         raise HTTPException(
             status_code=500,
-            detail=f"Internal server error: {str(e)}"
+            detail="Failed to generate image. Please try again later."
         )
 

@@ -76,12 +76,14 @@ async def generate_fusion(
         logger.info(f"Image fusion completed successfully - id: {fusion_id}")
         return JSONResponse(content=response_data)
         
-    except HTTPException:
+    except HTTPException as e:
+        # Re-raise HTTPExceptions as-is - they already have proper status codes and user-friendly messages
         raise
     except Exception as e:
         logger.error(f"Error generating image fusion: {str(e)}", exc_info=True)
+        # Only log full traceback, but return user-friendly message
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to generate image fusion: {str(e)}"
+            detail="Failed to generate image fusion. Please try again later."
         )
 

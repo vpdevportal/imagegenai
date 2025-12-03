@@ -76,11 +76,13 @@ async def generate_teleport(
         logger.info(f"Teleport completed successfully - id: {request_id}")
         return JSONResponse(content=response_data)
         
-    except HTTPException:
+    except HTTPException as e:
+        # Re-raise HTTPExceptions as-is - they already have proper status codes and user-friendly messages
         raise
     except Exception as e:
         logger.error(f"Error generating teleport: {str(e)}", exc_info=True)
+        # Only log full traceback, but return user-friendly message
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to generate teleport: {str(e)}"
+            detail="Failed to generate teleport. Please try again later."
         )
