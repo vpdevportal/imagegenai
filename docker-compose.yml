@@ -7,7 +7,7 @@ services:
       - "5001:3000"
       - "6001:8000"
     env_file:
-      - ./env.dev
+      - ./.env
     volumes:
       - ./apps/backend:/app/apps/backend
       - ./apps/frontend:/app/apps/frontend

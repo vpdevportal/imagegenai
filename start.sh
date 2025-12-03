@@ -164,24 +164,17 @@ cleanup() {
 # Set up trap to handle Ctrl+C
 trap cleanup SIGINT SIGTERM
 
-# Load environment variables from env.dev
-if [ -f "env.dev" ]; then
-    print_status "Loading environment variables from env.dev..."
-    # Create a temporary .env file for the backend with only backend-relevant variables
-    cat > apps/backend/.env << EOF
-# Backend Configuration
-HOST=0.0.0.0
-PORT=8000
-DEBUG=true
-GOOGLE_AI_API_KEY=$(grep '^GOOGLE_AI_API_KEY=' env.dev | cut -d'=' -f2)
-FRONTEND_URL=$(grep '^FRONTEND_URL=' env.dev | cut -d'=' -f2)
-ALLOWED_ORIGINS=$(grep '^ALLOWED_ORIGINS=' env.dev | cut -d'=' -f2)
-MAX_FILE_SIZE=$(grep '^MAX_FILE_SIZE=' env.dev | cut -d'=' -f2)
-ALLOWED_IMAGE_TYPES=$(grep '^ALLOWED_IMAGE_TYPES=' env.dev | cut -d'=' -f2)
-EOF
-    print_success "Environment variables loaded"
+# Load environment variables from .env
+if [ -f ".env" ]; then
+    print_status "Loading environment variables from .env..."
+    # Export all variables from .env to make them available to backend
+    # Skip comments and empty lines
+    set -a  # Automatically export all variables
+    source <(grep -v '^#' .env | grep -v '^$' | grep '=')
+    set +a  # Stop automatically exporting
+    print_success "Environment variables loaded from .env"
 else
-    print_warning "env.dev file not found, using system environment variables"
+    print_warning ".env file not found, using system environment variables"
 fi
 
 # Start backend in background
