@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
-type AIProvider = 'gemini' | 'replicate' | 'stability' | 'huggingface'
+type AIProvider = 'gemini' | 'replicate' | 'stability'
 
 interface ProviderContextType {
   provider: AIProvider
@@ -14,7 +14,7 @@ const ProviderContext = createContext<ProviderContextType | undefined>(undefined
 
 const STORAGE_KEY = 'imagegenai_ai_provider'
 const DEFAULT_PROVIDER: AIProvider = 'gemini'
-const AVAILABLE_PROVIDERS: AIProvider[] = ['gemini', 'replicate', 'stability', 'huggingface']
+const AVAILABLE_PROVIDERS: AIProvider[] = ['gemini', 'replicate', 'stability']
 
 export function ProviderProvider({ children }: { children: ReactNode }) {
   const [provider, setProviderState] = useState<AIProvider>(DEFAULT_PROVIDER)

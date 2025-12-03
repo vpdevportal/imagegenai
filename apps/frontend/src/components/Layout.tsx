@@ -31,7 +31,6 @@ export default function Layout({ children }: LayoutProps) {
     gemini: SparklesIcon,
     replicate: CpuChipIcon,
     stability: ServerIcon,
-    huggingface: CloudIcon,
   }
 
   const navigation = [
