@@ -1,5 +1,5 @@
 """
-Stability AI Image Generator using Stable Diffusion 3 img2img
+Stability AI Image Generator using Stable Diffusion img2img
 """
 
 import os
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class StabilityImageGenerator(BaseImageGenerator):
-    """Image generator using Stability AI API with Stable Diffusion 3"""
+    """Image generator using Stability AI API with Stable Diffusion"""
     
     def __init__(self, api_key: Optional[str] = None):
         """
@@ -34,11 +34,92 @@ class StabilityImageGenerator(BaseImageGenerator):
         if not self.api_key:
             raise ValueError("API key is required. Set STABILITY_AI_API_KEY environment variable")
         
-        self.base_url = "https://api.stability.ai/v2beta/stable-image"
+        # Stability AI v1 API base URL
+        self.base_url = "https://api.stability.ai/v1/generation"
+        # Default engine for image-to-image
+        self.engine = os.getenv('STABILITY_AI_ENGINE', 'stable-diffusion-xl-1024-v1-0')
+        
+        # Headers for v1 API
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "Accept": "image/*"
+            "Accept": "image/png"  # v1 API requires specific Accept header
         }
+    
+    def _resize_image_to_allowed_dimensions(self, image_content: bytes) -> bytes:
+        """
+        Resize image to one of the allowed dimensions for SDXL v1 models.
+        Allowed dimensions: 1024x1024, 1152x896, 1216x832, 1344x768, 1536x640, 
+                           640x1536, 768x1344, 832x1216, 896x1152
+        
+        Args:
+            image_content: Original image bytes
+            
+        Returns:
+            bytes: Resized image bytes
+        """
+        from io import BytesIO
+        
+        # Allowed dimensions for SDXL v1 models
+        ALLOWED_DIMENSIONS = [
+            (1024, 1024), (1152, 896), (1216, 832), (1344, 768), (1536, 640),
+            (640, 1536), (768, 1344), (832, 1216), (896, 1152)
+        ]
+        
+        try:
+            # Open image
+            img = Image.open(BytesIO(image_content))
+            original_width, original_height = img.size
+            original_aspect = original_width / original_height
+            
+            logger.info(f"Original image dimensions: {original_width}x{original_height}")
+            
+            # Find the closest allowed dimension that maintains aspect ratio
+            best_dimension = None
+            min_aspect_diff = float('inf')
+            
+            for width, height in ALLOWED_DIMENSIONS:
+                aspect = width / height
+                aspect_diff = abs(aspect - original_aspect)
+                
+                if aspect_diff < min_aspect_diff:
+                    min_aspect_diff = aspect_diff
+                    best_dimension = (width, height)
+            
+            target_width, target_height = best_dimension
+            
+            # Resize image maintaining aspect ratio, then crop/pad to exact dimensions
+            # First, resize to fit within target dimensions
+            if original_aspect > target_width / target_height:
+                # Image is wider - fit to width
+                new_width = target_width
+                new_height = int(target_width / original_aspect)
+            else:
+                # Image is taller - fit to height
+                new_height = target_height
+                new_width = int(target_height * original_aspect)
+            
+            # Resize image
+            resized_img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+            # Create new image with target dimensions and paste resized image
+            final_img = Image.new('RGB', (target_width, target_height), (0, 0, 0))
+            
+            # Center the resized image
+            paste_x = (target_width - new_width) // 2
+            paste_y = (target_height - new_height) // 2
+            final_img.paste(resized_img, (paste_x, paste_y))
+            
+            # Convert to bytes
+            output = BytesIO()
+            final_img.save(output, format='PNG')
+            output.seek(0)
+            
+            logger.info(f"Resized image to {target_width}x{target_height} (closest match to {original_width}x{original_height})")
+            return output.getvalue()
+            
+        except Exception as e:
+            logger.warning(f"Failed to resize image, using original: {str(e)}")
+            return image_content
     
     def generate_from_image_and_text(self, image_file: UploadFile, prompt: str) -> Tuple[bytes, str]:
         """
@@ -59,59 +140,91 @@ class StabilityImageGenerator(BaseImageGenerator):
             image_content = image_file.file.read()
             image_file.file.seek(0)
             
-            logger.info(f"Generating image with Stability AI SD3, prompt: {prompt[:100]}...")
+            # Resize image to allowed dimensions for SDXL v1 models
+            image_content = self._resize_image_to_allowed_dimensions(image_content)
             
-            # Use Stability AI img2img endpoint
+            logger.info(f"Generating image with Stability AI {self.engine}, prompt: {prompt[:100]}...")
+            
+            # Stability AI v1 API endpoint for image-to-image
+            endpoint = f"{self.base_url}/{self.engine}/image-to-image"
+            
+            # Prepare multipart/form-data request
             files = {
-                "image": (image_file.filename or "image.png", image_content, "image/png")
-            }
-            data = {
-                "prompt": prompt,
-                "mode": "image-to-image",
-                "strength": 0.7,
-                "seed": 0,
+                "init_image": (image_file.filename or "image.png", image_content, "image/png")
             }
             
+            # Form data parameters for v1 API
+            data = {
+                "text_prompts[0][text]": prompt,
+                "init_image_mode": "IMAGE_STRENGTH",
+                "image_strength": 0.7,  # How much the init_image influences the result (0.0 to 1.0)
+                "cfg_scale": 7,  # How strictly the AI adheres to the prompt (0 to 35)
+                "samples": 1,  # Number of images to generate
+                "steps": 30  # Number of diffusion steps
+            }
+            
+            logger.info(f"Calling Stability AI endpoint: {endpoint}")
             response = requests.post(
-                f"{self.base_url}/edit",
+                endpoint,
                 headers=self.headers,
                 files=files,
                 data=data,
-                timeout=60
+                timeout=120  # Image generation can take time
             )
             
             if response.status_code == 200:
+                # v1 API returns image bytes directly when Accept: image/png
                 image_data = response.content
                 content_type = response.headers.get("Content-Type", "image/png")
                 
                 logger.info(f"Image generated successfully: {len(image_data)} bytes")
                 return image_data, content_type
             else:
-                error_detail = response.text or f"HTTP {response.status_code}"
-                logger.error(f"Stability AI API error: {error_detail}")
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail=f"Stability AI API error: {error_detail}"
-                )
+                # Handle errors
+                error_detail = response.text[:1000] if response.text else f"HTTP {response.status_code}"
+                logger.error(f"Stability AI API error ({response.status_code}): {error_detail}")
+                
+                # Provide helpful error messages
+                if response.status_code == 401:
+                    raise HTTPException(
+                        status_code=401,
+                        detail="Authentication failed. Please check your Stability AI API key."
+                    )
+                elif response.status_code == 404:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Engine '{self.engine}' not found. Available engines may have changed. Error: {error_detail}"
+                    )
+                elif response.status_code == 400:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid request parameters. Error: {error_detail}"
+                    )
+                elif response.status_code == 429:
+                    raise HTTPException(
+                        status_code=429,
+                        detail="Rate limit exceeded. Please try again later."
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=f"Stability AI API error: {error_detail}"
+                    )
                 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to generate image with Stability AI: {str(e)}", exc_info=True)
+            logger.error(f"Failed to connect to Stability AI: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to connect to Stability AI: {str(e)}"
             )
+        except HTTPException:
+            # Re-raise HTTP exceptions
+            raise
         except Exception as e:
             logger.error(f"Failed to generate image with Stability AI: {str(e)}", exc_info=True)
-            error_message = "Image generation failed. Please try again later."
-            
-            if "401" in str(e) or "authentication" in str(e).lower():
-                error_message = "Authentication failed. Please check your API key."
-            elif "429" in str(e) or "rate limit" in str(e).lower():
-                error_message = "Rate limit exceeded. Please try again later."
-            
             raise HTTPException(
                 status_code=500,
-                detail=error_message
+                detail=f"Image generation failed: {str(e)}"
             )
     
     def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
@@ -128,58 +241,85 @@ class StabilityImageGenerator(BaseImageGenerator):
             HTTPException: If generation fails
         """
         try:
-            logger.info(f"Generating image from text with Stability AI SD3, prompt: {prompt[:100]}...")
+            logger.info(f"Generating image from text with Stability AI {self.engine}, prompt: {prompt[:100]}...")
             
+            # Stability AI v1 API endpoint for text-to-image
+            endpoint = f"{self.base_url}/{self.engine}/text-to-image"
+            
+            # Form data parameters for v1 API
             data = {
-                "prompt": prompt,
-                "output_format": "png",
+                "text_prompts[0][text]": prompt,
+                "cfg_scale": 7,
+                "samples": 1,
+                "steps": 30,
+                "width": 1024,
+                "height": 1024
             }
             
+            logger.info(f"Calling Stability AI endpoint: {endpoint}")
             response = requests.post(
-                f"{self.base_url}/generate/stable-diffusion-xl-1024-v1-0",
+                endpoint,
                 headers=self.headers,
-                json=data,
-                timeout=60
+                data=data,
+                timeout=120
             )
             
             if response.status_code == 200:
+                # v1 API returns image bytes directly when Accept: image/png
                 image_data = response.content
-                content_type = "image/png"
+                content_type = response.headers.get("Content-Type", "image/png")
                 
                 logger.info(f"Image generated successfully: {len(image_data)} bytes")
                 return image_data, content_type
             else:
-                error_detail = response.text or f"HTTP {response.status_code}"
-                logger.error(f"Stability AI API error: {error_detail}")
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail=f"Stability AI API error: {error_detail}"
-                )
+                error_detail = response.text[:1000] if response.text else f"HTTP {response.status_code}"
+                logger.error(f"Stability AI API error ({response.status_code}): {error_detail}")
+                
+                if response.status_code == 401:
+                    raise HTTPException(
+                        status_code=401,
+                        detail="Authentication failed. Please check your Stability AI API key."
+                    )
+                elif response.status_code == 404:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Engine '{self.engine}' not found. Error: {error_detail}"
+                    )
+                elif response.status_code == 400:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid request parameters. Error: {error_detail}"
+                    )
+                elif response.status_code == 429:
+                    raise HTTPException(
+                        status_code=429,
+                        detail="Rate limit exceeded. Please try again later."
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=f"Stability AI API error: {error_detail}"
+                    )
                 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to generate image from text with Stability AI: {str(e)}", exc_info=True)
+            logger.error(f"Failed to connect to Stability AI: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to connect to Stability AI: {str(e)}"
             )
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"Failed to generate image from text with Stability AI: {str(e)}", exc_info=True)
-            error_message = "Image generation failed. Please try again later."
-            
-            if "401" in str(e) or "authentication" in str(e).lower():
-                error_message = "Authentication failed. Please check your API key."
-            elif "429" in str(e) or "rate limit" in str(e).lower():
-                error_message = "Rate limit exceeded. Please try again later."
-            
             raise HTTPException(
                 status_code=500,
-                detail=error_message
+                detail=f"Image generation failed: {str(e)}"
             )
     
     def generate_from_multiple_images_and_text(self, image_files: list, prompt: str) -> Tuple[bytes, str]:
         """
         Generate an image using multiple reference images and text prompt
-        Note: Stability AI may not support multiple images directly, so we'll use the first image
+        Note: Stability AI v1 API doesn't support multiple images directly, so we'll use the first image
         
         Args:
             image_files: List of uploaded image files (mandatory)
@@ -197,7 +337,6 @@ class StabilityImageGenerator(BaseImageGenerator):
                 detail="At least one image file is required"
             )
         
-        # Use the first image for now
+        # Use the first image (Stability AI v1 API doesn't support multiple images)
         logger.info(f"Using first image from {len(image_files)} images for Stability AI generation")
         return self.generate_from_image_and_text(image_files[0], prompt)
-
