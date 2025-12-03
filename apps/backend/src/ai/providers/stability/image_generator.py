@@ -218,13 +218,19 @@ class StabilityImageGenerator(BaseImageGenerator):
                 detail=f"Failed to connect to Stability AI: {str(e)}"
             )
         except HTTPException:
-            # Re-raise HTTP exceptions
+            # Re-raise HTTPExceptions as-is (they already have proper status codes and messages)
             raise
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to connect to Stability AI: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to connect to Stability AI. Please try again later."
+            )
         except Exception as e:
             logger.error(f"Failed to generate image with Stability AI: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=500,
-                detail=f"Image generation failed: {str(e)}"
+                detail="Image generation failed. Please try again later."
             )
     
     def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
