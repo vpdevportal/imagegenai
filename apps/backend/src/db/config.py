@@ -71,7 +71,8 @@ class Settings(BaseSettings):
         # Look for .env in root directory (../../../../.env from apps/backend/src/db/)
         # Falls back to local .env if root .env not found
         env_file=["../../../../.env", "../../../.env", "../../.env", "../.env", ".env"],
-        case_sensitive=False
+        case_sensitive=False,
+        extra='ignore'  # Ignore extra fields from .env that aren't in Settings class
     )
 
 
