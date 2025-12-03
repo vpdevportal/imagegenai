@@ -37,8 +37,13 @@ COPY apps/backend/ ./apps/backend/
 # Copy frontend code (node_modules already installed, .dockerignore excludes it)
 COPY apps/frontend/ ./apps/frontend/
 
-# Build using Turbo (leverages caching and parallelization)
-RUN npm run build
+# Build applications
+# Backend build is just a placeholder, frontend needs actual build  
+RUN cd /app/apps/backend && npm run build
+# Install frontend dependencies locally (needed for Next.js to resolve modules)
+RUN cd /app/apps/frontend && npm install --legacy-peer-deps
+# Build frontend
+RUN cd /app/apps/frontend && npm run build
 
 # Create startup script for production
 # Frontend uses PORT env var (set by Coolify), defaults to 3000
@@ -46,11 +51,13 @@ RUN npm run build
 RUN echo '#!/bin/bash\n\
 set -e\n\
 # Use PORT env var for frontend (Coolify sets this), default to 3000\n\
-FRONTEND_PORT=${PORT:-3000}\n\
+# But ensure frontend uses 3000 internally (PORT might be set for host mapping)\n\
+FRONTEND_PORT=3000\n\
 # Start backend API on port 8000 (internal)\n\
 cd /app/apps/backend && uvicorn main:app --host 0.0.0.0 --port 8000 &\n\
-# Start frontend in production mode using PORT env var\n\
-cd /app/apps/frontend && PORT=$FRONTEND_PORT npm run start &\n\
+# Start frontend in production mode on port 3000 (mapped to host via docker)\n\
+# Explicitly set PORT to override any env var, use -p flag for Next.js\n\
+cd /app/apps/frontend && PORT=3000 npx next start -p 3000 &\n\
 # Wait for both processes\n\
 wait\n\
 ' > /app/start.sh && chmod +x /app/start.sh
