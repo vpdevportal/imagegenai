@@ -27,7 +27,7 @@ async def generate_variation(
         file: Uploaded image file (required)
         prompt: Optional text prompt describing the desired variation
                 If not provided, generates an automatic variation
-        provider: AI provider to use (gemini, replicate, stability, huggingface). Defaults to gemini.
+        provider: AI provider to use (gemini, replicate, stability). Defaults to gemini.
     """
     has_prompt = prompt is not None and prompt.strip() != '' if prompt else False
     logger.info(f"Starting image variation request - filename: {file.filename}, has_prompt: {has_prompt}, provider: {provider or 'gemini'}")

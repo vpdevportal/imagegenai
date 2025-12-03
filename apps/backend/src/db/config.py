@@ -49,12 +49,11 @@ class Settings(BaseSettings):
     # AI Configuration
     google_ai_api_key: Optional[str] = None
     gemini_model: str = DEFAULT_GEMINI_MODEL
-    default_ai_provider: str = "gemini"  # Default provider: gemini, replicate, stability, huggingface
+    default_ai_provider: str = "gemini"  # Default provider: gemini, replicate, stability
     
     # Additional AI Provider API Keys
     replicate_api_key: Optional[str] = None
     stability_ai_api_key: Optional[str] = None
-    huggingface_api_key: Optional[str] = None
     
     # File Upload Configuration
     max_file_size: int = DEFAULT_MAX_FILE_SIZE

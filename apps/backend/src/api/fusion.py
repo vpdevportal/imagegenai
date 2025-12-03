@@ -26,7 +26,7 @@ async def generate_fusion(
     Args:
         image1: First uploaded image file (required)
         image2: Second uploaded image file (required)
-        provider: AI provider to use (gemini, replicate, stability, huggingface). Defaults to gemini.
+        provider: AI provider to use (gemini, replicate, stability). Defaults to gemini.
     """
     logger.info(f"Starting image fusion request - image1: {image1.filename}, image2: {image2.filename}, provider: {provider or 'gemini'}")
     

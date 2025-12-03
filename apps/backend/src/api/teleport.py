@@ -26,7 +26,7 @@ async def generate_teleport(
     Args:
         background_image: The new background image (first image)
         person_image: The image containing the person (second image)
-        provider: AI provider to use (gemini, replicate, stability, huggingface). Defaults to gemini.
+        provider: AI provider to use (gemini, replicate, stability). Defaults to gemini.
     """
     logger.info(f"Starting teleport request - background: {background_image.filename}, person: {person_image.filename}, provider: {provider or 'gemini'}")
     

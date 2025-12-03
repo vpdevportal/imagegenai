@@ -43,7 +43,7 @@ async def generate_image(
     Args:
         prompt: Text prompt for image generation
         image: Reference image file
-        provider: AI provider to use (gemini, replicate, stability, huggingface). Defaults to gemini.
+        provider: AI provider to use (gemini, replicate, stability). Defaults to gemini.
     """
     logger.info(f"Starting image generation - prompt_length: {len(prompt)}, filename: {image.filename}, provider: {provider or 'gemini'}")
     

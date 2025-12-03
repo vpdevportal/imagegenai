@@ -12,7 +12,6 @@ from .base.base_prompt_generator import BasePromptGenerator
 from .providers.gemini import GeminiImageGenerator, GeminiPromptGenerator
 from .providers.replicate import ReplicateImageGenerator
 from .providers.stability import StabilityImageGenerator
-from .providers.huggingface import HuggingFaceImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,6 @@ class ImageGeneratorFactory:
         "gemini": GeminiImageGenerator,
         "replicate": ReplicateImageGenerator,
         "stability": StabilityImageGenerator,
-        "huggingface": HuggingFaceImageGenerator,
     }
     
     @classmethod
@@ -33,7 +31,7 @@ class ImageGeneratorFactory:
         Create an image generator instance for the specified provider
         
         Args:
-            provider: Provider name ("gemini", "replicate", "stability", "huggingface")
+            provider: Provider name ("gemini", "replicate", "stability")
             api_key: Optional API key (if not provided, will use environment variables)
             
         Returns:
