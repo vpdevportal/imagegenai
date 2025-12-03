@@ -89,11 +89,19 @@ class PromptToImageGenerator:
         image_file.file.seek(0)  # Reset file pointer
         reference_image = Image.open(BytesIO(image_content))
         
+        logger.info(f"Generating image with model: {self.model}, prompt: {prompt[:100]}...")
+        logger.info(f"Reference image size: {reference_image.size}, mode: {reference_image.mode}")
+        
         # Generate the image using Gemini
         response = self.client.models.generate_content(
             model=self.model,
             contents=[prompt, reference_image],
         )
+        
+        # Log response structure for debugging
+        logger.info(f"Response received. Has candidates: {hasattr(response, 'candidates') and response.candidates is not None}")
+        if hasattr(response, 'candidates') and response.candidates:
+            logger.info(f"Number of candidates: {len(response.candidates)}")
 
         # Process the response and return image data
         if response.candidates and len(response.candidates) > 0:
@@ -101,21 +109,41 @@ class PromptToImageGenerator:
             
             # First, try to extract image data if it exists
             if candidate.content and candidate.content.parts:
+                logger.info(f"Candidate has {len(candidate.content.parts)} parts")
                 for i, part in enumerate(candidate.content.parts):
-                    logger.debug(f"Part {i}: type={type(part).__name__}, has_inline_data={hasattr(part, 'inline_data') and part.inline_data is not None}")
-                    if hasattr(part, 'inline_data') and part.inline_data is not None:
+                    part_type = type(part).__name__
+                    has_inline = hasattr(part, 'inline_data') and part.inline_data is not None
+                    has_text = hasattr(part, 'text') and part.text
+                    logger.info(f"Part {i}: type={part_type}, has_inline_data={has_inline}, has_text={has_text}")
+                    
+                    # Log text content if present
+                    if has_text:
+                        logger.info(f"Part {i} text content: {part.text[:200]}")
+                    
+                    if has_inline:
                         image_data = part.inline_data.data
                         content_type = "image/png"  # Gemini typically returns PNG
-                        logger.debug(f"Found image data: {len(image_data)} bytes")
+                        logger.info(f"Found image data: {len(image_data)} bytes")
                         # Log finish_reason for debugging but don't block if image exists
                         if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
                             logger.info(f"Image generated successfully with finish_reason: {candidate.finish_reason}")
                         return image_data, content_type
                 
                 # If we get here, there were parts but no image data
-                logger.error(f"Response has {len(candidate.content.parts)} parts but no inline_data. Parts: {[type(p).__name__ for p in candidate.content.parts]}")
+                logger.warning(f"Response has {len(candidate.content.parts)} parts but no inline_data. Parts: {[type(p).__name__ for p in candidate.content.parts]}")
+                
+                # Check if there's text explaining why no image was generated
+                text_responses = []
+                for part in candidate.content.parts:
+                    if hasattr(part, 'text') and part.text:
+                        text_responses.append(part.text)
+                
+                if text_responses:
+                    error_detail = "The AI model returned a text response instead of an image: " + " ".join(text_responses)
+                    logger.error(error_detail)
+                    raise HTTPException(status_code=400, detail=error_detail)
             else:
-                logger.error("Candidate has no content or parts")
+                logger.warning("Candidate has no content or parts")
             
             # Only check finish_reason as error if no image data was found
             if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
