@@ -36,7 +36,9 @@ class ReplicateImageGenerator(BaseImageGenerator):
         
         # Set the API token for replicate client
         os.environ['REPLICATE_API_TOKEN'] = self.api_key
-        self.model = "black-forest-labs/flux-1-dev"  # FLUX.1-dev for image-to-image
+        # Allow model name to be configured via environment variable
+        # Default fallback models will be tried if the configured one fails
+        self.model = os.getenv('REPLICATE_MODEL_NAME', 'black-forest-labs/flux-dev')
     
     def generate_from_image_and_text(self, image_file: UploadFile, prompt: str) -> Tuple[bytes, str]:
         """
@@ -57,23 +59,63 @@ class ReplicateImageGenerator(BaseImageGenerator):
             image_content = image_file.file.read()
             image_file.file.seek(0)  # Reset file pointer
             
-            # Convert image to base64 for Replicate API
-            image_base64 = base64.b64encode(image_content).decode('utf-8')
-            image_data_url = f"data:image/png;base64,{image_base64}"
+            # Replicate accepts images as file-like objects (BytesIO)
+            # Reset the file pointer and use BytesIO
+            image_file.file.seek(0)
+            image_bytes_io = BytesIO(image_content)
             
-            logger.info(f"Generating image with Replicate FLUX.1-dev, prompt: {prompt[:100]}...")
+            logger.info(f"Generating image with Replicate model {self.model}, prompt: {prompt[:100]}...")
             
             # Use Replicate API for image-to-image generation
-            output = replicate.run(
-                self.model,
-                input={
-                    "prompt": prompt,
-                    "image": image_data_url,
-                    "num_outputs": 1,
-                    "guidance_scale": 7.5,
-                    "num_inference_steps": 28,
-                }
-            )
+            # Try different model names if one fails
+            # Start with configured model, then try common alternatives
+            model_names = [
+                self.model,  # Try configured model first
+                "black-forest-labs/flux-dev",
+                "black-forest-labs/flux-1-dev", 
+                "black-forest-labs/flux-1",
+                "stability-ai/flux-dev"  # Alternative naming
+            ]
+            # Remove duplicates while preserving order
+            model_names = list(dict.fromkeys(model_names))
+            
+            output = None
+            last_error = None
+            
+            for model_name in model_names:
+                try:
+                    logger.info(f"Trying model: {model_name}")
+                    # Replicate Python SDK accepts file-like objects
+                    output = replicate.run(
+                        model_name,
+                        input={
+                            "prompt": prompt,
+                            "image": image_bytes_io,
+                            "num_outputs": 1,
+                            "guidance_scale": 7.5,
+                            "num_inference_steps": 28,
+                        }
+                    )
+                    # If successful, update self.model for future use
+                    self.model = model_name
+                    logger.info(f"Successfully used model: {model_name}")
+                    break
+                except Exception as model_error:
+                    last_error = model_error
+                    error_str = str(model_error)
+                    logger.warning(f"Model {model_name} failed: {error_str}")
+                    if "404" not in error_str and "not found" not in error_str.lower():
+                        # If it's not a 404/not found, don't try other models
+                        raise
+                    continue
+            
+            if output is None:
+                error_msg = f"All model names failed. Last error: {str(last_error)}"
+                logger.error(error_msg)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Replicate model not found. Please check the model name. Error: {str(last_error)}"
+                )
             
             # Replicate returns a list of URLs or file paths
             if isinstance(output, list) and len(output) > 0:
