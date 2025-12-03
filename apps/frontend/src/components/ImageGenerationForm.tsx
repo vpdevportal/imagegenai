@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { SparklesIcon, PhotoIcon, ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { generateImage } from '@/services/api'
+import { useProvider } from '@/contexts/ProviderContext'
 
 interface ImageGenerationFormProps {
   onImageGenerated: (image: any) => void
@@ -18,6 +19,7 @@ export default function ImageGenerationForm({
   setIsGenerating,
   initialPrompt = ''
 }: ImageGenerationFormProps) {
+  const { provider } = useProvider()
   const [prompt, setPrompt] = useState(initialPrompt)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -133,8 +135,8 @@ export default function ImageGenerationForm({
     setIsGenerating(true)
 
     try {
-      console.log('Calling generateImage API with prompt:', `"${prompt}"`, 'file:', selectedFile.name)
-      const response = await generateImage(prompt, selectedFile, (attempt, maxAttempts) => {
+      console.log('Calling generateImage API with prompt:', `"${prompt}"`, 'file:', selectedFile.name, 'provider:', provider)
+      const response = await generateImage(prompt, selectedFile, provider, (attempt, maxAttempts) => {
         setRetryAttempt(attempt)
         setMaxRetries(maxAttempts)
       })

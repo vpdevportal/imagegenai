@@ -93,8 +93,8 @@ export interface ImageGenerationResponse {
 
 // API functions
 
-export const generateImage = async (prompt: string, image: File, onRetry?: (attempt: number, maxAttempts: number) => void): Promise<ImageGenerationResponse> => {
-  console.log('generateImage API call - prompt:', `"${prompt}"`, 'length:', prompt.length, 'file:', image.name)
+export const generateImage = async (prompt: string, image: File, provider?: string, onRetry?: (attempt: number, maxAttempts: number) => void): Promise<ImageGenerationResponse> => {
+  console.log('generateImage API call - prompt:', `"${prompt}"`, 'length:', prompt.length, 'file:', image.name, 'provider:', provider)
 
   const maxRetries = 3
   let lastError: any
@@ -104,6 +104,9 @@ export const generateImage = async (prompt: string, image: File, onRetry?: (atte
       const formData = new FormData()
       formData.append('prompt', prompt)
       formData.append('image', image)
+      if (provider) {
+        formData.append('provider', provider)
+      }
 
       console.log(`FormData contents - attempt ${attempt}/${maxRetries} - prompt:`, formData.get('prompt'), 'image:', formData.get('image'))
 
@@ -231,7 +234,7 @@ export const savePrompt = async (prompt: string): Promise<Prompt> => {
 }
 
 // Inspire API - Image to Prompt Generation
-export const generatePromptFromImage = async (file: File): Promise<{
+export const generatePromptFromImage = async (file: File, provider?: string): Promise<{
   success: boolean
   prompt: string
   style: string
@@ -242,6 +245,9 @@ export const generatePromptFromImage = async (file: File): Promise<{
 }> => {
   const formData = new FormData()
   formData.append('file', file)
+  if (provider) {
+    formData.append('provider', provider)
+  }
 
   const response = await api.post('/inspire/generate-prompt', formData, {
     headers: {
@@ -258,7 +264,7 @@ export const trackPromptUsage = async (promptId: number): Promise<Prompt> => {
 }
 
 // Variations API - Image Variation Generation
-export const generateVariation = async (file: File, prompt?: string): Promise<{
+export const generateVariation = async (file: File, prompt?: string, provider?: string): Promise<{
   id: string
   message: string
   prompt: string
@@ -273,6 +279,9 @@ export const generateVariation = async (file: File, prompt?: string): Promise<{
   if (prompt && prompt.trim()) {
     formData.append('prompt', prompt.trim())
   }
+  if (provider) {
+    formData.append('provider', provider)
+  }
 
   const response = await api.post('/variations/generate', formData, {
     headers: {
@@ -283,7 +292,7 @@ export const generateVariation = async (file: File, prompt?: string): Promise<{
 }
 
 // Fusion API - Merge Two People Together
-export const generateFusion = async (image1: File, image2: File): Promise<{
+export const generateFusion = async (image1: File, image2: File, provider?: string): Promise<{
   id: string
   message: string
   prompt: string
@@ -295,6 +304,9 @@ export const generateFusion = async (image1: File, image2: File): Promise<{
   const formData = new FormData()
   formData.append('image1', image1)
   formData.append('image2', image2)
+  if (provider) {
+    formData.append('provider', provider)
+  }
 
   const response = await api.post('/fusion/generate', formData, {
     headers: {
@@ -305,7 +317,7 @@ export const generateFusion = async (image1: File, image2: File): Promise<{
 }
 
 // Teleport API - Teleport Person to Background
-export const generateTeleport = async (backgroundImage: File, personImage: File): Promise<{
+export const generateTeleport = async (backgroundImage: File, personImage: File, provider?: string): Promise<{
   id: string
   message: string
   prompt: string
@@ -317,6 +329,9 @@ export const generateTeleport = async (backgroundImage: File, personImage: File)
   const formData = new FormData()
   formData.append('background_image', backgroundImage)
   formData.append('person_image', personImage)
+  if (provider) {
+    formData.append('provider', provider)
+  }
 
   const response = await api.post('/teleport/generate', formData, {
     headers: {

@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { ArrowsRightLeftIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { generateFusion } from '@/services/api'
+import { useProvider } from '@/contexts/ProviderContext'
 
 interface ImageFusionFormProps {
   onFusionGenerated: (fusion: any) => void
@@ -16,6 +17,7 @@ export default function ImageFusionForm({
   isGenerating, 
   setIsGenerating
 }: ImageFusionFormProps) {
+  const { provider } = useProvider()
   const [selectedFile1, setSelectedFile1] = useState<File | null>(null)
   const [selectedFile2, setSelectedFile2] = useState<File | null>(null)
   const [previewUrl1, setPreviewUrl1] = useState<string | null>(null)
@@ -105,7 +107,7 @@ export default function ImageFusionForm({
     setIsGenerating(true)
 
     try {
-      const response = await generateFusion(selectedFile1, selectedFile2)
+      const response = await generateFusion(selectedFile1, selectedFile2, provider)
       
       onFusionGenerated({
         id: response.id,

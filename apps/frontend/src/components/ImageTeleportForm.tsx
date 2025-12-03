@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { GlobeAmericasIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { generateTeleport } from '@/services/api'
+import { useProvider } from '@/contexts/ProviderContext'
 
 interface ImageTeleportFormProps {
   onTeleportGenerated: (result: any) => void
@@ -16,6 +17,7 @@ export default function ImageTeleportForm({
   isGenerating,
   setIsGenerating
 }: ImageTeleportFormProps) {
+  const { provider } = useProvider()
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null)
   const [personFile, setPersonFile] = useState<File | null>(null)
   const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null)
@@ -105,7 +107,7 @@ export default function ImageTeleportForm({
     setIsGenerating(true)
 
     try {
-      const response = await generateTeleport(personFile, backgroundFile)
+      const response = await generateTeleport(personFile, backgroundFile, provider)
 
       onTeleportGenerated({
         id: response.id,

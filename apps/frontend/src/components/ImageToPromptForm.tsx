@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { SparklesIcon, ArrowPathIcon, XMarkIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import { generatePromptFromImage } from '@/services/api'
 import { useToast } from '@/contexts/ToastContext'
+import { useProvider } from '@/contexts/ProviderContext'
 import { QueueItem } from '@/types'
 
 interface ImageToPromptFormProps {
@@ -11,6 +12,7 @@ interface ImageToPromptFormProps {
 }
 
 export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFormProps) {
+  const { provider } = useProvider()
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -86,7 +88,8 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
 
     try {
       const result = await generatePromptFromImage(
-        pendingItem.file
+        pendingItem.file,
+        provider
       )
       
       if (result.success) {

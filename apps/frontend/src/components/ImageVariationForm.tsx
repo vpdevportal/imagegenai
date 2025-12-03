@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { SparklesIcon, PhotoIcon, ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { generateVariation } from '@/services/api'
+import { useProvider } from '@/contexts/ProviderContext'
 
 interface ImageVariationFormProps {
   onVariationGenerated: (variation: any) => void
@@ -16,6 +17,7 @@ export default function ImageVariationForm({
   isGenerating, 
   setIsGenerating
 }: ImageVariationFormProps) {
+  const { provider } = useProvider()
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
@@ -94,7 +96,7 @@ export default function ImageVariationForm({
     setIsGenerating(true)
 
     try {
-      const response = await generateVariation(selectedFile, prompt || undefined)
+      const response = await generateVariation(selectedFile, prompt || undefined, provider)
       
       onVariationGenerated({
         id: response.id,
