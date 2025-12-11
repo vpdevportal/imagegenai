@@ -10,24 +10,30 @@ interface ProviderContextType {
   availableProviders: AIProvider[]
 }
 
-const ProviderContext = createContext<ProviderContextType | undefined>(undefined)
-
 const STORAGE_KEY = 'imagegenai_ai_provider'
 const DEFAULT_PROVIDER: AIProvider = 'gemini'
 const AVAILABLE_PROVIDERS: AIProvider[] = ['gemini', 'replicate', 'stability']
 
-export function ProviderProvider({ children }: { children: ReactNode }) {
-  const [provider, setProviderState] = useState<AIProvider>(DEFAULT_PROVIDER)
-  const [isInitialized, setIsInitialized] = useState(false)
+// Create context with default value to avoid undefined during SSR
+const ProviderContext = createContext<ProviderContextType>({
+  provider: DEFAULT_PROVIDER,
+  setProvider: () => {},
+  availableProviders: AVAILABLE_PROVIDERS,
+})
 
-  // Load provider from localStorage on mount
+export function ProviderProvider({ children }: { children: ReactNode }) {
+  // Initialize with default provider immediately (works for SSR/SSG)
+  const [provider, setProviderState] = useState<AIProvider>(DEFAULT_PROVIDER)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Load provider from localStorage after mount (client-side only)
   useEffect(() => {
+    setIsMounted(true)
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY) as AIProvider | null
       if (stored && AVAILABLE_PROVIDERS.includes(stored)) {
         setProviderState(stored)
       }
-      setIsInitialized(true)
     }
   }, [])
 
@@ -41,11 +47,7 @@ export function ProviderProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Don't render children until initialized to avoid hydration mismatch
-  if (!isInitialized) {
-    return null
-  }
-
+  // Always provide context value (never return null)
   return (
     <ProviderContext.Provider
       value={{
@@ -61,9 +63,7 @@ export function ProviderProvider({ children }: { children: ReactNode }) {
 
 export function useProvider() {
   const context = useContext(ProviderContext)
-  if (context === undefined) {
-    throw new Error('useProvider must be used within a ProviderProvider')
-  }
+  // Context always has a value (default or from provider), so no need to check
   return context
 }
 
