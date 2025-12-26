@@ -26,7 +26,8 @@ export default function ImageGenerationForm({
   const [error, setError] = useState('')
   const [dragActive, setDragActive] = useState(false)
   const [retryAttempt, setRetryAttempt] = useState(0)
-  const [maxRetries, setMaxRetries] = useState(3)
+  const [isCancelled, setIsCancelled] = useState(false)
+  const cancelRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Debug component mount
@@ -102,6 +103,17 @@ export default function ImageGenerationForm({
     setError('')
   }
 
+  const handleCancel = () => {
+    cancelRef.current = true
+    setIsCancelled(true)
+    setIsGenerating(false)
+    setError('Generation cancelled')
+    // Reset retry attempt after a brief delay to show the cancellation message
+    setTimeout(() => {
+      setRetryAttempt(0)
+    }, 1000)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -132,14 +144,21 @@ export default function ImageGenerationForm({
 
     setError('')
     setRetryAttempt(0)
+    setIsCancelled(false)
+    cancelRef.current = false
     setIsGenerating(true)
 
     try {
       console.log('Calling generateImage API with prompt:', `"${prompt}"`, 'file:', selectedFile.name, 'provider:', provider)
-      const response = await generateImage(prompt, selectedFile, provider, (attempt, maxAttempts) => {
-        setRetryAttempt(attempt)
-        setMaxRetries(maxAttempts)
-      })
+      const response = await generateImage(
+        prompt, 
+        selectedFile, 
+        provider, 
+        (attempt) => {
+          setRetryAttempt(attempt)
+        },
+        () => cancelRef.current
+      )
       
       onImageGenerated({
         id: response.id,
@@ -153,12 +172,21 @@ export default function ImageGenerationForm({
     } catch (err: any) {
       console.error('Image generation error:', err)
       
-      // Extract specific error message from API response
-      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to generate image after multiple attempts. Please try again.'
-      setError(errorMessage)
+      // Check if it was cancelled
+      if (cancelRef.current || err?.message === 'Image generation cancelled by user') {
+        setError('Image generation cancelled')
+        setIsCancelled(true)
+      } else {
+        // Extract specific error message from API response
+        const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to generate image. Retrying...'
+        setError(errorMessage)
+      }
     } finally {
       setIsGenerating(false)
-      setRetryAttempt(0)
+      // Only reset retry attempt if not cancelled (cancellation handler will reset it)
+      if (!cancelRef.current) {
+        setRetryAttempt(0)
+      }
     }
   }
 
@@ -264,41 +292,56 @@ export default function ImageGenerationForm({
         {/* Retry Progress */}
         {isGenerating && retryAttempt > 0 && (
           <div className="text-teal-300 text-sm bg-teal-900/20 border border-teal-500/30 rounded-lg p-3">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-teal-400 border-t-transparent"></div>
-              <span>Retrying... Attempt {retryAttempt} of {maxRetries}</span>
-            </div>
-            <div className="w-full bg-teal-900/30 rounded-full h-2 overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-teal-500 to-cyan-600 h-2 rounded-full transition-all duration-500" 
-                style={{ width: `${(retryAttempt / maxRetries) * 100}%` }}
-              ></div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-teal-400 border-t-transparent"></div>
+                <span>Retrying... Attempt {retryAttempt}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded transition-colors"
+              >
+                Stop
+              </button>
             </div>
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={isGenerating || !prompt.trim() || !selectedFile || prompt.length > 1000}
-          className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-          onClick={(e) => {
-            console.log('Button clicked - prompt:', `"${prompt}"`, 'length:', prompt.length, 'selectedFile:', selectedFile, 'disabled:', isGenerating || !prompt.trim() || !selectedFile || prompt.length > 1000)
-          }}
-        >
-          {isGenerating ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-              <span>
-                {retryAttempt > 0 ? `Retrying... (${retryAttempt}/${maxRetries})` : 'Generating...'}
-              </span>
-            </>
-          ) : (
-            <>
-              <SparklesIcon className="h-4 w-4" />
-              <span>Generate Image</span>
-            </>
+        <div className="flex space-x-2">
+          <button
+            type="submit"
+            disabled={isGenerating || !prompt.trim() || !selectedFile || prompt.length > 1000}
+            className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            onClick={(e) => {
+              console.log('Button clicked - prompt:', `"${prompt}"`, 'length:', prompt.length, 'selectedFile:', selectedFile, 'disabled:', isGenerating || !prompt.trim() || !selectedFile || prompt.length > 1000)
+            }}
+          >
+            {isGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <span>
+                  {retryAttempt > 0 ? `Retrying... (Attempt ${retryAttempt})` : 'Generating...'}
+                </span>
+              </>
+            ) : (
+              <>
+                <SparklesIcon className="h-4 w-4" />
+                <span>Generate Image</span>
+              </>
+            )}
+          </button>
+          {isGenerating && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-4 btn-secondary flex items-center justify-center space-x-2"
+            >
+              <XMarkIcon className="h-4 w-4" />
+              <span>Cancel</span>
+            </button>
           )}
-        </button>
+        </div>
       </form>
 
     </div>
