@@ -18,7 +18,7 @@ const getApiBaseUrl = () => {
     return process.env.NEXT_PUBLIC_API_URL
   }
   
-  return 'http://127.0.0.1:8000/api'
+  return 'http://127.0.0.1:6001/api'
 }
 
 // Normalize image URLs to use relative paths to avoid local network permission issues
@@ -93,13 +93,27 @@ export interface ImageGenerationResponse {
 
 // API functions
 
-export const generateImage = async (prompt: string, image: File, provider?: string, onRetry?: (attempt: number, maxAttempts: number) => void): Promise<ImageGenerationResponse> => {
+export const generateImage = async (
+  prompt: string, 
+  image: File, 
+  provider?: string, 
+  onRetry?: (attempt: number) => void,
+  shouldCancel?: () => boolean
+): Promise<ImageGenerationResponse> => {
   console.log('generateImage API call - prompt:', `"${prompt}"`, 'length:', prompt.length, 'file:', image.name, 'provider:', provider)
 
-  const maxRetries = 3
   let lastError: any
+  let attempt = 0
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  while (true) {
+    // Check if cancellation was requested
+    if (shouldCancel && shouldCancel()) {
+      console.log('Image generation cancelled by user')
+      throw new Error('Image generation cancelled by user')
+    }
+
+    attempt++
+    
     try {
       const formData = new FormData()
       formData.append('prompt', prompt)
@@ -108,7 +122,7 @@ export const generateImage = async (prompt: string, image: File, provider?: stri
         formData.append('provider', provider)
       }
 
-      console.log(`FormData contents - attempt ${attempt}/${maxRetries} - prompt:`, formData.get('prompt'), 'image:', formData.get('image'))
+      console.log(`FormData contents - attempt ${attempt} - prompt:`, formData.get('prompt'), 'image:', formData.get('image'))
 
       const response = await api.post('/generate/', formData, {
         headers: {
@@ -120,29 +134,46 @@ export const generateImage = async (prompt: string, image: File, provider?: stri
       return response.data
 
     } catch (error: any) {
+      // Check if this is a cancellation error (re-throw it)
+      if (error?.message === 'Image generation cancelled by user') {
+        throw error
+      }
+
       lastError = error
-      console.error(`Image generation attempt ${attempt}/${maxRetries} failed:`, error?.response?.data || error?.message)
+      console.error(`Image generation attempt ${attempt} failed:`, error?.response?.data || error?.message)
+
+      // Check if cancellation was requested after error
+      if (shouldCancel && shouldCancel()) {
+        console.log('Image generation cancelled by user after error')
+        throw new Error('Image generation cancelled by user')
+      }
 
       // Notify about retry attempt
       if (onRetry) {
-        onRetry(attempt, maxRetries)
+        onRetry(attempt)
       }
 
-      // If this is the last attempt, don't wait
-      if (attempt === maxRetries) {
-        break
-      }
-
-      // Exponential backoff: wait 1s, 2s, 4s, 8s between retries
-      const delay = Math.pow(2, attempt - 1) * 1000
+      // Exponential backoff: wait 1s, 2s, 4s, 8s, then cap at 8s between retries
+      const delay = Math.min(Math.pow(2, attempt - 1) * 1000, 8000)
       console.log(`Waiting ${delay}ms before retry attempt ${attempt + 1}`)
-      await new Promise(resolve => setTimeout(resolve, delay))
+      
+      // Wait with cancellation check
+      let cancelled = false
+      const startTime = Date.now()
+      while (Date.now() - startTime < delay) {
+        if (shouldCancel && shouldCancel()) {
+          cancelled = true
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+      
+      if (cancelled) {
+        console.log('Image generation cancelled during wait')
+        throw new Error('Image generation cancelled by user')
+      }
     }
   }
-
-  // If we get here, all retries failed
-  console.error(`Image generation failed after ${maxRetries} attempts`)
-  throw lastError
 }
 
 // Prompt API functions

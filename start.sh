@@ -95,7 +95,7 @@ kill_port() {
 print_status "Checking and cleaning up ports..."
 
 # Check if Chrome might be using these ports
-for port in 8000 3000; do
+for port in 6001 5001; do
     chrome_pids=$(lsof -ti :$port 2>/dev/null | xargs -I {} ps -p {} -o comm= 2>/dev/null | grep -i chrome || true)
     if [ -n "$chrome_pids" ]; then
         print_warning "Chrome processes detected on port $port. This might cause Chrome sessions to be cleared."
@@ -103,8 +103,8 @@ for port in 8000 3000; do
     fi
 done
 
-kill_port 8000 "backend"
-kill_port 3000 "frontend"
+kill_port 6001 "backend"
+kill_port 5001 "frontend"
 
 # Check if Python virtual environment exists
 if [ ! -d "apps/backend/venv" ]; then
@@ -144,7 +144,7 @@ cleanup() {
     jobs -p | xargs -r kill 2>/dev/null || true
     
     # Safely kill only development processes on our ports
-    for port in 8000 3000; do
+    for port in 6001 5001; do
         local pids=$(lsof -ti :$port 2>/dev/null)
         if [ -n "$pids" ]; then
             for pid in $pids; do
@@ -189,10 +189,10 @@ else
 fi
 
 # Start backend in background
-print_status "Starting FastAPI backend on http://localhost:8000"
+print_status "Starting FastAPI backend on http://localhost:6001"
 cd apps/backend
 source venv/bin/activate
-python main.py &
+PORT=6001 python main.py &
 BACKEND_PID=$!
 cd ../..
 
@@ -200,7 +200,7 @@ cd ../..
 sleep 3
 
 # Start frontend in background
-print_status "Starting Next.js frontend on http://localhost:3000"
+print_status "Starting Next.js frontend on http://localhost:5001"
 cd apps/frontend
 npm run dev &
 FRONTEND_PID=$!
@@ -213,9 +213,9 @@ echo ""
 print_success "Development environment started successfully!"
 echo ""
 echo "🌐 Application URLs:"
-echo "   Frontend:  http://localhost:3000"
-echo "   Backend:   http://localhost:8000"
-echo "   API Docs:  http://localhost:8000/api/docs"
+echo "   Frontend:  http://localhost:5001"
+echo "   Backend:   http://localhost:6001"
+echo "   API Docs:  http://localhost:6001/api/docs"
 echo ""
 echo "📝 Useful Commands:"
 echo "   - Press Ctrl+C to stop all servers"
