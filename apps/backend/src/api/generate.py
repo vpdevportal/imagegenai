@@ -45,18 +45,21 @@ async def generate_image(
         image: Reference image file
         provider: AI provider to use (gemini, replicate, stability). Defaults to gemini.
     """
-    logger.info(f"Starting image generation - prompt_length: {len(prompt)}, filename: {image.filename}, provider: {provider or 'gemini'}")
+    logger.info(f"Starting image generation - prompt_length: {len(prompt) if prompt else 0}, filename: {image.filename if image else 'None'}, content_type: {image.content_type if image else 'None'}, provider: {provider or 'gemini'}")
     
     try:
         # Validate prompt
-        if not prompt.strip():
+        if not prompt or not prompt.strip():
+            logger.warning(f"Validation failed: Empty prompt")
             raise HTTPException(status_code=400, detail="Prompt cannot be empty")
         
         if len(prompt) > 1000:
+            logger.warning(f"Validation failed: Prompt too long ({len(prompt)} characters)")
             raise HTTPException(status_code=400, detail="Prompt too long (max 1000 characters)")
         
         # Validate that image is provided
         if not image or not image.filename:
+            logger.warning(f"Validation failed: No image file provided")
             raise HTTPException(status_code=400, detail="Reference image is required")
         
         # Generate unique ID for this request
@@ -64,10 +67,31 @@ async def generate_image(
         current_time = datetime.now().isoformat()
         
         # Validate image file
-        if image.content_type not in settings.allowed_image_types:
+        if not image.content_type:
+            logger.warning(f"Image file has no content_type - filename: {image.filename}")
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid file type. Allowed types: {', '.join(settings.allowed_image_types)}"
+                detail="Image file type could not be determined. Please ensure the file is a valid image."
+            )
+        
+        # Normalize content_type (handle case and variations)
+        content_type_lower = image.content_type.lower()
+        # Map common variations
+        content_type_map = {
+            'image/jpg': 'image/jpeg',
+            'image/jpeg': 'image/jpeg',
+            'image/png': 'image/png',
+            'image/webp': 'image/webp'
+        }
+        normalized_content_type = content_type_map.get(content_type_lower, content_type_lower)
+        
+        # Check if normalized type is allowed
+        allowed_types_lower = [t.lower() for t in settings.allowed_image_types]
+        if normalized_content_type not in allowed_types_lower and content_type_lower not in allowed_types_lower:
+            logger.warning(f"Invalid file type: {image.content_type} (normalized: {normalized_content_type}) - filename: {image.filename}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file type: {image.content_type}. Allowed types: {', '.join(settings.allowed_image_types)}"
             )
         
         # Check file size
@@ -76,6 +100,7 @@ async def generate_image(
         max_size_mb = settings.max_file_size // (1024*1024)
         
         if file_size > settings.max_file_size:
+            logger.warning(f"Validation failed: File too large ({file_size / (1024*1024):.2f}MB, max: {max_size_mb}MB)")
             raise HTTPException(
                 status_code=400,
                 detail=f"Reference image too large. Maximum size is {max_size_mb}MB"
