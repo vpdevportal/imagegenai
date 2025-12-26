@@ -25,6 +25,7 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
   const { addToast } = useToast()
   const [savingIds, setSavingIds] = useState<Set<string | number>>(new Set())
   const [savedIds, setSavedIds] = useState<Set<string | number>>(new Set())
+  const [hoveredImageId, setHoveredImageId] = useState<string | number | null>(null)
 
   const handleDownload = (image: ImageData) => {
     try {
@@ -185,6 +186,8 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
           <div
             key={image.id}
             className="relative group bg-[#1a2332]/40 rounded-lg overflow-hidden border border-[#2a3441] hover:border-teal-500/30 transition-all duration-200"
+            onMouseEnter={() => setHoveredImageId(image.id)}
+            onMouseLeave={() => setHoveredImageId(null)}
           >
             {/* Generated Image */}
             <div className="relative w-full bg-[#0a1929]" style={{ minHeight: '300px' }}>
@@ -201,8 +204,10 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
               />
               
               {/* Overlay with actions */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-300">
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/60 to-transparent">
+              <div className={`absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent transition-all duration-300 ${
+                hoveredImageId === image.id ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}>
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/60 to-transparent pointer-events-auto">
                   <p className="text-white text-sm font-medium mb-3 line-clamp-2 drop-shadow-lg">
                     {image.prompt}
                   </p>
@@ -210,11 +215,11 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
                     <span className="text-xs text-gray-200 font-medium">
                       {new Date(image.createdAt).toLocaleDateString()}
                     </span>
-                    <div className="flex space-x-2" onMouseEnter={(e) => e.stopPropagation()}>
+                    <div className="flex space-x-2">
                       <button
                         onClick={() => handleSavePrompt(image)}
                         disabled={savingIds.has(image.id) || savedIds.has(image.id)}
-                        className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-110 active:scale-95 shadow-lg"
+                        className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-110 active:scale-95 shadow-lg z-10"
                         title={savedIds.has(image.id) ? 'Saved' : 'Save Prompt'}
                       >
                         {savingIds.has(image.id) ? (
@@ -227,7 +232,7 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
                       </button>
                       <button
                         onClick={() => handleDownload(image)}
-                        className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 transform hover:scale-110 active:scale-95 shadow-lg"
+                        className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 transform hover:scale-110 active:scale-95 shadow-lg z-10"
                         title="Download"
                       >
                         <ArrowDownTrayIcon className="h-4 w-4 text-white" />
@@ -235,7 +240,7 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
                       {onDelete && (
                         <button
                           onClick={() => handleDelete(image)}
-                          className="p-2 rounded-xl bg-gradient-to-r from-red-500/80 to-pink-600/80 hover:from-red-600 hover:to-pink-700 backdrop-blur-sm transition-all duration-300 transform hover:scale-110 active:scale-95 shadow-lg"
+                          className="p-2 rounded-xl bg-gradient-to-r from-red-500/80 to-pink-600/80 hover:from-red-600 hover:to-pink-700 backdrop-blur-sm transition-all duration-300 transform hover:scale-110 active:scale-95 shadow-lg z-10"
                           title="Delete Image"
                         >
                           <TrashIcon className="h-4 w-4 text-white" />
@@ -247,7 +252,9 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
               </div>
 
               {/* Status badge and action buttons */}
-              <div className="absolute top-4 right-4 flex items-center space-x-2 opacity-100 group-hover:opacity-0 transition-opacity duration-300 pointer-events-auto z-20">
+              <div className={`absolute top-4 right-4 flex items-center space-x-2 transition-opacity duration-300 pointer-events-auto z-20 ${
+                hoveredImageId === image.id ? 'opacity-0' : 'opacity-100'
+              }`}>
                 <button
                   onClick={() => handleSavePrompt(image)}
                   disabled={savingIds.has(image.id) || savedIds.has(image.id)}
