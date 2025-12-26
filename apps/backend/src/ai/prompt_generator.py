@@ -58,7 +58,7 @@ class PromptGenerator:
                 
                 CAMERA: [ALWAYS describe as: mobile camera, low quality, handheld, natural lighting, slight sensor noise, realistic exposure, authentic ambient lighting, casual mobile phone photography style]
                 
-                Be thorough and specific in each section. Keep the total response under 1000 characters. Each section should be on a new line with its label."""
+                Be thorough and specific in each section. Keep the total response under 2000 characters. Each section should be on a new line with its label."""
     
     def fusion_prompt(self) -> str:
         """

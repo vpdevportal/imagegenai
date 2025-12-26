@@ -80,8 +80,8 @@ class ImageToPromptService:
             )
             
             # Validate prompt length
-            if len(prompt) > 1000:
-                prompt = prompt[:1000].rsplit(' ', 1)[0]
+            if len(prompt) > 2000:
+                prompt = prompt[:2000].rsplit(' ', 1)[0]
             
             # Generate thumbnail
             thumbnail_data = ThumbnailGenerator.generate_thumbnail_from_pil_image(image)
