@@ -295,7 +295,7 @@ export default function ImageGenerationForm({
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-teal-400 border-t-transparent"></div>
-                <span>Retrying... Attempt {retryAttempt}</span>
+                <span>Retrying... Attempt {retryAttempt} of 20</span>
               </div>
               <button
                 type="button"
@@ -321,7 +321,7 @@ export default function ImageGenerationForm({
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                 <span>
-                  {retryAttempt > 0 ? `Retrying... (Attempt ${retryAttempt})` : 'Generating...'}
+                  {retryAttempt > 0 ? `Retrying... (Attempt ${retryAttempt}/20)` : 'Generating...'}
                 </span>
               </>
             ) : (

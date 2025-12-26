@@ -104,8 +104,9 @@ export const generateImage = async (
 
   let lastError: any
   let attempt = 0
+  const maxRetries = 20
 
-  while (true) {
+  while (attempt < maxRetries) {
     // Check if cancellation was requested
     if (shouldCancel && shouldCancel()) {
       console.log('Image generation cancelled by user')
@@ -153,6 +154,12 @@ export const generateImage = async (
         onRetry(attempt)
       }
 
+      // Check if we've reached max retries
+      if (attempt >= maxRetries) {
+        console.error(`Image generation failed after ${maxRetries} attempts`)
+        break
+      }
+
       // Exponential backoff: wait 1s, 2s, 4s, 8s, then cap at 8s between retries
       const delay = Math.min(Math.pow(2, attempt - 1) * 1000, 8000)
       console.log(`Waiting ${delay}ms before retry attempt ${attempt + 1}`)
@@ -173,6 +180,12 @@ export const generateImage = async (
         throw new Error('Image generation cancelled by user')
       }
     }
+  }
+
+  // If we get here, all retries failed
+  if (attempt >= maxRetries) {
+    console.error(`Image generation failed after ${maxRetries} attempts`)
+    throw lastError || new Error(`Image generation failed after ${maxRetries} attempts`)
   }
 }
 
