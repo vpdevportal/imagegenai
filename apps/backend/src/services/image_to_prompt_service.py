@@ -30,14 +30,18 @@ class ImageToPromptService:
         """
         Get the appropriate prompt generator instance based on provider
         
+        Note: Prompt generation currently only supports gemini, so provider parameter
+        is ignored and gemini is always used.
+        
         Args:
-            provider: Provider name (defaults to gemini if not specified)
+            provider: Provider name (ignored - always uses gemini for prompt generation)
             
         Returns:
-            BasePromptGenerator: Generator instance
+            BasePromptGenerator: Generator instance (always gemini)
         """
-        provider = provider or getattr(settings, 'default_ai_provider', 'gemini')
-        return PromptGeneratorFactory.create(provider)
+        # Prompt generation only supports gemini, so always use gemini
+        # regardless of the provider parameter
+        return PromptGeneratorFactory.create('gemini')
     
     async def generate_prompt_from_image(
         self,
@@ -57,7 +61,8 @@ class ImageToPromptService:
         Raises:
             HTTPException: If generation fails
         """
-        logger.info(f"Starting prompt generation - filename: {file.filename}, provider: {provider or 'gemini'}")
+        # Note: Prompt generation always uses gemini, regardless of provider parameter
+        logger.info(f"Starting prompt generation - filename: {file.filename}, using provider: gemini (provider parameter '{provider}' ignored for prompt generation)")
         
         try:
             # Validate file type
