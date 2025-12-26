@@ -30,33 +30,34 @@ class PromptGenerator:
         """
         Get the template prompt for converting images to text prompts
         
+        This prompt will be used to edit a user's input image. The generated prompt describes
+        elements from the reference image, but when applied, facial features will come from
+        the input image being edited.
+        
         Returns:
             str: The template prompt text for image-to-prompt generation
         """
-        style_instruction = "Focus on photorealistic details, realistic lighting and textures"
-            
-        detail_instruction = "Provide a detailed description including colors, composition, mood, and key elements"
-
-        return f"""Generate a rich, detailed description of this image that will be used WITH the reference image to create variations. Start your response with "USE THIS WITH THE REFERENCE IMAGE:" followed by the description.
+        return f"""Generate a detailed description of this reference image. This description will be used to edit a user's input image. Start your response with "USE THIS WITH THE REFERENCE IMAGE:" followed by the description.
                 
-                {style_instruction}. {detail_instruction}. Emphasize a natural, candid, handheld mobile camera look with realistic exposure, slight sensor noise, natural skin tones, and authentic ambient lighting. Avoid studio perfection.
-                
-                IMPORTANT: Body type, build, and proportions will be automatically preserved from the reference image - do NOT describe them. Provide comprehensive details for the following modifiable aspects:
+                CRITICAL INSTRUCTIONS:
+                - When this prompt is used to edit a user's input image, the FACE (skin tone, texture, eye color, nose structure, lip color, face shape, all facial features) will come from the INPUT IMAGE being edited, NOT from this reference image. Do NOT describe facial features from the reference - they will be automatically preserved from the input image.
+                - The camera is ALWAYS a mobile camera with low quality - describe it as such.
+                - Focus on describing modifiable elements: clothing, pose, background, composition, lighting, and style.
                 
                 Format your response with the following labeled sections (use the exact labels shown):
                                 
-                FACE: [Provide detailed description of facial features to preserve: eye color and shape, nose structure, lip fullness and color, face shape, skin tone and texture, expressions, distinctive features, and identity characteristics]
+                FACE: [DO NOT describe facial features from the reference image. State: "Preserve all facial features from the input image - skin tone, texture, eye color, nose structure, lip color, face shape, and all facial characteristics must remain exactly as in the input image being edited"]
                 
-                CLOTHING: [Provide detailed description of clothing: specific garment types, exact colors and patterns, fabric textures and materials, fit (tight/loose/fitted), how much it reveals body shapes and curves (degree of revelation), how it emphasizes silhouette and contours, accessories, and overall fashion aesthetic]
+                CLOTHING: [Describe the clothing from the reference image: specific garment types, exact colors and patterns, fabric textures and materials, fit (tight/loose/fitted), how it reveals body shapes and curves, how it emphasizes silhouette and contours, accessories, and overall fashion aesthetic]
                 
-                POSE: [Provide detailed description of the pose: specific body positioning, arm and leg placement, head angle and tilt, camera angle (eye-level/low/high), shot framing (close-up/mid/full), and overall composition]
+                POSE: [Describe the pose from the reference image: specific body positioning, arm and leg placement, head angle and tilt, camera angle (eye-level/low/high), shot framing (close-up/mid/full), and overall composition]
                 
-                BREAST: [Provide detailed description of the desired breast size (small/medium/large/etc.) and shape - this can be modified from the reference image]
+                BREAST: [ALWAYS describe as: large or medium breast size with natural shape and proportions]
 
-                BACKGROUND: [Provide detailed description of the setting: indoor/outdoor, specific location type, colors and lighting, environmental elements, depth and focus, and overall atmosphere]
+                BACKGROUND: [Describe the setting from the reference image: indoor/outdoor, specific location type, colors and lighting, environmental elements, depth and focus, and overall atmosphere]
                 
-                CAMERA: [Provide detailed description of the mobile camera characteristics: lighting quality (natural/artificial/mixed), exposure level, color temperature, sharpness, any natural blur or bokeh effects]
-                \
+                CAMERA: [ALWAYS describe as: mobile camera, low quality, handheld, natural lighting, slight sensor noise, realistic exposure, authentic ambient lighting, casual mobile phone photography style]
+                
                 Be thorough and specific in each section. Keep the total response under 1000 characters. Each section should be on a new line with its label."""
     
     def fusion_prompt(self) -> str:
