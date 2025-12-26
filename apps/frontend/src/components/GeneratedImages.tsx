@@ -201,7 +201,7 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
               />
               
               {/* Overlay with actions */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-300">
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/60 to-transparent">
                   <p className="text-white text-sm font-medium mb-3 line-clamp-2 drop-shadow-lg">
                     {image.prompt}
@@ -210,7 +210,7 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
                     <span className="text-xs text-gray-200 font-medium">
                       {new Date(image.createdAt).toLocaleDateString()}
                     </span>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2" onMouseEnter={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleSavePrompt(image)}
                         disabled={savingIds.has(image.id) || savedIds.has(image.id)}
@@ -247,7 +247,7 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
               </div>
 
               {/* Status badge and action buttons */}
-              <div className="absolute top-4 right-4 flex items-center space-x-2 opacity-100 group-hover:opacity-0 transition-opacity duration-300">
+              <div className="absolute top-4 right-4 flex items-center space-x-2 opacity-100 group-hover:opacity-0 transition-opacity duration-300 pointer-events-auto z-20">
                 <button
                   onClick={() => handleSavePrompt(image)}
                   disabled={savingIds.has(image.id) || savedIds.has(image.id)}

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { SparklesIcon, ArrowPathIcon, XMarkIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
+import Image from 'next/image'
 import { generatePromptFromImage } from '@/services/api'
 import { useToast } from '@/contexts/ToastContext'
 import { useProvider } from '@/contexts/ProviderContext'
@@ -133,7 +134,7 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
       processingRef.current = false
       setIsProcessing(false)
     }
-  }, [queue, addToast, onPromptGenerated])
+  }, [queue, addToast, onPromptGenerated, provider])
 
   // Auto-process queue when items are added or status changes
   useEffect(() => {
@@ -259,10 +260,13 @@ export default function ImageToPromptForm({ onPromptGenerated }: ImageToPromptFo
             >
               {/* Thumbnail */}
               <div className="w-16 h-16 flex-shrink-0 relative bg-[#0a1929] rounded-lg overflow-hidden border border-[#2a3441]">
-                <img
+                <Image
                   src={item.preview}
                   alt="Preview"
+                  width={64}
+                  height={64}
                   className="w-full h-full object-cover"
+                  unoptimized
                 />
               </div>
 
