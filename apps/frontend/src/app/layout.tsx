@@ -8,9 +8,6 @@ import { ToastContainer } from '@/components/Toast'
 
 const inter = Inter({ subsets: ['latin'] })
 
-// Disable static generation since we use client-side context
-export const dynamic = 'force-dynamic'
-
 export const metadata: Metadata = {
   title: 'ImageGenAI - AI-Powered Image Generation',
   description: 'Generate stunning images using artificial intelligence',
