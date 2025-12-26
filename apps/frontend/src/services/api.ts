@@ -154,10 +154,10 @@ export const generateImage = async (
         onRetry(attempt)
       }
 
-      // Check if we've reached max retries
+      // Check if we've reached max retries - if so, throw immediately
       if (attempt >= maxRetries) {
         console.error(`Image generation failed after ${maxRetries} attempts`)
-        break
+        throw lastError || new Error(`Image generation failed after ${maxRetries} attempts`)
       }
 
       // Exponential backoff: wait 1s, 2s, 4s, 8s, then cap at 8s between retries
@@ -182,11 +182,9 @@ export const generateImage = async (
     }
   }
 
-  // If we get here, all retries failed
-  if (attempt >= maxRetries) {
-    console.error(`Image generation failed after ${maxRetries} attempts`)
-    throw lastError || new Error(`Image generation failed after ${maxRetries} attempts`)
-  }
+  // This should never be reached due to the check inside the loop, but TypeScript needs this
+  // to understand that the function always returns or throws
+  throw lastError || new Error(`Image generation failed after ${maxRetries} attempts`)
 }
 
 // Prompt API functions
