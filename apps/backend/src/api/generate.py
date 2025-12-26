@@ -53,9 +53,9 @@ async def generate_image(
             logger.warning(f"Validation failed: Empty prompt")
             raise HTTPException(status_code=400, detail="Prompt cannot be empty")
         
-        if len(prompt) > 1000:
+        if len(prompt) > 2000:
             logger.warning(f"Validation failed: Prompt too long ({len(prompt)} characters)")
-            raise HTTPException(status_code=400, detail="Prompt too long (max 1000 characters)")
+            raise HTTPException(status_code=400, detail="Prompt too long (max 2000 characters)")
         
         # Validate that image is provided
         if not image or not image.filename:
@@ -67,32 +67,45 @@ async def generate_image(
         current_time = datetime.now().isoformat()
         
         # Validate image file
-        if not image.content_type:
-            logger.warning(f"Image file has no content_type - filename: {image.filename}")
-            raise HTTPException(
-                status_code=400,
-                detail="Image file type could not be determined. Please ensure the file is a valid image."
-            )
+        # Use content_type if available, otherwise try to infer from filename
+        content_type_to_validate = image.content_type
+        if not content_type_to_validate and image.filename:
+            # Try to infer from filename extension
+            filename_lower = image.filename.lower()
+            if filename_lower.endswith(('.jpg', '.jpeg')):
+                content_type_to_validate = 'image/jpeg'
+                logger.info(f"Inferred content_type: {content_type_to_validate} from filename: {image.filename}")
+            elif filename_lower.endswith('.png'):
+                content_type_to_validate = 'image/png'
+                logger.info(f"Inferred content_type: {content_type_to_validate} from filename: {image.filename}")
+            elif filename_lower.endswith('.webp'):
+                content_type_to_validate = 'image/webp'
+                logger.info(f"Inferred content_type: {content_type_to_validate} from filename: {image.filename}")
         
-        # Normalize content_type (handle case and variations)
-        content_type_lower = image.content_type.lower()
-        # Map common variations
-        content_type_map = {
-            'image/jpg': 'image/jpeg',
-            'image/jpeg': 'image/jpeg',
-            'image/png': 'image/png',
-            'image/webp': 'image/webp'
-        }
-        normalized_content_type = content_type_map.get(content_type_lower, content_type_lower)
-        
-        # Check if normalized type is allowed
-        allowed_types_lower = [t.lower() for t in settings.allowed_image_types]
-        if normalized_content_type not in allowed_types_lower and content_type_lower not in allowed_types_lower:
-            logger.warning(f"Invalid file type: {image.content_type} (normalized: {normalized_content_type}) - filename: {image.filename}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid file type: {image.content_type}. Allowed types: {', '.join(settings.allowed_image_types)}"
-            )
+        if not content_type_to_validate:
+            logger.warning(f"Image file has no content_type and could not infer from filename: {image.filename}")
+            # Allow to proceed - the service layer will handle actual image validation
+            # This is more lenient than before to avoid breaking existing functionality
+        else:
+            # Normalize content_type (handle case and variations)
+            content_type_lower = content_type_to_validate.lower()
+            # Map common variations
+            content_type_map = {
+                'image/jpg': 'image/jpeg',
+                'image/jpeg': 'image/jpeg',
+                'image/png': 'image/png',
+                'image/webp': 'image/webp'
+            }
+            normalized_content_type = content_type_map.get(content_type_lower, content_type_lower)
+            
+            # Check if normalized type is allowed
+            allowed_types_lower = [t.lower() for t in settings.allowed_image_types]
+            if normalized_content_type not in allowed_types_lower and content_type_lower not in allowed_types_lower:
+                logger.warning(f"Invalid file type: {content_type_to_validate} (normalized: {normalized_content_type}) - filename: {image.filename}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid file type: {content_type_to_validate}. Allowed types: {', '.join(settings.allowed_image_types)}"
+                )
         
         # Check file size
         content = await image.read()
