@@ -39,11 +39,11 @@ COPY apps/frontend/ ./apps/frontend/
 
 # Build applications
 # Backend build is just a placeholder, frontend needs actual build  
-RUN cd /app/apps/backend && npm run build
+RUN echo "Building backend..." && cd /app/apps/backend && npm run build || (echo "Backend build failed" && exit 1)
 # Install frontend dependencies locally (needed for Next.js to resolve modules)
-RUN cd /app/apps/frontend && npm install --legacy-peer-deps
+RUN echo "Installing frontend dependencies..." && cd /app/apps/frontend && npm install --legacy-peer-deps || (echo "Frontend dependency installation failed" && exit 1)
 # Build frontend
-RUN cd /app/apps/frontend && npm run build
+RUN echo "Building frontend..." && cd /app/apps/frontend && npm run build || (echo "Frontend build failed" && exit 1)
 
 # Create startup script for production
 # Frontend uses PORT env var (set by Coolify), defaults to 3000
