@@ -54,14 +54,15 @@ RUN echo "Building frontend..." && cd /app/apps/frontend && NODE_ENV=production 
 # Backend runs on fixed internal port 8000
 RUN echo '#!/bin/bash\n\
 set -e\n\
-# Use PORT env var for frontend (Coolify sets this), default to 3000\n\
-# But ensure frontend uses 3000 internally (PORT might be set for host mapping)\n\
+# Always run the frontend on 3000 *inside the container*.\n\
+# Coolify may set PORT (often 8000) for the service, but this container runs\n\
+# both backend and frontend; do not let PORT redirect healthchecks or frontend.\n\
 FRONTEND_PORT=3000\n\
 # Start backend API on port 8000 (internal)\n\
 cd /app/apps/backend && uvicorn main:app --host 0.0.0.0 --port 8000 &\n\
 # Start frontend in production mode on port 3000 (mapped to host via docker)\n\
-# Explicitly set PORT to override any env var, use -p flag for Next.js\n\
-cd /app/apps/frontend && PORT=3000 npx next start -p 3000 &\n\
+# next start is incompatible with output: standalone, so run the standalone server.\n\
+cd /app/apps/frontend && NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 node .next/standalone/server.js &\n\
 # Wait for both processes\n\
 wait\n\
 ' > /app/start.sh && chmod +x /app/start.sh
@@ -72,9 +73,9 @@ wait\n\
 EXPOSE 3000 8000
 
 # Health check - check both frontend and backend
-# Frontend port uses PORT env var (defaults to 3000), backend is always 8000
+# Backend is always 8000, frontend is always 3000 inside the container.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD sh -c "curl -f http://localhost:8000/api/health && curl -f http://localhost:${PORT:-3000} || exit 1"
+    CMD sh -c "curl -f http://localhost:8000/api/health && curl -f http://localhost:3000/api/health || exit 1"
 
 # Start both services
 CMD ["/app/start.sh"]
