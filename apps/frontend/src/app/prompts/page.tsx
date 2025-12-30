@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import PromptsDisplay from '@/components/PromptsDisplay'
 
+export const dynamic = 'force-dynamic'
+
 export default function PromptsPage() {
   const router = useRouter()
 

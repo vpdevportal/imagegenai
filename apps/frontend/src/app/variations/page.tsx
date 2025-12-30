@@ -4,6 +4,8 @@ import { useState } from 'react'
 import ImageVariationForm from '@/components/ImageVariationForm'
 import GeneratedImages from '@/components/GeneratedImages'
 
+export const dynamic = 'force-dynamic'
+
 export default function VariationsPage() {
   const [images, setImages] = useState<any[]>([])
   const [isGenerating, setIsGenerating] = useState(false)

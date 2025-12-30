@@ -4,6 +4,8 @@ import { useState } from 'react'
 import ImageTeleportForm from '@/components/ImageTeleportForm'
 import GeneratedImages from '@/components/GeneratedImages'
 
+export const dynamic = 'force-dynamic'
+
 export default function TeleportPage() {
     const [images, setImages] = useState<any[]>([])
     const [isGenerating, setIsGenerating] = useState(false)

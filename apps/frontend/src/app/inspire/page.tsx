@@ -5,6 +5,8 @@ import Image from 'next/image'
 import ImageToPromptForm from '@/components/ImageToPromptForm'
 import GeneratedImages from '@/components/GeneratedImages'
 
+export const dynamic = 'force-dynamic'
+
 export default function InspirePage() {
   const [images, setImages] = useState<any[]>([])
   const [generatedPrompts, setGeneratedPrompts] = useState<Array<{

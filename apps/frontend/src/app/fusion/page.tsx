@@ -4,6 +4,8 @@ import { useState } from 'react'
 import ImageFusionForm from '@/components/ImageFusionForm'
 import GeneratedImages from '@/components/GeneratedImages'
 
+export const dynamic = 'force-dynamic'
+
 export default function FusionPage() {
   const [images, setImages] = useState<any[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
