@@ -32,16 +32,9 @@ export default function ImageGenerationForm({
   const cancelRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Debug component mount
-  useEffect(() => {
-    console.log('ImageGenerationForm mounted - initialPrompt:', `"${initialPrompt}"`, 'prompt:', `"${prompt}"`)
-  }, [])
-
   // Update prompt when initialPrompt prop changes
   useEffect(() => {
-    console.log('useEffect triggered - initialPrompt:', `"${initialPrompt}"`, 'current prompt:', `"${prompt}"`)
     if (initialPrompt) {
-      console.log('Setting prompt to:', `"${initialPrompt}"`)
       setPrompt(initialPrompt)
     }
   }, [initialPrompt])
