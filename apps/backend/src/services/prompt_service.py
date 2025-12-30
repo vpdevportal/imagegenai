@@ -220,6 +220,22 @@ class PromptService:
         """Clean up old prompts without thumbnails"""
         return prompt_repository.cleanup_old(days)
     
+    def increment_usage_by_id(self, prompt_id: int) -> bool:
+        """Increment usage count for a prompt by ID"""
+        try:
+            return prompt_repository.increment_usage_by_id(prompt_id)
+        except Exception as e:
+            logger.error(f"Error incrementing usage for prompt ID {prompt_id} - error: {str(e)}", exc_info=True)
+            return False
+    
+    def track_failure_by_id(self, prompt_id: int) -> bool:
+        """Track a failure for a prompt by ID"""
+        try:
+            return prompt_repository.increment_failures_by_id(prompt_id)
+        except Exception as e:
+            logger.error(f"Error tracking failure for prompt ID {prompt_id} - error: {str(e)}", exc_info=True)
+            return False
+    
     def track_failure(self, prompt_text: str) -> bool:
         """Track a failure for a prompt"""
         try:

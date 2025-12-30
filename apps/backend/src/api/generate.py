@@ -32,7 +32,8 @@ class ImageGenerationResponse(BaseModel):
 async def generate_image(
     prompt: str = Form(...),
     image: UploadFile = File(...),
-    provider: Optional[str] = Form(None)
+    provider: Optional[str] = Form(None),
+    prompt_id: Optional[int] = Form(None)
 ):
     """
     Generate image from text prompt with reference image
@@ -41,14 +42,15 @@ async def generate_image(
     to generate new images. The reference image is mandatory.
     
     Args:
-        prompt: Text prompt for image generation
+        prompt: Text prompt for image generation (required)
         image: Reference image file
         provider: AI provider to use (gemini, replicate, stability). Defaults to gemini.
+        prompt_id: Optional prompt ID. If provided, will increment usage count for that prompt ID.
     """
-    logger.info(f"Starting image generation - prompt_length: {len(prompt) if prompt else 0}, filename: {image.filename if image else 'None'}, content_type: {image.content_type if image else 'None'}, provider: {provider or 'gemini'}")
+    logger.info(f"Starting image generation - prompt_id: {prompt_id}, prompt_length: {len(prompt) if prompt else 0}, filename: {image.filename if image else 'None'}, content_type: {image.content_type if image else 'None'}, provider: {provider or 'gemini'}")
     
     try:
-        # Validate prompt
+        # Validate prompt (always required)
         if not prompt or not prompt.strip():
             logger.warning(f"Validation failed: Empty prompt")
             raise HTTPException(status_code=400, detail="Prompt cannot be empty")
@@ -128,9 +130,14 @@ async def generate_image(
             provider=provider
         )
         
-        # Track usage for the original prompt if it exists in database (only on successful generation)
+        # Track usage for the prompt (only on successful generation)
         try:
-            if prompt_service.exists_by_text(prompt):
+            if prompt_id:
+                # Increment usage by ID
+                prompt_service.increment_usage_by_id(prompt_id)
+                logger.info(f"Successfully incremented usage count for prompt ID {prompt_id}")
+            elif prompt_service.exists_by_text(prompt):
+                # Fallback to text-based tracking if no prompt_id provided
                 model_name = provider or getattr(settings, 'gemini_model', 'gemini-2.5-flash-image')
                 prompt_service.update_prompt(prompt, model_name)
         except Exception as usage_error:
@@ -156,9 +163,11 @@ async def generate_image(
         return response
         
     except HTTPException as e:
-        # Track failure for the original prompt if it exists in database
+        # Track failure for the prompt
         try:
-            if prompt_service.exists_by_text(prompt):
+            if prompt_id:
+                prompt_service.track_failure_by_id(prompt_id)
+            elif prompt and prompt_service.exists_by_text(prompt):
                 prompt_service.track_failure(prompt)
         except Exception:
             pass
@@ -167,9 +176,11 @@ async def generate_image(
     except Exception as e:
         logger.error(f"Error during image generation: {str(e)}", exc_info=True)
         
-        # Track failure for the original prompt if it exists in database
+        # Track failure for the prompt
         try:
-            if prompt_service.exists_by_text(prompt):
+            if prompt_id:
+                prompt_service.track_failure_by_id(prompt_id)
+            elif prompt and prompt_service.exists_by_text(prompt):
                 prompt_service.track_failure(prompt)
         except Exception:
             pass

@@ -87,6 +87,56 @@ class PromptRepository:
             logger.error(f"Error in update for prompt - hash: {prompt.prompt_hash[:8]}..., error: {str(e)}")
             raise
 
+    def increment_usage_by_id(self, prompt_id: int) -> bool:
+        """Increment usage count for a prompt by ID"""
+        logger.info(f"Incrementing usage count for prompt - ID: {prompt_id}")
+        
+        try:
+            with db_connection.get_connection() as conn:
+                cursor = conn.execute("""
+                    UPDATE prompts 
+                    SET total_uses = total_uses + 1,
+                        last_used_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (prompt_id,))
+                
+                if cursor.rowcount > 0:
+                    logger.info(f"Successfully incremented usage count - ID: {prompt_id}, rows affected: {cursor.rowcount}")
+                    conn.commit()
+                    return True
+                else:
+                    logger.warning(f"No prompt found to increment usage for ID: {prompt_id}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Error incrementing usage for prompt - ID: {prompt_id}, error: {str(e)}")
+            raise
+    
+    def increment_failures_by_id(self, prompt_id: int) -> bool:
+        """Increment failure count for a prompt by ID"""
+        logger.info(f"Incrementing failure count for prompt - ID: {prompt_id}")
+        
+        try:
+            with db_connection.get_connection() as conn:
+                cursor = conn.execute("""
+                    UPDATE prompts 
+                    SET total_fails = total_fails + 1,
+                        last_used_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (prompt_id,))
+                
+                if cursor.rowcount > 0:
+                    logger.info(f"Successfully incremented failure count - ID: {prompt_id}, rows affected: {cursor.rowcount}")
+                    conn.commit()
+                    return True
+                else:
+                    logger.warning(f"No prompt found to increment failures for ID: {prompt_id}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Error incrementing failures for prompt - ID: {prompt_id}, error: {str(e)}")
+            raise
+    
     def increment_failures(self, prompt_hash: str) -> bool:
         """Increment failure count for a prompt"""
         logger.info(f"Incrementing failure count for prompt - hash: {prompt_hash[:8]}...")
