@@ -18,7 +18,8 @@ router = APIRouter(prefix="/grouping", tags=["grouping"])
 async def generate_grouping(
     prompt: str = Form(...),
     images: List[UploadFile] = File(...),
-    provider: Optional[str] = Form(None)
+    provider: Optional[str] = Form(None),
+    prompt_id: Optional[int] = Form(None)
 ):
     """
     Generate an image using multiple person images and a text prompt
@@ -27,8 +28,9 @@ async def generate_grouping(
         prompt: Text prompt for image generation (required)
         images: List of uploaded person image files (required, at least 1)
         provider: AI provider to use (gemini, replicate, stability). Defaults to gemini.
+        prompt_id: Optional prompt ID. If provided, will increment usage count for that prompt ID.
     """
-    logger.info(f"Starting image grouping request - prompt_length: {len(prompt) if prompt else 0}, num_images: {len(images) if images else 0}, provider: {provider or 'gemini'}")
+    logger.info(f"Starting image grouping request - prompt_id: {prompt_id}, prompt_length: {len(prompt) if prompt else 0}, num_images: {len(images) if images else 0}, provider: {provider or 'gemini'}")
     
     try:
         # Validate prompt
@@ -108,6 +110,16 @@ async def generate_grouping(
             provider=provider
         )
         
+        # Track usage for the prompt (only on successful generation)
+        try:
+            if prompt_id:
+                # Increment usage by ID
+                from ..services.prompt_service import prompt_service
+                prompt_service.increment_usage_by_id(prompt_id)
+                logger.info(f"Successfully incremented usage count for prompt ID {prompt_id}")
+        except Exception as usage_error:
+            logger.warning(f"Failed to track prompt usage: {usage_error}")
+        
         # Convert image data to base64 for JSON response
         generated_image_base64 = base64.b64encode(generated_image_data).decode('utf-8')
         generated_image_data_url = f"data:{content_type};base64,{generated_image_base64}"
@@ -130,10 +142,26 @@ async def generate_grouping(
         return JSONResponse(content=response_data)
         
     except HTTPException as e:
+        # Track failure for the prompt
+        try:
+            if prompt_id:
+                from ..services.prompt_service import prompt_service
+                prompt_service.track_failure_by_id(prompt_id)
+        except Exception:
+            pass
         # Re-raise HTTPExceptions as-is - they already have proper status codes and user-friendly messages
         raise
     except Exception as e:
         logger.error(f"Error generating image grouping: {str(e)}", exc_info=True)
+        
+        # Track failure for the prompt
+        try:
+            if prompt_id:
+                from ..services.prompt_service import prompt_service
+                prompt_service.track_failure_by_id(prompt_id)
+        except Exception:
+            pass
+        
         # Only log full traceback, but return user-friendly message
         raise HTTPException(
             status_code=500,
