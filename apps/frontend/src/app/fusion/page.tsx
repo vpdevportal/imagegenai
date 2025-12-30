@@ -1,9 +1,6 @@
-'use client'
+import FusionPageClient from './FusionPageClient'
 
-import { useState } from 'react'
-import ImageFusionForm from '@/components/ImageFusionForm'
-import GeneratedImages from '@/components/GeneratedImages'
-
+// Force dynamic rendering - this is a server component wrapper
 export const dynamic = 'force-dynamic'
 
 export default function FusionPage() {

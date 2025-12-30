@@ -1,11 +1,16 @@
-'use client'
+import { Suspense } from 'react'
+import GeneratePageClient from './GeneratePageClient'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import ImageGenerationForm from '@/components/ImageGenerationForm'
-import GeneratedImages from '@/components/GeneratedImages'
+// Force dynamic rendering - this is a server component wrapper
+export const dynamic = 'force-dynamic'
 
-function GeneratePageContent() {
+export default function GeneratePage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-500"></div></div>}>
+      <GeneratePageClient />
+    </Suspense>
+  )
+}
   const [images, setImages] = useState<any[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [initialPrompt, setInitialPrompt] = useState('')

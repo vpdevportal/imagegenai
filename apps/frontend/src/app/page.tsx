@@ -1,20 +1,8 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-
+// Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 export default function Home() {
-  const router = useRouter()
-
-  useEffect(() => {
-    router.replace('/generate')
-  }, [router])
-
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-500 border-t-transparent"></div>
-    </div>
-  )
+  redirect('/generate')
 }

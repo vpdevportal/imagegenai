@@ -1,9 +1,6 @@
-'use client'
+import VariationsPageClient from './VariationsPageClient'
 
-import { useState } from 'react'
-import ImageVariationForm from '@/components/ImageVariationForm'
-import GeneratedImages from '@/components/GeneratedImages'
-
+// Force dynamic rendering - this is a server component wrapper
 export const dynamic = 'force-dynamic'
 
 export default function VariationsPage() {

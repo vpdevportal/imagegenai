@@ -1,9 +1,6 @@
-'use client'
+import TeleportPageClient from './TeleportPageClient'
 
-import { useState } from 'react'
-import ImageTeleportForm from '@/components/ImageTeleportForm'
-import GeneratedImages from '@/components/GeneratedImages'
-
+// Force dynamic rendering - this is a server component wrapper
 export const dynamic = 'force-dynamic'
 
 export default function TeleportPage() {
