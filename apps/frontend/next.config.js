@@ -3,6 +3,8 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6001/api',
   },
+  // Disable static optimization - all pages will be rendered dynamically
+  output: 'standalone',
   // Proxy API requests to backend - works in both dev and production
   // This allows frontend to use relative URLs like '/api' which get proxied to backend
   async rewrites() {
