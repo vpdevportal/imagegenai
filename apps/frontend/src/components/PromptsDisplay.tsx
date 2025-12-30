@@ -27,7 +27,7 @@ import ConfirmationDialog from './ConfirmationDialog'
 import { useToast } from '@/contexts/ToastContext'
 
 interface PromptsDisplayProps {
-  onPromptSelect?: (prompt: string) => void
+  onPromptSelect?: (promptId: number) => void
 }
 
 export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) {
@@ -150,7 +150,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
 
   const handlePromptClick = (prompt: Prompt) => {
     if (onPromptSelect) {
-      onPromptSelect(prompt.prompt_text)
+      onPromptSelect(prompt.id)
     }
   }
 

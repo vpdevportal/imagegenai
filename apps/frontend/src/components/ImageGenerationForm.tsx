@@ -11,13 +11,15 @@ interface ImageGenerationFormProps {
   isGenerating: boolean
   setIsGenerating: (value: boolean) => void
   initialPrompt?: string
+  initialPromptId?: number
 }
 
 export default function ImageGenerationForm({ 
   onImageGenerated, 
   isGenerating, 
   setIsGenerating,
-  initialPrompt = ''
+  initialPrompt = '',
+  initialPromptId
 }: ImageGenerationFormProps) {
   const { provider } = useProvider()
   const [prompt, setPrompt] = useState(initialPrompt)
@@ -149,7 +151,7 @@ export default function ImageGenerationForm({
     setIsGenerating(true)
 
     try {
-      console.log('Calling generateImage API with prompt:', `"${prompt}"`, 'file:', selectedFile.name, 'provider:', provider)
+      console.log('Calling generateImage API with prompt:', `"${prompt}"`, 'file:', selectedFile.name, 'provider:', provider, 'promptId:', initialPromptId)
       const response = await generateImage(
         prompt, 
         selectedFile, 
@@ -157,7 +159,8 @@ export default function ImageGenerationForm({
         (attempt) => {
           setRetryAttempt(attempt)
         },
-        () => cancelRef.current
+        () => cancelRef.current,
+        initialPromptId
       )
       
       onImageGenerated({

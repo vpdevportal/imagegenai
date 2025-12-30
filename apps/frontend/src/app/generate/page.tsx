@@ -9,13 +9,33 @@ function GeneratePageContent() {
   const [images, setImages] = useState<any[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [initialPrompt, setInitialPrompt] = useState('')
+  const [promptId, setPromptId] = useState<number | undefined>(undefined)
   const searchParams = useSearchParams()
 
-  // Read prompt from URL parameters
+  // Read prompt ID and prompt text from URL parameters
   useEffect(() => {
-    const prompt = searchParams.get('prompt')
-    if (prompt) {
-      setInitialPrompt(decodeURIComponent(prompt))
+    const promptIdParam = searchParams.get('promptId')
+    const promptParam = searchParams.get('prompt')
+    
+    if (promptIdParam) {
+      const id = parseInt(promptIdParam, 10)
+      if (!isNaN(id)) {
+        setPromptId(id)
+        // Fetch prompt text from API to populate the form
+        import('@/services/api').then(({ getPrompt }) => {
+          getPrompt(id)
+            .then((prompt) => {
+              setInitialPrompt(prompt.prompt_text)
+            })
+            .catch((err) => {
+              console.error('Failed to fetch prompt:', err)
+            })
+        })
+      }
+    } else if (promptParam) {
+      // Fallback to old prompt parameter for backward compatibility
+      setInitialPrompt(decodeURIComponent(promptParam))
+      setPromptId(undefined)
     }
   }, [searchParams])
 
@@ -38,6 +58,7 @@ function GeneratePageContent() {
               isGenerating={isGenerating}
               setIsGenerating={setIsGenerating}
               initialPrompt={initialPrompt}
+              initialPromptId={promptId}
             />
           </div>
           

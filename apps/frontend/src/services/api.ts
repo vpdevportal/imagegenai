@@ -98,9 +98,10 @@ export const generateImage = async (
   image: File, 
   provider?: string, 
   onRetry?: (attempt: number) => void,
-  shouldCancel?: () => boolean
+  shouldCancel?: () => boolean,
+  promptId?: number
 ): Promise<ImageGenerationResponse> => {
-  console.log('generateImage API call - prompt:', `"${prompt}"`, 'length:', prompt.length, 'file:', image.name, 'provider:', provider)
+  console.log('generateImage API call - prompt:', `"${prompt}"`, 'length:', prompt.length, 'file:', image.name, 'provider:', provider, 'promptId:', promptId)
 
   let lastError: any
   let attempt = 0
@@ -117,10 +118,13 @@ export const generateImage = async (
     
     try {
       const formData = new FormData()
-      formData.append('prompt', prompt)
+      formData.append('prompt', prompt) // Prompt is always required
       formData.append('image', image)
       if (provider) {
         formData.append('provider', provider)
+      }
+      if (promptId) {
+        formData.append('prompt_id', promptId.toString())
       }
 
       console.log(`FormData contents - attempt ${attempt} - prompt:`, formData.get('prompt'), 'image:', formData.get('image'))
@@ -245,6 +249,11 @@ export const searchPrompts = async (query: string, limit = 20): Promise<Prompt[]
 
 export const getPromptStats = async (): Promise<PromptStats> => {
   const response = await api.get('/prompts/stats/overview')
+  return response.data
+}
+
+export const getPrompt = async (promptId: number): Promise<Prompt> => {
+  const response = await api.get(`/prompts/${promptId}`)
   return response.data
 }
 

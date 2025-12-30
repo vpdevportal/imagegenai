@@ -6,10 +6,9 @@ import PromptsDisplay from '@/components/PromptsDisplay'
 export default function PromptsPage() {
   const router = useRouter()
 
-  const handlePromptSelect = (prompt: string) => {
-    // Navigate to generate page with the selected prompt as URL parameter
-    const encodedPrompt = encodeURIComponent(prompt)
-    router.push(`/generate?prompt=${encodedPrompt}`)
+  const handlePromptSelect = (promptId: number) => {
+    // Navigate to generate page with the selected prompt ID as URL parameter
+    router.push(`/generate?promptId=${promptId}`)
   }
 
   return (
