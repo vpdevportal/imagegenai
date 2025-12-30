@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { SparklesIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { generateGrouping } from '@/services/api'
 import { useProvider } from '@/contexts/ProviderContext'
@@ -10,13 +10,15 @@ interface ImageGroupingFormProps {
   isGenerating: boolean
   setIsGenerating: (value: boolean) => void
   initialPrompt?: string
+  initialPromptId?: number
 }
 
 export default function ImageGroupingForm({ 
   onImageGenerated, 
   isGenerating, 
   setIsGenerating,
-  initialPrompt = ''
+  initialPrompt = '',
+  initialPromptId
 }: ImageGroupingFormProps) {
   const { provider } = useProvider()
   const [prompt, setPrompt] = useState(initialPrompt)
@@ -28,6 +30,13 @@ export default function ImageGroupingForm({
   const [isCancelled, setIsCancelled] = useState(false)
   const cancelRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Update prompt when initialPrompt prop changes
+  useEffect(() => {
+    if (initialPrompt) {
+      setPrompt(initialPrompt)
+    }
+  }, [initialPrompt])
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files || files.length === 0) return
@@ -155,7 +164,8 @@ export default function ImageGroupingForm({
         (attempt) => {
           setRetryAttempt(attempt)
         },
-        () => cancelRef.current
+        () => cancelRef.current,
+        initialPromptId
       )
       
       onImageGenerated({

@@ -9,7 +9,9 @@ import {
   ChartBarIcon,
   XMarkIcon,
   TrashIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  SparklesIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { 
@@ -27,7 +29,7 @@ import ConfirmationDialog from './ConfirmationDialog'
 import { useToast } from '@/contexts/ToastContext'
 
 interface PromptsDisplayProps {
-  onPromptSelect?: (promptId: number) => void
+  onPromptSelect?: (promptId: number, type: 'generate' | 'group') => void
 }
 
 export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) {
@@ -148,9 +150,17 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
     }
   }
 
-  const handlePromptClick = (prompt: Prompt) => {
+  const handleGenerateClick = (promptId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
     if (onPromptSelect) {
-      onPromptSelect(prompt.id)
+      onPromptSelect(promptId, 'generate')
+    }
+  }
+
+  const handleGroupClick = (promptId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onPromptSelect) {
+      onPromptSelect(promptId, 'group')
     }
   }
 
@@ -381,8 +391,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
           {prompts.map((prompt) => (
             <div
               key={prompt.id}
-              onClick={() => handlePromptClick(prompt)}
-              className="bg-[#1a2332]/40 rounded-lg border border-[#2a3441] hover:border-teal-500/30 hover:shadow-md transition-all duration-200 cursor-pointer group flex h-20 overflow-hidden"
+              className="bg-[#1a2332]/40 rounded-lg border border-[#2a3441] hover:border-teal-500/30 hover:shadow-md transition-all duration-200 group flex h-20 overflow-hidden"
             >
               {/* Thumbnail */}
               <div className="w-20 h-20 flex-shrink-0 relative bg-[#0a1929] rounded-l-lg overflow-hidden border-r border-[#2a3441]">
@@ -422,7 +431,24 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                 </p>
                 <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
                   <span>{formatDate(prompt.last_used_at)}</span>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1.5">
+                    {/* Generate and Group buttons */}
+                    <button
+                      onClick={(e) => handleGenerateClick(prompt.id, e)}
+                      className="px-1.5 py-0.5 text-[10px] font-medium bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 rounded transition-colors flex items-center space-x-0.5"
+                      title="Generate with this prompt"
+                    >
+                      <SparklesIcon className="h-2.5 w-2.5" />
+                      <span>Gen</span>
+                    </button>
+                    <button
+                      onClick={(e) => handleGroupClick(prompt.id, e)}
+                      className="px-1.5 py-0.5 text-[10px] font-medium bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 rounded transition-colors flex items-center space-x-0.5"
+                      title="Group with this prompt"
+                    >
+                      <UserGroupIcon className="h-2.5 w-2.5" />
+                      <span>Group</span>
+                    </button>
                     {prompt.model && (
                       <span className="bg-[#1a2332] px-1.5 py-0.5 rounded-lg text-xs border border-[#2a3441]">
                         {prompt.model}

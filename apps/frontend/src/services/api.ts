@@ -398,7 +398,8 @@ export const generateGrouping = async (
   images: File[],
   provider?: string,
   onRetry?: (attempt: number) => void,
-  shouldCancel?: () => boolean
+  shouldCancel?: () => boolean,
+  promptId?: number
 ): Promise<ImageGenerationResponse> => {
   let lastError: any
   let attempt = 0
@@ -419,6 +420,9 @@ export const generateGrouping = async (
       })
       if (provider) {
         formData.append('provider', provider)
+      }
+      if (promptId) {
+        formData.append('prompt_id', promptId.toString())
       }
 
       const response = await api.post('/grouping/generate', formData, {

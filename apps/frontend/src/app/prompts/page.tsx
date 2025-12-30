@@ -6,9 +6,13 @@ import PromptsDisplay from '@/components/PromptsDisplay'
 export default function PromptsPage() {
   const router = useRouter()
 
-  const handlePromptSelect = (promptId: number) => {
-    // Navigate to generate page with the selected prompt ID as URL parameter
-    router.push(`/generate?promptId=${promptId}`)
+  const handlePromptSelect = (promptId: number, type: 'generate' | 'group') => {
+    // Navigate to the appropriate page with the selected prompt ID as URL parameter
+    if (type === 'group') {
+      router.push(`/grouping?promptId=${promptId}`)
+    } else {
+      router.push(`/generate?promptId=${promptId}`)
+    }
   }
 
   return (
