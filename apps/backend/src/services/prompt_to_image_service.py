@@ -8,7 +8,7 @@ Uses the AI generator classes for the actual AI operations.
 import logging
 import tempfile
 import os
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 from fastapi import HTTPException, UploadFile
 
 from ..ai.factory import ImageGeneratorFactory
@@ -171,6 +171,53 @@ class PromptToImageService:
             raise HTTPException(
                 status_code=500,
                 detail=f"Teleport generation failed: {str(e)}"
+            )
+    
+    async def generate_grouping_from_images(
+        self,
+        prompt: str,
+        images: List[UploadFile],
+        provider: Optional[str] = None
+    ) -> Tuple[bytes, str, str]:
+        """
+        Generate an image using multiple person images and a text prompt
+        
+        Args:
+            prompt: Text prompt for image generation
+            images: List of uploaded person image files
+            provider: AI provider to use (defaults to gemini)
+            
+        Returns:
+            Tuple[bytes, str, str]: (image_data, content_type, reference_image_url)
+            
+        Raises:
+            HTTPException: If generation fails
+        """
+        try:
+            generator = self._get_generator(provider)
+            # Process first image as reference image URL (for response)
+            reference_image_url = generator.process_reference_image(images[0])
+            
+            # Reset file pointers for all images
+            for image in images:
+                image.file.seek(0)
+            
+            # Generate grouping using multiple images with the provided prompt
+            generated_image_data, content_type = generator.generate_from_multiple_images_and_text(
+                images, 
+                prompt
+            )
+            return generated_image_data, content_type, reference_image_url
+            
+        except HTTPException:
+            # Re-raise HTTPExceptions as-is (they already have proper status codes and messages)
+            raise
+        except Exception as e:
+            logger.error(f"Grouping generation failed: {str(e)}", exc_info=True)
+            # Convert unexpected exceptions to HTTPException
+            raise HTTPException(
+                status_code=500,
+                detail=f"Grouping generation failed: {str(e)}"
             )
 
 

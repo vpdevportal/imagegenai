@@ -383,4 +383,79 @@ export const generateTeleport = async (backgroundImage: File, personImage: File,
   return response.data
 }
 
+// Grouping API - Generate Image with Multiple Person Images
+export const generateGrouping = async (
+  prompt: string,
+  images: File[],
+  provider?: string,
+  onRetry?: (attempt: number) => void,
+  shouldCancel?: () => boolean
+): Promise<ImageGenerationResponse> => {
+  let lastError: any
+  let attempt = 0
+  const maxRetries = 20
+
+  while (attempt < maxRetries) {
+    if (shouldCancel && shouldCancel()) {
+      throw new Error('Image generation cancelled by user')
+    }
+
+    attempt++
+
+    try {
+      const formData = new FormData()
+      formData.append('prompt', prompt)
+      images.forEach((image) => {
+        formData.append('images', image)
+      })
+      if (provider) {
+        formData.append('provider', provider)
+      }
+
+      const response = await api.post('/grouping/generate', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      return response.data
+    } catch (error: any) {
+      if (error?.message === 'Image generation cancelled by user') {
+        throw error
+      }
+
+      lastError = error
+
+      if (shouldCancel && shouldCancel()) {
+        throw new Error('Image generation cancelled by user')
+      }
+
+      if (onRetry) {
+        onRetry(attempt)
+      }
+
+      if (attempt >= maxRetries) {
+        throw lastError || new Error(`Image generation failed after ${maxRetries} attempts`)
+      }
+
+      const delay = Math.min(Math.pow(2, attempt - 1) * 1000, 8000)
+      let cancelled = false
+      const startTime = Date.now()
+      while (Date.now() - startTime < delay) {
+        if (shouldCancel && shouldCancel()) {
+          cancelled = true
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+
+      if (cancelled) {
+        throw new Error('Image generation cancelled by user')
+      }
+    }
+  }
+
+  throw lastError || new Error(`Image generation failed after ${maxRetries} attempts`)
+}
+
 export default api
