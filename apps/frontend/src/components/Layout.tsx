@@ -3,7 +3,6 @@
 import {
   SparklesIcon,
   ListBulletIcon,
-  ChartBarIcon,
   LightBulbIcon,
   ArrowPathIcon,
   ArrowsRightLeftIcon,
@@ -11,7 +10,8 @@ import {
   ChevronDownIcon,
   CpuChipIcon,
   ServerIcon,
-  CloudIcon
+  CloudIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline'
 import { Listbox, Transition } from '@headlessui/react'
 import Link from 'next/link'
@@ -35,12 +35,12 @@ export default function Layout({ children }: LayoutProps) {
 
   const navigation = [
     { name: 'Generate', href: '/generate', icon: SparklesIcon, current: pathname === '/generate' },
+    { name: 'Groupping', href: '/grouping', icon: UserGroupIcon, current: pathname === '/grouping' },
     { name: 'Variations', href: '/variations', icon: ArrowPathIcon, current: pathname === '/variations' },
     { name: 'Fusion', href: '/fusion', icon: ArrowsRightLeftIcon, current: pathname === '/fusion' },
     { name: 'Teleport', href: '/teleport', icon: GlobeAmericasIcon, current: pathname === '/teleport' },
     { name: 'Inspire', href: '/inspire', icon: LightBulbIcon, current: pathname === '/inspire' },
     { name: 'Prompts', href: '/prompts', icon: ListBulletIcon, current: pathname === '/prompts' },
-    { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, current: pathname === '/analytics' },
   ]
 
   return (
