@@ -48,6 +48,13 @@ RUN echo "Installing frontend dependencies..." && cd /app/apps/frontend && npm i
 # use development server rendering internals during `next build` and fail while prerendering.
 # Force a production build regardless of external build-time env.
 RUN echo "Building frontend..." && cd /app/apps/frontend && NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 npm run build || (echo "Frontend build failed" && exit 1)
+#
+# Next.js `output: 'standalone'` requires copying static assets and `public/` into the
+# standalone directory, otherwise `/_next/static/*` and `/public/*` routes 404 in production.
+RUN cd /app/apps/frontend \
+    && mkdir -p .next/standalone/.next \
+    && cp -R .next/static .next/standalone/.next/static \
+    && cp -R public .next/standalone/public
 
 # Create startup script for production
 # Frontend uses PORT env var (set by Coolify), defaults to 3000
