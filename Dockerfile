@@ -43,7 +43,11 @@ RUN echo "Building backend..." && cd /app/apps/backend && npm run build || (echo
 # Install frontend dependencies locally (needed for Next.js to resolve modules)
 RUN echo "Installing frontend dependencies..." && cd /app/apps/frontend && npm install --legacy-peer-deps || (echo "Frontend dependency installation failed" && exit 1)
 # Build frontend
-RUN echo "Building frontend..." && cd /app/apps/frontend && npm run build || (echo "Frontend build failed" && exit 1)
+#
+# NOTE: Coolify may inject NODE_ENV=development at build-time, which can cause Next/React to
+# use development server rendering internals during `next build` and fail while prerendering.
+# Force a production build regardless of external build-time env.
+RUN echo "Building frontend..." && cd /app/apps/frontend && NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 npm run build || (echo "Frontend build failed" && exit 1)
 
 # Create startup script for production
 # Frontend uses PORT env var (set by Coolify), defaults to 3000
