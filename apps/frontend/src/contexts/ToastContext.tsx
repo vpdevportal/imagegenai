@@ -17,13 +17,17 @@ interface ToastContextType {
   clearToasts: () => void
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined)
+// Create context with default value to avoid undefined during SSR
+const ToastContext = createContext<ToastContextType>({
+  toasts: [],
+  addToast: () => {},
+  removeToast: () => {},
+  clearToasts: () => {},
+})
 
 export const useToast = () => {
   const context = useContext(ToastContext)
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider')
-  }
+  // Context always has a value (default or from provider), so no need to check
   return context
 }
 
