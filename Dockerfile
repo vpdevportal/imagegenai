@@ -58,8 +58,9 @@ set -e\n\
 # Coolify may set PORT (often 8000) for the service, but this container runs\n\
 # both backend and frontend; do not let PORT redirect healthchecks or frontend.\n\
 FRONTEND_PORT=3000\n\
-# Start backend API on port 8000 (internal)\n\
-cd /app/apps/backend && uvicorn main:app --host 0.0.0.0 --port 8000 &\n\
+# Start backend API on port 8000 (internal-only)\n\
+# Bind to 127.0.0.1 so it is NOT reachable from outside the container.\n\
+cd /app/apps/backend && uvicorn main:app --host 127.0.0.1 --port 8000 &\n\
 # Start frontend in production mode on port 3000 (mapped to host via docker)\n\
 # next start is incompatible with output: standalone, so run the standalone server.\n\
 cd /app/apps/frontend && NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 node .next/standalone/server.js &\n\
@@ -68,14 +69,13 @@ wait\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Expose ports
-# Port 3000 is the default main entry point (frontend) - can be overridden by PORT env var
-# Port 8000 is for backend API (internal)
-EXPOSE 3000 8000
+# Only expose the frontend port publicly. Backend is internal-only.
+EXPOSE 3000
 
 # Health check - check both frontend and backend
 # Backend is always 8000, frontend is always 3000 inside the container.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD sh -c "curl -f http://localhost:8000/api/health && curl -f http://localhost:3000/api/health || exit 1"
+    CMD sh -c "curl -f http://127.0.0.1:8000/api/health && curl -f http://127.0.0.1:3000/api/health || exit 1"
 
 # Start both services
 CMD ["/app/start.sh"]
