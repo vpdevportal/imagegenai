@@ -150,7 +150,7 @@ export default function ImageGenerationForm({
         selectedFile, 
         provider, 
         (attempt) => {
-          setRetryAttempt(attempt)
+        setRetryAttempt(attempt)
         },
         () => cancelRef.current,
         initialPromptId
@@ -173,15 +173,15 @@ export default function ImageGenerationForm({
         setError('Image generation cancelled')
         setIsCancelled(true)
       } else {
-        // Extract specific error message from API response
+      // Extract specific error message from API response
         const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to generate image. Retrying...'
-        setError(errorMessage)
+      setError(errorMessage)
       }
     } finally {
       setIsGenerating(false)
       // Only reset retry attempt if not cancelled (cancellation handler will reset it)
       if (!cancelRef.current) {
-        setRetryAttempt(0)
+      setRetryAttempt(0)
       }
     }
   }
@@ -290,9 +290,9 @@ export default function ImageGenerationForm({
           <div className="text-teal-300 text-sm bg-teal-900/20 border border-teal-500/30 rounded-lg p-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-teal-400 border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-teal-400 border-t-transparent"></div>
                 <span>Retrying... Attempt {retryAttempt} of 20</span>
-              </div>
+            </div>
               <button
                 type="button"
                 onClick={handleCancel}
@@ -305,28 +305,28 @@ export default function ImageGenerationForm({
         )}
 
         <div className="flex space-x-2">
-          <button
-            type="submit"
+        <button
+          type="submit"
             disabled={isGenerating || !prompt.trim() || !selectedFile || prompt.length > 2000}
             className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-            onClick={(e) => {
+          onClick={(e) => {
               console.log('Button clicked - prompt:', `"${prompt}"`, 'length:', prompt.length, 'selectedFile:', selectedFile, 'disabled:', isGenerating || !prompt.trim() || !selectedFile || prompt.length > 2000)
-            }}
-          >
-            {isGenerating ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                <span>
+          }}
+        >
+          {isGenerating ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              <span>
                   {retryAttempt > 0 ? `Retrying... (Attempt ${retryAttempt}/20)` : 'Generating...'}
-                </span>
-              </>
-            ) : (
-              <>
-                <SparklesIcon className="h-4 w-4" />
-                <span>Generate Image</span>
-              </>
-            )}
-          </button>
+              </span>
+            </>
+          ) : (
+            <>
+              <SparklesIcon className="h-4 w-4" />
+              <span>Generate Image</span>
+            </>
+          )}
+        </button>
           {isGenerating && (
             <button
               type="button"

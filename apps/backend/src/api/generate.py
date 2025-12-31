@@ -104,10 +104,10 @@ async def generate_image(
             allowed_types_lower = [t.lower() for t in settings.allowed_image_types]
             if normalized_content_type not in allowed_types_lower and content_type_lower not in allowed_types_lower:
                 logger.warning(f"Invalid file type: {content_type_to_validate} (normalized: {normalized_content_type}) - filename: {image.filename}")
-                raise HTTPException(
-                    status_code=400,
+            raise HTTPException(
+                status_code=400,
                     detail=f"Invalid file type: {content_type_to_validate}. Allowed types: {', '.join(settings.allowed_image_types)}"
-                )
+            )
         
         # Check file size
         content = await image.read()

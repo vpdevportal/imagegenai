@@ -55,7 +55,7 @@ class PromptGenerator:
                 BREAST: [ALWAYS describe as: large or medium breast size with natural shape and proportions]
 
                 BACKGROUND: [Describe the setting from the reference image: indoor/outdoor, specific location type, colors and lighting, environmental elements, depth and focus, and overall atmosphere]
-                
+
                 CAMERA: [ALWAYS describe as: mobile camera, low quality, handheld, natural lighting, slight sensor noise, realistic exposure, authentic ambient lighting, casual mobile phone photography style]
                 
                 Be thorough and specific in each section. Keep the total response under 2000 characters. Each section should be on a new line with its label."""
