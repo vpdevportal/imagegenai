@@ -28,7 +28,7 @@ class ImageGenerationResponse(BaseModel):
     estimated_completion_time: Optional[int] = None
 
 
-@router.post("/", response_model=ImageGenerationResponse)
+@router.post("", response_model=ImageGenerationResponse)
 async def generate_image(
     prompt: str = Form(...),
     image: UploadFile = File(...),

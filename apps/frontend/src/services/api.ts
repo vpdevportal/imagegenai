@@ -129,7 +129,7 @@ export const generateImage = async (
 
       console.log(`FormData contents - attempt ${attempt} - prompt:`, formData.get('prompt'), 'image:', formData.get('image'))
 
-      const response = await api.post('/generate/', formData, {
+      const response = await api.post('/generate', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
