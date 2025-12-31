@@ -41,6 +41,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'recent' | 'popular' | 'most-failed' | 'search'>('recent')
   const [thumbnails, setThumbnails] = useState<Record<number, string>>({})
+  const [loadingThumbnails, setLoadingThumbnails] = useState<Set<number>>(new Set())
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set())
   
   // Pagination state
@@ -81,27 +82,9 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
       setTotalPages(Math.ceil(fetchedPrompts.length / itemsPerPage))
       setCurrentPage(1) // Reset to first page when loading new data
       
-      // Load thumbnails for all fetched prompts
-      const thumbnailPromises = fetchedPrompts
-        .filter(prompt => prompt.thumbnail_mime)
-        .map(async (prompt) => {
-          try {
-            const thumbnailUrl = await getPromptThumbnail(prompt.id)
-            return { id: prompt.id, url: thumbnailUrl }
-          } catch (err) {
-            console.warn(`Failed to load thumbnail for prompt ${prompt.id}:`, err)
-            return null
-          }
-        })
-      
-      const thumbnailResults = await Promise.all(thumbnailPromises)
-      const thumbnailMap: Record<number, string> = {}
-      thumbnailResults.forEach(result => {
-        if (result) {
-          thumbnailMap[result.id] = result.url
-        }
-      })
-      setThumbnails(thumbnailMap)
+      // Clear thumbnails for new data - they will load lazily
+      setThumbnails({})
+      setLoadingThumbnails(new Set())
       
     } catch (err) {
       setError('Failed to load prompts')
@@ -118,6 +101,59 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
     const pagePrompts = allPrompts.slice(startIndex, endIndex)
     setPrompts(pagePrompts)
   }, [allPrompts, currentPage, itemsPerPage])
+
+  // Lazy load thumbnails for visible prompts
+  const loadThumbnail = useCallback(async (promptId: number) => {
+    // Skip if already loading or loaded
+    if (loadingThumbnails.has(promptId) || thumbnails[promptId]) {
+      return
+    }
+
+    // Skip if prompt doesn't have thumbnail metadata
+    const prompt = allPrompts.find(p => p.id === promptId)
+    if (!prompt || !prompt.thumbnail_mime) {
+      return
+    }
+
+    setLoadingThumbnails(prev => new Set(prev).add(promptId))
+
+    try {
+      const thumbnailUrl = await getPromptThumbnail(promptId)
+      setThumbnails(prev => ({ ...prev, [promptId]: thumbnailUrl }))
+    } catch (err) {
+      console.warn(`Failed to load thumbnail for prompt ${promptId}:`, err)
+    } finally {
+      setLoadingThumbnails(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(promptId)
+        return newSet
+      })
+    }
+  }, [allPrompts, loadingThumbnails, thumbnails])
+
+  // Load thumbnails for visible prompts using Intersection Observer
+  useEffect(() => {
+    // Load thumbnails for currently visible prompts (first page)
+    if (prompts.length > 0 && !loading) {
+      // Load thumbnails progressively with a small delay to avoid blocking
+      const loadPrompts = prompts.slice(0, 10) // Load first 10 immediately
+      const delayedPrompts = prompts.slice(10) // Load rest with delay
+
+      // Load first batch immediately
+      loadPrompts.forEach((prompt, index) => {
+        setTimeout(() => {
+          loadThumbnail(prompt.id)
+        }, index * 50) // Stagger by 50ms
+      })
+
+      // Load remaining with more delay
+      delayedPrompts.forEach((prompt, index) => {
+        setTimeout(() => {
+          loadThumbnail(prompt.id)
+        }, 500 + (index * 100)) // Start after 500ms, then stagger by 100ms
+      })
+    }
+  }, [prompts, loading, loadThumbnail])
 
   const loadStats = useCallback(async () => {
     try {
@@ -405,6 +441,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                       e.currentTarget.style.display = 'none'
                     }}
                   />
+                ) : loadingThumbnails.has(prompt.id) ? (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"></div>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400">
                     <EyeIcon className="h-5 w-5" />
