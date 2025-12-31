@@ -16,21 +16,36 @@ class ShortNameFormatter(logging.Formatter):
                 record.name = record.name.ljust(20)  # Pad with spaces to 20 characters
         return super().format(record)
 
+# Filter to ignore health check endpoint logs
+class HealthCheckFilter(logging.Filter):
+    def filter(self, record):
+        # Filter out uvicorn access logs for health check endpoints
+        message = record.getMessage()
+        if '/api/health' in message or '/health' in message:
+            return False
+        return True
+
 # Configure logging
 formatter = ShortNameFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 # Create handlers
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
+stream_handler.addFilter(HealthCheckFilter())
 
 file_handler = logging.FileHandler('imagegenai.log')
 file_handler.setFormatter(formatter)
+file_handler.addFilter(HealthCheckFilter())
 
 # Configure root logger
 logging.basicConfig(
     level=logging.INFO,
     handlers=[stream_handler, file_handler]
 )
+
+# Also filter uvicorn access logger
+uvicorn_access_logger = logging.getLogger("uvicorn.access")
+uvicorn_access_logger.addFilter(HealthCheckFilter())
 
 # Create FastAPI app
 app = FastAPI(
