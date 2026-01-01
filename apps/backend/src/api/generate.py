@@ -163,14 +163,19 @@ async def generate_image(
         return response
         
     except HTTPException as e:
+        # Log the HTTP exception details before tracking failure
+        logger.warning(f"HTTPException during image generation - status: {e.status_code}, detail: {e.detail}, prompt_id: {prompt_id}")
+        
         # Track failure for the prompt
         try:
             if prompt_id:
                 prompt_service.track_failure_by_id(prompt_id)
+                logger.info(f"Tracked failure for prompt ID {prompt_id}")
             elif prompt and prompt_service.exists_by_text(prompt):
                 prompt_service.track_failure(prompt)
-        except Exception:
-            pass
+                logger.info(f"Tracked failure for prompt text (hash: {prompt[:50]}...)")
+        except Exception as track_error:
+            logger.warning(f"Failed to track prompt failure: {track_error}")
         
         raise e
     except Exception as e:
@@ -180,10 +185,12 @@ async def generate_image(
         try:
             if prompt_id:
                 prompt_service.track_failure_by_id(prompt_id)
+                logger.info(f"Tracked failure for prompt ID {prompt_id}")
             elif prompt and prompt_service.exists_by_text(prompt):
                 prompt_service.track_failure(prompt)
-        except Exception:
-            pass
+                logger.info(f"Tracked failure for prompt text (hash: {prompt[:50]}...)")
+        except Exception as track_error:
+            logger.warning(f"Failed to track prompt failure: {track_error}")
         
         # Only log full traceback, but return user-friendly message
         raise HTTPException(
