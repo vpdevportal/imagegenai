@@ -52,7 +52,7 @@ class PromptGenerator:
                 
                 POSE: [Describe the pose from the reference image: specific body positioning, arm and leg placement, head angle and tilt, camera angle (eye-level/low/high), shot framing (close-up/mid/full), and overall composition]
                 
-                BREAST: [ALWAYS describe as: large or medium breast size with natural shape and proportions]
+                BREAST: [ALWAYS describe as: large breast size with natural shape and proportions. If cleavage is exposed, describe how much is exposed and how it is exposed (e.g., partially visible, fully visible, deep cleavage, subtle cleavage)]
 
                 BACKGROUND: [Describe the setting from the reference image: indoor/outdoor, specific location type, colors and lighting, environmental elements, depth and focus, and overall atmosphere]
 
