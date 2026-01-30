@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { PhotoIcon, ArrowDownTrayIcon, BookmarkIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PhotoIcon, ArrowDownTrayIcon, BookmarkIcon, CheckIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { savePrompt, normalizeImageUrl } from '@/services/api'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -19,9 +19,10 @@ interface ImageData {
 interface GeneratedImagesProps {
   images: ImageData[]
   onDelete?: (imageId: string | number) => void
+  onClearAll?: () => void
 }
 
-export default function GeneratedImages({ images, onDelete }: GeneratedImagesProps) {
+export default function GeneratedImages({ images, onDelete, onClearAll }: GeneratedImagesProps) {
   const { addToast } = useToast()
   const [savingIds, setSavingIds] = useState<Set<string | number>>(new Set())
   const [savedIds, setSavedIds] = useState<Set<string | number>>(new Set())
@@ -170,14 +171,26 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
           Created Images ({images.length})
         </h3>
         {images.length > 0 && (
-          <button
-            onClick={handleDownloadAll}
-            className="btn-secondary flex items-center space-x-2 text-sm"
-            title="Download all images"
-          >
-            <ArrowDownTrayIcon className="h-4 w-4" />
-            <span>Download All</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleDownloadAll}
+              className="btn-secondary flex items-center space-x-2 text-sm"
+              title="Download all images"
+            >
+              <ArrowDownTrayIcon className="h-4 w-4" />
+              <span>Download All</span>
+            </button>
+            {onClearAll && (
+              <button
+                onClick={onClearAll}
+                className="btn-secondary flex items-center space-x-2 text-sm text-red-300 hover:text-red-200 border-red-500/40 hover:border-red-500/60"
+                title="Clear all images"
+              >
+                <XMarkIcon className="h-4 w-4" />
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
         )}
       </div>
       
@@ -251,9 +264,9 @@ export default function GeneratedImages({ images, onDelete }: GeneratedImagesPro
                 </div>
               </div>
 
-              {/* Status badge and action buttons */}
+              {/* Status badge and action buttons - show on hover (same as bottom overlay), hide when mouse leaves */}
               <div className={`absolute top-4 right-4 flex items-center space-x-2 transition-opacity duration-300 pointer-events-auto z-20 ${
-                hoveredImageId === image.id ? 'opacity-0' : 'opacity-100'
+                hoveredImageId === image.id ? 'opacity-100' : 'opacity-0'
               }`}>
                 <button
                   onClick={() => handleSavePrompt(image)}
