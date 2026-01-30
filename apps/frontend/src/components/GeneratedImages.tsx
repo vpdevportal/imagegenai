@@ -108,7 +108,7 @@ export default function GeneratedImages({ images, onDelete, onClearAll }: Genera
         type: 'success',
         title: 'Image Deleted',
         message: 'The image has been removed from your collection',
-        duration: 2000
+        duration: 1000
       })
     }
   }
