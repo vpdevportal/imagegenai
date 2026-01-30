@@ -6,6 +6,8 @@ import tempfile
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 
+import psycopg2
+
 from ..models.prompt import Prompt
 from ..repositories.prompt_repository import prompt_repository
 from ..utils.thumbnail import ThumbnailGenerator
@@ -118,6 +120,35 @@ class PromptService:
             thumbnail_mime=prompt.thumbnail_mime,
             thumbnail_width=prompt.thumbnail_width,
             thumbnail_height=prompt.thumbnail_height
+        )
+
+    def update_prompt_text(self, prompt_id: int, prompt_text: str) -> Optional[PromptResponse]:
+        """Update prompt text by ID. Returns updated PromptResponse or None if not found.
+        Raises ValueError for validation errors or if new text hashes to an existing prompt."""
+        text = (prompt_text or "").strip()
+        if not text:
+            raise ValueError("Prompt text cannot be empty")
+        if len(text) > 2000:
+            raise ValueError("Prompt text too long (max 2000 characters)")
+        new_hash = Prompt.hash_prompt(text)
+        try:
+            updated = prompt_repository.update_text_by_id(prompt_id, text, new_hash)
+        except psycopg2.IntegrityError:
+            raise ValueError("A prompt with this text already exists")
+        if not updated:
+            return None
+        return PromptResponse(
+            id=updated.id,
+            prompt_text=updated.prompt_text,
+            prompt_hash=updated.prompt_hash,
+            total_uses=updated.total_uses,
+            total_fails=updated.total_fails,
+            first_used_at=updated.first_used_at,
+            last_used_at=updated.last_used_at,
+            model=updated.model,
+            thumbnail_mime=updated.thumbnail_mime,
+            thumbnail_width=updated.thumbnail_width,
+            thumbnail_height=updated.thumbnail_height
         )
     
     def get_prompt_with_thumbnail(self, prompt_id: int) -> Optional[PromptWithThumbnail]:

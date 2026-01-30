@@ -2,7 +2,7 @@
 API endpoints for prompt management
 """
 import logging
-from fastapi import APIRouter, HTTPException, Query, Path, Form
+from fastapi import APIRouter, HTTPException, Query, Path, Form, Body
 from fastapi.responses import Response
 from typing import Optional, List
 
@@ -178,6 +178,25 @@ async def get_prompt_stats():
     except Exception as e:
         logger.error(f"Failed to get stats: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve statistics")
+
+@router.patch("/{prompt_id}", response_model=PromptResponse)
+async def update_prompt(
+    prompt_id: int = Path(..., description="Prompt ID"),
+    prompt_text: str = Body(..., embed=True, min_length=1, max_length=2000, description="New prompt text")
+):
+    """Update prompt text by ID"""
+    try:
+        updated = prompt_service.update_prompt_text(prompt_id, prompt_text.strip())
+        if not updated:
+            raise HTTPException(status_code=404, detail="Prompt not found")
+        return updated
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update prompt {prompt_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update prompt")
 
 @router.delete("/{prompt_id}")
 async def delete_prompt(

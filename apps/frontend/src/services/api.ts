@@ -272,6 +272,11 @@ export const deletePrompt = async (promptId: number): Promise<{ message: string 
   return response.data
 }
 
+export const updatePrompt = async (promptId: number, promptText: string): Promise<Prompt> => {
+  const response = await api.patch(`/prompts/${promptId}`, { prompt_text: promptText })
+  return response.data
+}
+
 export const savePrompt = async (prompt: string): Promise<Prompt> => {
   const formData = new FormData()
   formData.append('prompt', prompt)

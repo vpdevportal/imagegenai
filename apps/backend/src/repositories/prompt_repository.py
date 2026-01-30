@@ -5,6 +5,8 @@ import logging
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
+import psycopg2
+
 from ..db.connection import db_connection
 from ..models.prompt import Prompt
 
@@ -89,6 +91,30 @@ class PromptRepository:
                     
         except Exception as e:
             logger.error(f"Error in update for prompt - hash: {prompt.prompt_hash[:8]}..., error: {str(e)}")
+            raise
+
+    def update_text_by_id(self, prompt_id: int, prompt_text: str, prompt_hash: str) -> Optional[Prompt]:
+        """Update prompt text and hash by ID. Returns updated prompt or None if not found.
+        Raises psycopg2.IntegrityError if new prompt_hash conflicts with another existing row."""
+        try:
+            with db_connection.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        UPDATE prompts
+                        SET prompt_text = %s, prompt_hash = %s
+                        WHERE id = %s
+                    """, (prompt_text, prompt_hash, prompt_id))
+                    if cursor.rowcount == 0:
+                        conn.rollback()
+                        return None
+                    conn.commit()
+                    cursor.execute("SELECT * FROM prompts WHERE id = %s", (prompt_id,))
+                    row = cursor.fetchone()
+                    return self._row_to_prompt(row) if row else None
+        except psycopg2.IntegrityError:
+            raise
+        except Exception as e:
+            logger.error(f"Error updating prompt text by ID {prompt_id}: {str(e)}")
             raise
 
     def increment_usage_by_id(self, prompt_id: int) -> bool:

@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { SparklesIcon, PhotoIcon, ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { SparklesIcon, PhotoIcon, XMarkIcon, BookmarkSquareIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { generateImage } from '@/services/api'
+import { generateImage, updatePrompt } from '@/services/api'
 import { useProvider } from '@/contexts/ProviderContext'
+import { useToast } from '@/contexts/ToastContext'
 
 interface ImageGenerationFormProps {
   onImageGenerated: (image: any) => void
@@ -22,7 +23,9 @@ export default function ImageGenerationForm({
   initialPromptId
 }: ImageGenerationFormProps) {
   const { provider } = useProvider()
+  const { addToast } = useToast()
   const [prompt, setPrompt] = useState(initialPrompt)
+  const [isSaving, setIsSaving] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -107,6 +110,29 @@ export default function ImageGenerationForm({
     setTimeout(() => {
       setRetryAttempt(0)
     }, 1000)
+  }
+
+  const handleSavePrompt = async () => {
+    if (initialPromptId == null || !prompt.trim() || prompt.length > 2000) return
+    if (prompt.trim() === initialPrompt.trim()) return
+    setIsSaving(true)
+    try {
+      await updatePrompt(initialPromptId, prompt.trim())
+      addToast({
+        type: 'success',
+        title: 'Prompt saved',
+        message: 'Prompt text has been updated successfully.'
+      })
+    } catch (err: any) {
+      const message = err?.response?.data?.detail || err?.message || 'Failed to save prompt'
+      addToast({
+        type: 'error',
+        title: 'Save failed',
+        message: typeof message === 'string' ? message : 'Failed to save prompt.'
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -267,7 +293,7 @@ export default function ImageGenerationForm({
             disabled={isGenerating}
             rows={4}
           />
-          <div className="flex justify-between items-center mt-1">
+          <div className="flex justify-between items-center mt-1 flex-wrap gap-2">
             <span className={`text-xs ${prompt.length > 2000 ? 'text-red-400' : 'text-gray-500'}`}>
               {prompt.length}/2000 characters
             </span>
@@ -275,6 +301,32 @@ export default function ImageGenerationForm({
               <span className="text-xs text-red-400">
                 Prompt too long!
               </span>
+            )}
+            {initialPromptId != null && (
+              <button
+                type="button"
+                onClick={handleSavePrompt}
+                disabled={
+                  isSaving ||
+                  isGenerating ||
+                  !prompt.trim() ||
+                  prompt.trim() === initialPrompt.trim() ||
+                  prompt.length > 2000
+                }
+                className="btn-secondary text-sm inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-gray-400 border-t-transparent" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <BookmarkSquareIcon className="h-4 w-4" />
+                    <span>Save prompt</span>
+                  </>
+                )}
+              </button>
             )}
           </div>
         </div>
