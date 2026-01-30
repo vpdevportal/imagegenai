@@ -182,7 +182,7 @@ async def get_prompt_stats():
 @router.patch("/{prompt_id}", response_model=PromptResponse)
 async def update_prompt(
     prompt_id: int = Path(..., description="Prompt ID"),
-    prompt_text: str = Body(..., embed=True, min_length=1, max_length=2000, description="New prompt text")
+    prompt_text: str = Body(..., embed=True, min_length=1, max_length=5000, description="New prompt text")
 ):
     """Update prompt text by ID"""
     try:

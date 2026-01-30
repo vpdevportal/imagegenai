@@ -128,8 +128,8 @@ class PromptService:
         text = (prompt_text or "").strip()
         if not text:
             raise ValueError("Prompt text cannot be empty")
-        if len(text) > 2000:
-            raise ValueError("Prompt text too long (max 2000 characters)")
+        if len(text) > 5000:
+            raise ValueError("Prompt text too long (max 5000 characters)")
         new_hash = Prompt.hash_prompt(text)
         try:
             updated = prompt_repository.update_text_by_id(prompt_id, text, new_hash)

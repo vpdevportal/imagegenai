@@ -76,8 +76,8 @@ class GeminiPromptGenerator(BasePromptGenerator):
                 raise Exception("Generated prompt is empty")
             
             # Validate and truncate if necessary
-            if len(generated_prompt) > 2000:
-                generated_prompt = generated_prompt[:2000].rsplit(' ', 1)[0]
+            if len(generated_prompt) > 5000:
+                generated_prompt = generated_prompt[:5000].rsplit(' ', 1)[0]
             
             return generated_prompt
             

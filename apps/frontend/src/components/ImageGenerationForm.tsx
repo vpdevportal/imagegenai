@@ -113,7 +113,7 @@ export default function ImageGenerationForm({
   }
 
   const handleSavePrompt = async () => {
-    if (initialPromptId == null || !prompt.trim() || prompt.length > 2000) return
+    if (initialPromptId == null || !prompt.trim() || prompt.length > 5000) return
     if (prompt.trim() === initialPrompt.trim()) return
     setIsSaving(true)
     try {
@@ -151,9 +151,9 @@ export default function ImageGenerationForm({
       return
     }
 
-    if (prompt.length > 2000) {
+    if (prompt.length > 5000) {
       console.log('Validation failed: Prompt too long')
-      setError('Prompt too long (max 2000 characters)')
+      setError('Prompt too long (max 5000 characters)')
       return
     }
 
@@ -294,10 +294,10 @@ export default function ImageGenerationForm({
             rows={4}
           />
           <div className="flex justify-between items-center mt-1 flex-wrap gap-2">
-            <span className={`text-xs ${prompt.length > 2000 ? 'text-red-400' : 'text-gray-500'}`}>
-              {prompt.length}/2000 characters
+            <span className={`text-xs ${prompt.length > 5000 ? 'text-red-400' : 'text-gray-500'}`}>
+              {prompt.length}/5000 characters
             </span>
-            {prompt.length > 2000 && (
+            {prompt.length > 5000 && (
               <span className="text-xs text-red-400">
                 Prompt too long!
               </span>
@@ -311,7 +311,7 @@ export default function ImageGenerationForm({
                   isGenerating ||
                   !prompt.trim() ||
                   prompt.trim() === initialPrompt.trim() ||
-                  prompt.length > 2000
+                  prompt.length > 5000
                 }
                 className="btn-secondary text-sm inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -359,10 +359,10 @@ export default function ImageGenerationForm({
         <div className="flex space-x-2">
         <button
           type="submit"
-            disabled={isGenerating || !prompt.trim() || !selectedFile || prompt.length > 2000}
+            disabled={isGenerating || !prompt.trim() || !selectedFile || prompt.length > 5000}
             className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           onClick={(e) => {
-              console.log('Button clicked - prompt:', `"${prompt}"`, 'length:', prompt.length, 'selectedFile:', selectedFile, 'disabled:', isGenerating || !prompt.trim() || !selectedFile || prompt.length > 2000)
+              console.log('Button clicked - prompt:', `"${prompt}"`, 'length:', prompt.length, 'selectedFile:', selectedFile, 'disabled:', isGenerating || !prompt.trim() || !selectedFile || prompt.length > 5000)
           }}
         >
           {isGenerating ? (

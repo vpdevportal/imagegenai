@@ -7,7 +7,7 @@ from datetime import datetime
 
 class PromptBase(BaseModel):
     """Base prompt schema"""
-    prompt_text: str = Field(..., min_length=1, max_length=2000)
+    prompt_text: str = Field(..., min_length=1, max_length=5000)
     model: Optional[str] = Field(None, max_length=100)
 
 class PromptCreate(PromptBase):

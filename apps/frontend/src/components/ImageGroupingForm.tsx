@@ -128,7 +128,7 @@ export default function ImageGroupingForm({
   }
 
   const handleSavePrompt = async () => {
-    if (initialPromptId == null || !prompt.trim() || prompt.length > 2000) return
+    if (initialPromptId == null || !prompt.trim() || prompt.length > 5000) return
     if (prompt.trim() === initialPrompt.trim()) return
     setIsSaving(true)
     try {
@@ -161,8 +161,8 @@ export default function ImageGroupingForm({
       return
     }
 
-    if (prompt.length > 2000) {
-      setError('Prompt too long (max 2000 characters)')
+    if (prompt.length > 5000) {
+      setError('Prompt too long (max 5000 characters)')
       return
     }
 
@@ -339,10 +339,10 @@ export default function ImageGroupingForm({
             rows={4}
           />
           <div className="flex justify-between items-center mt-1 flex-wrap gap-2">
-            <span className={`text-xs ${prompt.length > 2000 ? 'text-red-400' : 'text-gray-500'}`}>
-              {prompt.length}/2000 characters
+            <span className={`text-xs ${prompt.length > 5000 ? 'text-red-400' : 'text-gray-500'}`}>
+              {prompt.length}/5000 characters
             </span>
-            {prompt.length > 2000 && (
+            {prompt.length > 5000 && (
               <span className="text-xs text-red-400">
                 Prompt too long!
               </span>
@@ -356,7 +356,7 @@ export default function ImageGroupingForm({
                   isGenerating ||
                   !prompt.trim() ||
                   prompt.trim() === initialPrompt.trim() ||
-                  prompt.length > 2000
+                  prompt.length > 5000
                 }
                 className="btn-secondary text-sm inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -404,7 +404,7 @@ export default function ImageGroupingForm({
         <div className="flex space-x-2">
           <button
             type="submit"
-            disabled={isGenerating || !prompt.trim() || selectedFiles.length === 0 || prompt.length > 2000}
+            disabled={isGenerating || !prompt.trim() || selectedFiles.length === 0 || prompt.length > 5000}
             className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           >
             {isGenerating ? (

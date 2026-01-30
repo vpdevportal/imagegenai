@@ -88,8 +88,8 @@ export default function ImageVariationForm({
       return
     }
 
-    if (prompt.length > 2000) {
-      setError('Prompt too long (max 2000 characters)')
+    if (prompt.length > 5000) {
+      setError('Prompt too long (max 5000 characters)')
       return
     }
 
@@ -199,7 +199,7 @@ export default function ImageVariationForm({
             placeholder="Describe the variation you want (e.g., 'change background to sunset', 'make it more colorful'). Leave empty for automatic variation."
             disabled={isGenerating}
             rows={4}
-            maxLength={2000}
+            maxLength={5000}
             className="input-field resize-none"
           />
           <div className="flex justify-between items-center mt-1">
@@ -207,7 +207,7 @@ export default function ImageVariationForm({
               Leave empty for automatic variation generation
             </p>
             <span className="text-xs text-gray-400">
-              {prompt.length}/2000
+              {prompt.length}/5000
             </span>
           </div>
         </div>

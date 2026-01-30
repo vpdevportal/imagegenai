@@ -38,9 +38,9 @@ async def generate_grouping(
             logger.warning(f"Validation failed: Empty prompt")
             raise HTTPException(status_code=400, detail="Prompt cannot be empty")
         
-        if len(prompt) > 2000:
+        if len(prompt) > 5000:
             logger.warning(f"Validation failed: Prompt too long ({len(prompt)} characters)")
-            raise HTTPException(status_code=400, detail="Prompt too long (max 2000 characters)")
+            raise HTTPException(status_code=400, detail="Prompt too long (max 5000 characters)")
         
         # Validate images
         if not images or len(images) == 0:
