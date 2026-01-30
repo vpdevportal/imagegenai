@@ -76,7 +76,16 @@ class PromptGenerator:
         Returns:
             str: The teleport prompt to use
         """
-        return "Replace the background of the person in the first image with the background from the second image. CRITICAL: Preserve the person's exact face, facial features, body type, clothing, and pose from the first image without any changes. The person should remain in sharp focus with clear details. Crop and adjust the background from the second image to match the aspect ratio, framing, and composition style of the first image - if the person is in a close-up shot, zoom in on the background; if it's a wide shot, keep the background wide. The background framing should complement the person's shot type (portrait, mid-shot, full-body, etc.). Ensure realistic proportions and scale - the person's size should match the perspective and depth of the new background. Apply consistent lighting, shadows, and color grading so the person appears to be lit by the same light sources as the background. The final result should be a seamless, photorealistic image where the person from the first image looks like they were originally photographed in the background location from the second image, with matching framing and composition."
+        return """You are given TWO images. Your task is to place the person from the FIRST image into the location shown in the SECOND image so the result looks like a real, natural photograph taken in that place.
+
+STEP 1 — ANALYSE THE FIRST IMAGE (the person):
+Identify and remember the person: their face (facial structure, skin tone, eyes, nose, mouth), hair (style, color, length), body type, clothing (garments, colors, patterns, fit), and accessories. Preserve this identity in the final image. You do NOT need to keep their pose, angle, or framing from the first image.
+
+STEP 2 — ANALYSE THE SECOND IMAGE (the location):
+Analyse the location: type of place, composition, perspective, depth, light direction and mood, shadows, time of day, colors, and scale of the environment. Understand how a real photo of someone in this place would look.
+
+STEP 3 — COMBINE FOR A REAL PHOTO:
+Place the person (same face, same clothes, same identity) into the location so it looks like one real photograph taken there. You MAY and SHOULD change anything that makes it look natural: adjust the person’s pose so it fits the scene, change viewing angle or camera viewpoint, change distance or size of the person in frame, reframe the shot (close-up, wide, etc.)—whatever makes the image look like an authentic, candid photo of that person in that location. Match lighting, shadows, and color to the location. The goal is a single image that looks like a real photo, not a cut-paste; the person should feel naturally part of the scene."""
 
 
 # Global instance
