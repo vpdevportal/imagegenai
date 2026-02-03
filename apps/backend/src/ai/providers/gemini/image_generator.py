@@ -280,7 +280,7 @@ class GeminiImageGenerator(BaseImageGenerator):
                 reference_images.append(reference_image)
             
             # Generate the image using Gemini with multiple images
-            contents = [prompt] + reference_images
+            contents = reference_images + [prompt]
             logger.info(f"Generating image with {len(reference_images)} reference images and prompt: {prompt[:100]}...")
             
             response = self.client.models.generate_content(
