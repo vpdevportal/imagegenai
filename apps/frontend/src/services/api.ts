@@ -319,8 +319,14 @@ export const trackPromptUsage = async (promptId: number): Promise<Prompt> => {
   return response.data
 }
 
-// Variations API - Image Variation Generation
-export const generateVariation = async (file: File, prompt?: string, provider?: string): Promise<{
+// Variations API - Image Variation Generation (with retry logic)
+export const generateVariation = async (
+  file: File,
+  prompt?: string,
+  provider?: string,
+  onRetry?: (attempt: number) => void,
+  shouldCancel?: () => boolean
+): Promise<{
   id: string
   message: string
   prompt: string
@@ -330,21 +336,70 @@ export const generateVariation = async (file: File, prompt?: string, provider?: 
   reference_image_url: string
   created_at: string
 }> => {
-  const formData = new FormData()
-  formData.append('file', file)
-  if (prompt && prompt.trim()) {
-    formData.append('prompt', prompt.trim())
-  }
-  if (provider) {
-    formData.append('provider', provider)
+  let lastError: any
+  let attempt = 0
+  const maxRetries = 20
+
+  while (attempt < maxRetries) {
+    if (shouldCancel && shouldCancel()) {
+      throw new Error('Image generation cancelled by user')
+    }
+
+    attempt++
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      if (prompt && prompt.trim()) {
+        formData.append('prompt', prompt.trim())
+      }
+      if (provider) {
+        formData.append('provider', provider)
+      }
+
+      const response = await api.post('/variations/generate', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      return response.data
+    } catch (error: any) {
+      if (error?.message === 'Image generation cancelled by user') {
+        throw error
+      }
+
+      lastError = error
+
+      if (shouldCancel && shouldCancel()) {
+        throw new Error('Image generation cancelled by user')
+      }
+
+      if (onRetry) {
+        onRetry(attempt)
+      }
+
+      if (attempt >= maxRetries) {
+        throw lastError || new Error(`Image variation failed after ${maxRetries} attempts`)
+      }
+
+      const delay = Math.min(Math.pow(2, attempt - 1) * 1000, 8000)
+      let cancelled = false
+      const startTime = Date.now()
+      while (Date.now() - startTime < delay) {
+        if (shouldCancel && shouldCancel()) {
+          cancelled = true
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+
+      if (cancelled) {
+        throw new Error('Image generation cancelled by user')
+      }
+    }
   }
 
-  const response = await api.post('/variations/generate', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  })
-  return response.data
+  throw lastError || new Error(`Image variation failed after ${maxRetries} attempts`)
 }
 
 // Fusion API - Merge Two People Together

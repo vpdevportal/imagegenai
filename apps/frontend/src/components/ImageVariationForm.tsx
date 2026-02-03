@@ -23,6 +23,9 @@ export default function ImageVariationForm({
   const [prompt, setPrompt] = useState('')
   const [error, setError] = useState('')
   const [dragActive, setDragActive] = useState(false)
+  const [retryAttempt, setRetryAttempt] = useState(0)
+  const [isCancelled, setIsCancelled] = useState(false)
+  const cancelRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (file: File) => {
@@ -77,6 +80,14 @@ export default function ImageVariationForm({
     setError('')
   }
 
+  const handleCancel = () => {
+    cancelRef.current = true
+    setIsCancelled(true)
+    setIsGenerating(false)
+    setError('Generation cancelled')
+    setTimeout(() => setRetryAttempt(0), 1000)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -93,10 +104,19 @@ export default function ImageVariationForm({
       return
     }
 
+    setRetryAttempt(0)
+    setIsCancelled(false)
+    cancelRef.current = false
     setIsGenerating(true)
 
     try {
-      const response = await generateVariation(selectedFile, prompt || undefined, provider)
+      const response = await generateVariation(
+        selectedFile,
+        prompt || undefined,
+        provider,
+        (attempt) => setRetryAttempt(attempt),
+        () => cancelRef.current
+      )
       
       onVariationGenerated({
         id: response.id,
@@ -109,10 +129,18 @@ export default function ImageVariationForm({
       })
     } catch (err: any) {
       console.error('Image variation error:', err)
-      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to generate image variation. Please try again.'
-      setError(errorMessage)
+      if (cancelRef.current || err?.message === 'Image generation cancelled by user') {
+        setError('Generation cancelled')
+        setIsCancelled(true)
+      } else {
+        const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to generate image variation. Retrying...'
+        setError(errorMessage)
+      }
     } finally {
       setIsGenerating(false)
+      if (!cancelRef.current) {
+        setRetryAttempt(0)
+      }
     }
   }
 
@@ -219,27 +247,56 @@ export default function ImageVariationForm({
           </div>
         )}
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={!selectedFile || isGenerating}
-          className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-        >
-          {isGenerating ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Generating Variation...
-            </>
-          ) : (
-            <>
-              <SparklesIcon className="h-5 w-5 mr-2" />
-              Generate Variation
-            </>
+        {/* Retry Progress */}
+        {isGenerating && retryAttempt > 0 && (
+          <div className="text-teal-300 text-sm bg-teal-900/20 border border-teal-500/30 rounded-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-teal-400 border-t-transparent"></div>
+                <span>Retrying... Attempt {retryAttempt} of 20</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded transition-colors"
+              >
+                Stop
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex space-x-2">
+          <button
+            type="submit"
+            disabled={!selectedFile || isGenerating}
+            className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          >
+            {isGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <span>
+                  {retryAttempt > 0 ? `Retrying... (Attempt ${retryAttempt}/20)` : 'Generating Variation...'}
+                </span>
+              </>
+            ) : (
+              <>
+                <SparklesIcon className="h-5 w-5 mr-2" />
+                Generate Variation
+              </>
+            )}
+          </button>
+          {isGenerating && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-4 btn-secondary flex items-center justify-center space-x-2"
+            >
+              <XMarkIcon className="h-5 w-5" />
+              <span>Cancel</span>
+            </button>
           )}
-        </button>
+        </div>
       </form>
     </div>
   )
