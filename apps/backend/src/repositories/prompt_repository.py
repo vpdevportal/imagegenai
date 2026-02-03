@@ -311,7 +311,7 @@ class PromptRepository:
                            thumbnail_mime, thumbnail_width, thumbnail_height
                     FROM prompts 
                     WHERE LOWER(prompt_text) LIKE %s
-                    ORDER BY total_uses DESC, last_used_at DESC
+                    ORDER BY last_used_at DESC
                     LIMIT %s
                 """, (search_term, limit))
                 
