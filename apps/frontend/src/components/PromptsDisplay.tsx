@@ -48,7 +48,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
-  const [itemsPerPage] = useState(21) // Smaller page size for better UX
+  const [itemsPerPage] = useState(18) // 6 rows × 3 columns
   const [allPrompts, setAllPrompts] = useState<Prompt[]>([]) // Store all fetched prompts
   const [confirmationDialog, setConfirmationDialog] = useState<{
     isOpen: boolean
