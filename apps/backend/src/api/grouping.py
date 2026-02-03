@@ -6,7 +6,7 @@ from datetime import datetime
 import base64
 import logging
 
-from ..services.prompt_to_image_service import prompt_to_image_service
+from ..services.grouping_service import grouping_service
 from ..db.config import settings
 
 logger = logging.getLogger(__name__)
@@ -103,11 +103,11 @@ async def generate_grouping(
             # Reset file pointer for service
             await image.seek(0)
         
-        # Generate grouping using service
-        generated_image_data, content_type, reference_image_url = await prompt_to_image_service.generate_grouping_from_images(
+        # Generate grouping using dedicated grouping service
+        generated_image_data, content_type, reference_image_url = await grouping_service.generate_from_images(
             prompt=prompt,
             images=images,
-            provider=provider
+            provider=provider,
         )
         
         # Track usage for the prompt (only on successful generation)
