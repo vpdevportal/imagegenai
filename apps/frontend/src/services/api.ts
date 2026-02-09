@@ -10,14 +10,14 @@ const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     return '/api'
   }
-  
+
   // Server-side: use environment variable if set, otherwise 127.0.0.1
   // Using 127.0.0.1 instead of localhost forces IPv4 and avoids IPv6 connection issues
   // This is for SSR/SSG scenarios (if any)
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL
   }
-  
+
   return 'http://127.0.0.1:6001/api'
 }
 
@@ -35,12 +35,12 @@ export const normalizeImageUrl = (url: string | undefined | null): string => {
 
   try {
     const urlObj = new URL(url, typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
-    
+
     // If it's a localhost or same-origin URL, convert to relative path
     // This ensures it goes through Next.js proxy instead of direct backend access
-    if (urlObj.hostname === 'localhost' || 
-        urlObj.hostname === '127.0.0.1' || 
-        (typeof window !== 'undefined' && urlObj.hostname === window.location.hostname)) {
+    if (urlObj.hostname === 'localhost' ||
+      urlObj.hostname === '127.0.0.1' ||
+      (typeof window !== 'undefined' && urlObj.hostname === window.location.hostname)) {
       // If it's an API endpoint, ensure it starts with /api
       if (urlObj.pathname.startsWith('/api/')) {
         return urlObj.pathname + urlObj.search
@@ -48,7 +48,7 @@ export const normalizeImageUrl = (url: string | undefined | null): string => {
       // Otherwise, return the pathname
       return urlObj.pathname + urlObj.search
     }
-    
+
     // For external URLs, return as-is (they're safe)
     return url
   } catch (e) {
@@ -94,9 +94,9 @@ export interface ImageGenerationResponse {
 // API functions
 
 export const generateImage = async (
-  prompt: string, 
-  image: File, 
-  provider?: string, 
+  prompt: string,
+  image: File,
+  provider?: string,
   onRetry?: (attempt: number) => void,
   shouldCancel?: () => boolean,
   promptId?: number
@@ -115,7 +115,7 @@ export const generateImage = async (
     }
 
     attempt++
-    
+
     try {
       const formData = new FormData()
       formData.append('prompt', prompt) // Prompt is always required
@@ -167,7 +167,7 @@ export const generateImage = async (
       // Exponential backoff: wait 1s, 2s, 4s, 8s, then cap at 8s between retries
       const delay = Math.min(Math.pow(2, attempt - 1) * 1000, 8000)
       console.log(`Waiting ${delay}ms before retry attempt ${attempt + 1}`)
-      
+
       // Wait with cancellation check
       let cancelled = false
       const startTime = Date.now()
@@ -178,7 +178,7 @@ export const generateImage = async (
         }
         await new Promise(resolve => setTimeout(resolve, 100))
       }
-      
+
       if (cancelled) {
         console.log('Image generation cancelled during wait')
         throw new Error('Image generation cancelled by user')
@@ -234,6 +234,16 @@ export const getMostFailedPrompts = async (limit = 100, model?: string): Promise
   }
 
   const response = await api.get(`/prompts/most-failed?${params}`)
+  return response.data
+}
+
+export const getZeroUsedPrompts = async (limit = 100, model?: string): Promise<Prompt[]> => {
+  const params = new URLSearchParams({ limit: limit.toString() })
+  if (model) {
+    params.append('model', model)
+  }
+
+  const response = await api.get(`/prompts/zero-used?${params}`)
   return response.data
 }
 

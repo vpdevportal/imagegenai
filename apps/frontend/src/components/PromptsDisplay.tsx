@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { 
-  MagnifyingGlassIcon, 
-  FireIcon, 
-  ClockIcon, 
+import {
+  MagnifyingGlassIcon,
+  FireIcon,
+  ClockIcon,
   EyeIcon,
   ChartBarIcon,
   XMarkIcon,
@@ -14,12 +14,13 @@ import {
   UserGroupIcon
 } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { 
-  getPrompts, 
-  getPopularPrompts, 
-  getRecentPrompts, 
+import {
+  getPrompts,
+  getPopularPrompts,
+  getRecentPrompts,
   getMostFailedPrompts,
-  searchPrompts, 
+  getZeroUsedPrompts,
+  searchPrompts,
   getPromptStats,
   getPromptThumbnail,
   deletePrompt
@@ -39,11 +40,11 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState<'recent' | 'popular' | 'most-failed' | 'search'>('recent')
+  const [activeTab, setActiveTab] = useState<'recent' | 'popular' | 'most-failed' | 'zero-used' | 'search'>('recent')
   const [thumbnails, setThumbnails] = useState<Record<number, string>>({})
   const [loadingThumbnails, setLoadingThumbnails] = useState<Set<number>>(new Set())
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set())
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -60,32 +61,34 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
     promptText: ''
   })
 
-  const loadPrompts = useCallback(async (tab: 'recent' | 'popular' | 'most-failed' | 'search' = 'recent') => {
+  const loadPrompts = useCallback(async (tab: 'recent' | 'popular' | 'most-failed' | 'zero-used' | 'search' = 'recent') => {
     setLoading(true)
     setError('')
-    
+
     try {
       let fetchedPrompts: Prompt[] = []
-      
+
       if (tab === 'recent') {
         fetchedPrompts = await getRecentPrompts(10000) // Fetch all data for client-side pagination
       } else if (tab === 'popular') {
         fetchedPrompts = await getPopularPrompts(10000) // Fetch all data for client-side pagination
       } else if (tab === 'most-failed') {
         fetchedPrompts = await getMostFailedPrompts(10000) // Fetch all data for client-side pagination
+      } else if (tab === 'zero-used') {
+        fetchedPrompts = await getZeroUsedPrompts(10000) // Fetch all data for client-side pagination
       } else if (tab === 'search' && searchQuery.trim()) {
         fetchedPrompts = await searchPrompts(searchQuery.trim(), 10000) // Fetch all data for client-side pagination
       }
-      
+
       setAllPrompts(fetchedPrompts)
       setTotalItems(fetchedPrompts.length)
       setTotalPages(Math.ceil(fetchedPrompts.length / itemsPerPage))
       setCurrentPage(1) // Reset to first page when loading new data
-      
+
       // Clear thumbnails for new data - they will load lazily
       setThumbnails({})
       setLoadingThumbnails(new Set())
-      
+
     } catch (err) {
       setError('Failed to load prompts')
       console.error('Error loading prompts:', err)
@@ -202,7 +205,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
 
   const handleDeletePrompt = (promptId: number, event: React.MouseEvent) => {
     event.stopPropagation() // Prevent triggering the card click
-    
+
     const prompt = prompts.find(p => p.id === promptId)
     if (prompt) {
       setConfirmationDialog({
@@ -218,30 +221,30 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
 
     const promptId = confirmationDialog.promptId
     setDeletingIds(prev => new Set(prev).add(promptId))
-    
+
     try {
       await deletePrompt(promptId)
-      
+
       // Remove the prompt from the local state
       setPrompts(prev => prev.filter(p => p.id !== promptId))
-      
+
       // Remove thumbnail from state
       setThumbnails(prev => {
         const newThumbnails = { ...prev }
         delete newThumbnails[promptId]
         return newThumbnails
       })
-      
+
       // Reload stats to update counts
       loadStats()
-      
+
       // Close confirmation dialog
       setConfirmationDialog({
         isOpen: false,
         promptId: null,
         promptText: ''
       })
-      
+
     } catch (error) {
       console.error('Failed to delete prompt:', error)
       addToast({
@@ -346,44 +349,50 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
         <div className="flex space-x-1 bg-[#1a2332]/50 p-1 rounded-xl border border-[#2a3441]/50">
           <button
             onClick={() => setActiveTab('recent')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-              activeTab === 'recent'
-                ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
-            }`}
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === 'recent'
+              ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
+              }`}
           >
             <ClockIcon className="h-4 w-4 mr-2" />
             Recent
           </button>
           <button
             onClick={() => setActiveTab('popular')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-              activeTab === 'popular'
-                ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
-            }`}
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === 'popular'
+              ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
+              }`}
           >
             <FireIcon className="h-4 w-4 mr-2" />
             Popular
           </button>
           <button
             onClick={() => setActiveTab('most-failed')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-              activeTab === 'most-failed'
-                ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
-            }`}
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === 'most-failed'
+              ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
+              }`}
           >
             <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
             Most Failed
           </button>
           <button
+            onClick={() => setActiveTab('zero-used')}
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === 'zero-used'
+              ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
+              }`}
+          >
+            <ClockIcon className="h-4 w-4 mr-2" />
+            0 Used
+          </button>
+          <button
             onClick={() => setActiveTab('search')}
-            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-              activeTab === 'search'
-                ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
-            }`}
+            className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === 'search'
+              ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a2332]'
+              }`}
           >
             <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
             Search
@@ -409,9 +418,10 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
       ) : prompts.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-2 font-medium">
-            {activeTab === 'search' ? 'No prompts found' : 
-             activeTab === 'most-failed' ? 'No failed prompts found' : 
-             'No prompts available'}
+            {activeTab === 'search' ? 'No prompts found' :
+              activeTab === 'most-failed' ? 'No failed prompts found' :
+                activeTab === 'zero-used' ? 'No unused prompts found' :
+                  'No prompts available'}
           </div>
           {activeTab === 'search' && (
             <button
@@ -450,12 +460,12 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                     <EyeIcon className="h-5 w-5" />
                   </div>
                 )}
-                
+
                 {/* Overlay with usage count */}
                 <div className="absolute top-1 right-1 bg-black/70 text-white text-xs px-1 py-0.5 rounded-full">
                   {prompt.total_uses}
                 </div>
-                
+
                 {/* Failure count overlay */}
                 {prompt.total_fails > 0 && (
                   <div className="absolute bottom-1 left-1 bg-red-600/80 text-white text-xs px-1 py-0.5 rounded-full">
@@ -463,7 +473,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                   </div>
                 )}
               </div>
-              
+
               {/* Content */}
               <div className="flex-1 px-3 py-2 flex flex-col justify-between">
                 <p className="text-xs text-gray-200 line-clamp-2 leading-tight font-medium">
@@ -522,7 +532,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
               Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} prompts
             </span>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {/* Previous Button */}
             <button
@@ -532,7 +542,7 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
             >
               Previous
             </button>
-            
+
             {/* Page Numbers */}
             <div className="flex items-center space-x-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -546,23 +556,22 @@ export default function PromptsDisplay({ onPromptSelect }: PromptsDisplayProps) 
                 } else {
                   pageNum = currentPage - 2 + i
                 }
-                
+
                 return (
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
-                      currentPage === pageNum
-                        ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
-                        : 'text-gray-300 bg-[#1a2332] border border-[#2a3441] hover:bg-[#1a2332]/80'
-                    }`}
+                    className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${currentPage === pageNum
+                      ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md'
+                      : 'text-gray-300 bg-[#1a2332] border border-[#2a3441] hover:bg-[#1a2332]/80'
+                      }`}
                   >
                     {pageNum}
                   </button>
                 )
               })}
             </div>
-            
+
             {/* Next Button */}
             <button
               onClick={() => handlePageChange(currentPage + 1)}

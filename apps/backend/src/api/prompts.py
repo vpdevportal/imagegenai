@@ -93,6 +93,18 @@ async def get_most_failed_prompts(
         logger.error(f"Failed to get most failed prompts: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve most failed prompts")
 
+@router.get("/zero-used", response_model=List[PromptResponse])
+async def get_zero_used_prompts(
+    limit: int = Query(50, ge=1, le=10000, description="Maximum results"),
+    model: Optional[str] = Query(None, description="Filter by model")
+):
+    """Get prompts with zero usage"""
+    try:
+        return prompt_service.get_zero_used_prompts(limit, model)
+    except Exception as e:
+        logger.error(f"Failed to get zero used prompts: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve zero used prompts")
+
 @router.get("/health")
 async def health_check():
     """Health check for prompts API"""

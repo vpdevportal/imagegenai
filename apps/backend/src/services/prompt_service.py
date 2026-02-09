@@ -198,6 +198,15 @@ class PromptService:
         prompts = prompt_repository.get_most_failed(limit, model)
         return [self._prompt_to_response(prompt) for prompt in prompts]
     
+    def get_zero_used_prompts(
+        self,
+        limit: int = 50,
+        model: Optional[str] = None
+    ) -> List[PromptResponse]:
+        """Get prompts with zero usage"""
+        prompts = prompt_repository.get_zero_used(limit, model)
+        return [self._prompt_to_response(prompt) for prompt in prompts]
+    
     def search_prompts(self, query: str, limit: int = 20) -> List[PromptResponse]:
         """Search prompts"""
         prompts = prompt_repository.search(query, limit)

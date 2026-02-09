@@ -300,6 +300,33 @@ class PromptRepository:
                 
                 return [self._row_to_prompt(row) for row in cursor.fetchall()]
     
+    def get_zero_used(self, limit: int = 50, model: Optional[str] = None) -> List[Prompt]:
+        """Get prompts with zero usage (excludes thumbnail_data BLOB for performance)"""
+        with db_connection.get_connection() as conn:
+            with conn.cursor() as cursor:
+                if model:
+                    cursor.execute("""
+                        SELECT id, prompt_text, prompt_hash, total_uses, total_fails,
+                               first_used_at, last_used_at, model,
+                               thumbnail_mime, thumbnail_width, thumbnail_height
+                        FROM prompts 
+                        WHERE model = %s AND thumbnail_data IS NOT NULL AND total_uses = 0
+                        ORDER BY total_fails ASC, last_used_at DESC
+                        LIMIT %s
+                    """, (model, limit))
+                else:
+                    cursor.execute("""
+                        SELECT id, prompt_text, prompt_hash, total_uses, total_fails,
+                               first_used_at, last_used_at, model,
+                               thumbnail_mime, thumbnail_width, thumbnail_height
+                        FROM prompts 
+                        WHERE thumbnail_data IS NOT NULL AND total_uses = 0
+                        ORDER BY total_fails ASC, last_used_at DESC
+                        LIMIT %s
+                    """, (limit,))
+                
+                return [self._row_to_prompt(row) for row in cursor.fetchall()]
+    
     def search(self, query: str, limit: int = 20) -> List[Prompt]:
         """Search prompts by text (excludes thumbnail_data BLOB for performance)"""
         search_term = f"%{query.lower()}%"
