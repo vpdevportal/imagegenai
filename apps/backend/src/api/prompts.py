@@ -238,7 +238,7 @@ async def save_prompt(
             # Use default provider for thumbnail generation
             default_provider = getattr(settings, 'default_ai_provider', 'gemini')
             generator = ImageGeneratorFactory.create(default_provider)
-            thumbnail_data, _ = generator.generate_from_text(prompt)
+            thumbnail_data, _ = await generator.generate_from_text(prompt)
         except Exception as gen_error:
             logger.warning(f"Failed to generate thumbnail: {gen_error}")
             # Continue without thumbnail - attempt_save_prompt handles None thumbnail_data

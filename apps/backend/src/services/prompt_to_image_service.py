@@ -61,7 +61,7 @@ class PromptToImageService:
         try:
             generator = self._get_generator(provider)
             reference_image_url = generator.process_reference_image(reference_image)
-            generated_image_data, content_type = generator.generate_from_image_and_text(
+            generated_image_data, content_type = await generator.generate_from_image_and_text(
                 reference_image, prompt
             )
             return generated_image_data, content_type, reference_image_url
@@ -107,7 +107,7 @@ class PromptToImageService:
             image2.file.seek(0)
             
             # Generate fusion using multiple images
-            generated_image_data, content_type = generator.generate_from_multiple_images_and_text(
+            generated_image_data, content_type = await generator.generate_from_multiple_images_and_text(
                 [image1, image2], 
                 prompt_generator.fusion_prompt()
             )
@@ -155,8 +155,7 @@ class PromptToImageService:
             
             # Generate using multiple images
             # Note: The order matters - person image is first (primary), background is second
-            # This tells the AI to modify the person's background with the new background
-            generated_image_data, content_type = generator.generate_from_multiple_images_and_text(
+            generated_image_data, content_type = await generator.generate_from_multiple_images_and_text(
                 [person_image, background_image], 
                 prompt_generator.teleport_prompt()
             )

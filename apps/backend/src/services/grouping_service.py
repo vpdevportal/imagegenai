@@ -61,7 +61,7 @@ class GroupingService:
                 image.file.seek(0)
 
             prompt_with_note = (prompt.strip() + GROUPING_FACE_PRESERVATION_NOTE).strip()
-            generated_image_data, content_type = generator.generate_from_multiple_images_and_text(
+            generated_image_data, content_type = await generator.generate_from_multiple_images_and_text(
                 images, prompt_with_note
             )
             return generated_image_data, content_type, reference_image_url
