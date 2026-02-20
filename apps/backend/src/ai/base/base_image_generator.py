@@ -11,7 +11,7 @@ class BaseImageGenerator(ABC):
     """Abstract base class for all image generation providers"""
     
     @abstractmethod
-    def generate_from_image_and_text(
+    async def generate_from_image_and_text(
         self, 
         image_file: UploadFile, 
         prompt: str
@@ -32,7 +32,7 @@ class BaseImageGenerator(ABC):
         pass
     
     @abstractmethod
-    def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
+    async def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
         """
         Generate an image using only text prompt (no reference image)
         
@@ -48,7 +48,7 @@ class BaseImageGenerator(ABC):
         pass
     
     @abstractmethod
-    def generate_from_multiple_images_and_text(
+    async def generate_from_multiple_images_and_text(
         self, 
         image_files: list, 
         prompt: str

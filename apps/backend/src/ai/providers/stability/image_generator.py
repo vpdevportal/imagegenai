@@ -2,6 +2,7 @@
 Stability AI Image Generator using Stable Diffusion img2img
 """
 
+import asyncio
 import os
 from typing import Optional, Tuple
 from io import BytesIO
@@ -121,20 +122,11 @@ class StabilityImageGenerator(BaseImageGenerator):
             logger.warning(f"Failed to resize image, using original: {str(e)}")
             return image_content
     
-    def generate_from_image_and_text(self, image_file: UploadFile, prompt: str) -> Tuple[bytes, str]:
-        """
-        Generate an image using a reference image and text prompt (img2img)
-        
-        Args:
-            image_file: Uploaded image file (mandatory)
-            prompt: Text prompt for image generation
-            
-        Returns:
-            Tuple[bytes, str]: (image_data, content_type)
-            
-        Raises:
-            HTTPException: If generation fails
-        """
+    async def generate_from_image_and_text(self, image_file: UploadFile, prompt: str) -> Tuple[bytes, str]:
+        """Async wrapper: runs sync Stability API in thread pool to avoid blocking the event loop."""
+        return await asyncio.to_thread(self._sync_generate_from_image_and_text, image_file, prompt)
+
+    def _sync_generate_from_image_and_text(self, image_file: UploadFile, prompt: str) -> Tuple[bytes, str]:
         try:
             # Read image content
             image_content = image_file.file.read()
@@ -233,19 +225,11 @@ class StabilityImageGenerator(BaseImageGenerator):
                 detail="Image generation failed. Please try again later."
             )
     
-    def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
-        """
-        Generate an image using only text prompt (text-to-image)
-        
-        Args:
-            prompt: Text prompt for image generation
-            
-        Returns:
-            Tuple[bytes, str]: (image_data, content_type)
-            
-        Raises:
-            HTTPException: If generation fails
-        """
+    async def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
+        """Async wrapper: runs sync Stability API in thread pool to avoid blocking the event loop."""
+        return await asyncio.to_thread(self._sync_generate_from_text, prompt)
+
+    def _sync_generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
         try:
             logger.info(f"Generating image from text with Stability AI {self.engine}, prompt: {prompt[:100]}...")
             
@@ -322,27 +306,11 @@ class StabilityImageGenerator(BaseImageGenerator):
                 detail=f"Image generation failed: {str(e)}"
             )
     
-    def generate_from_multiple_images_and_text(self, image_files: list, prompt: str) -> Tuple[bytes, str]:
-        """
-        Generate an image using multiple reference images and text prompt
-        Note: Stability AI v1 API doesn't support multiple images directly, so we'll use the first image
-        
-        Args:
-            image_files: List of uploaded image files (mandatory)
-            prompt: Text prompt for image generation
-            
-        Returns:
-            Tuple[bytes, str]: (image_data, content_type)
-            
-        Raises:
-            HTTPException: If generation fails
-        """
+    async def generate_from_multiple_images_and_text(self, image_files: list, prompt: str) -> Tuple[bytes, str]:
+        """Stability AI v1 uses first image only."""
         if not image_files or len(image_files) == 0:
             raise HTTPException(
                 status_code=400,
                 detail="At least one image file is required"
             )
-        
-        # Use the first image (Stability AI v1 API doesn't support multiple images)
-        logger.info(f"Using first image from {len(image_files)} images for Stability AI generation")
-        return self.generate_from_image_and_text(image_files[0], prompt)
+        return await self.generate_from_image_and_text(image_files[0], prompt)

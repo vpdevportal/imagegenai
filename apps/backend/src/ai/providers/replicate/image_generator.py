@@ -2,6 +2,7 @@
 Replicate Image Generator using FLUX.1-dev model
 """
 
+import asyncio
 import os
 from typing import Optional, Tuple
 from io import BytesIO
@@ -40,20 +41,11 @@ class ReplicateImageGenerator(BaseImageGenerator):
         # Default fallback models will be tried if the configured one fails
         self.model = os.getenv('REPLICATE_MODEL_NAME', 'black-forest-labs/flux-dev')
     
-    def generate_from_image_and_text(self, image_file: UploadFile, prompt: str) -> Tuple[bytes, str]:
-        """
-        Generate an image using a reference image and text prompt (img2img)
-        
-        Args:
-            image_file: Uploaded image file (mandatory)
-            prompt: Text prompt for image generation
-            
-        Returns:
-            Tuple[bytes, str]: (image_data, content_type)
-            
-        Raises:
-            HTTPException: If generation fails
-        """
+    async def generate_from_image_and_text(self, image_file: UploadFile, prompt: str) -> Tuple[bytes, str]:
+        """Async wrapper: runs sync Replicate API in thread pool to avoid blocking the event loop."""
+        return await asyncio.to_thread(self._sync_generate_from_image_and_text, image_file, prompt)
+
+    def _sync_generate_from_image_and_text(self, image_file: UploadFile, prompt: str) -> Tuple[bytes, str]:
         try:
             # Read and process the uploaded image
             image_content = image_file.file.read()
@@ -153,19 +145,11 @@ class ReplicateImageGenerator(BaseImageGenerator):
                 detail=error_message
             )
     
-    def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
-        """
-        Generate an image using only text prompt (text-to-image)
-        
-        Args:
-            prompt: Text prompt for image generation
-            
-        Returns:
-            Tuple[bytes, str]: (image_data, content_type)
-            
-        Raises:
-            HTTPException: If generation fails
-        """
+    async def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
+        """Async wrapper: runs sync Replicate API in thread pool to avoid blocking the event loop."""
+        return await asyncio.to_thread(self._sync_generate_from_text, prompt)
+
+    def _sync_generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
         try:
             logger.info(f"Generating image from text with Replicate FLUX.1-dev, prompt: {prompt[:100]}...")
             
@@ -216,28 +200,12 @@ class ReplicateImageGenerator(BaseImageGenerator):
                 detail=error_message
             )
     
-    def generate_from_multiple_images_and_text(self, image_files: list, prompt: str) -> Tuple[bytes, str]:
-        """
-        Generate an image using multiple reference images and text prompt
-        Note: Replicate FLUX may not support multiple images directly, so we'll use the first image
-        
-        Args:
-            image_files: List of uploaded image files (mandatory)
-            prompt: Text prompt for image generation
-            
-        Returns:
-            Tuple[bytes, str]: (image_data, content_type)
-            
-        Raises:
-            HTTPException: If generation fails
-        """
+    async def generate_from_multiple_images_and_text(self, image_files: list, prompt: str) -> Tuple[bytes, str]:
+        """Async wrapper. Replicate FLUX uses first image only."""
         if not image_files or len(image_files) == 0:
             raise HTTPException(
                 status_code=400,
                 detail="At least one image file is required"
             )
-        
-        # Use the first image for now (Replicate FLUX may not support multiple images)
-        logger.info(f"Using first image from {len(image_files)} images for Replicate generation")
-        return self.generate_from_image_and_text(image_files[0], prompt)
+        return await self.generate_from_image_and_text(image_files[0], prompt)
 

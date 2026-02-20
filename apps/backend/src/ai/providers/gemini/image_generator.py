@@ -67,9 +67,9 @@ class GeminiImageGenerator(BaseImageGenerator):
         self.client = genai.Client(api_key=self.api_key)
         self.model = getattr(settings, 'gemini_model', DEFAULT_GEMINI_MODEL)
     
-    def generate_from_image_and_text(self, image_file: UploadFile, prompt: str) -> Tuple[bytes, str]:
+    async def generate_from_image_and_text(self, image_file: UploadFile, prompt: str) -> Tuple[bytes, str]:
         """
-        Generate an image using a reference image and text prompt
+        Generate an image using a reference image and text prompt (async, non-blocking).
         
         Args:
             image_file: Uploaded image file (mandatory)
@@ -89,11 +89,12 @@ class GeminiImageGenerator(BaseImageGenerator):
         logger.info(f"Generating image with model: {self.model}, prompt: {prompt[:100]}...")
         logger.info(f"Reference image size: {reference_image.size}, mode: {reference_image.mode}")
         
-        # Generate the image using Gemini
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=[prompt, reference_image],
-        )
+        # Generate the image using Gemini async client (non-blocking)
+        async with self.client.aio as aclient:
+            response = await aclient.models.generate_content(
+                model=self.model,
+                contents=[prompt, reference_image],
+            )
         
         # Log response structure for debugging
         logger.info(f"Response received. Has candidates: {hasattr(response, 'candidates') and response.candidates is not None}")
@@ -169,9 +170,9 @@ class GeminiImageGenerator(BaseImageGenerator):
             detail="Failed to generate image from reference: No image data found in response. The model may not have generated an image."
         )
     
-    def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
+    async def generate_from_text(self, prompt: str) -> Tuple[bytes, str]:
         """
-        Generate an image using only text prompt (no reference image)
+        Generate an image using only text prompt (no reference image) (async, non-blocking).
         
         Args:
             prompt: Text prompt for image generation
@@ -183,11 +184,11 @@ class GeminiImageGenerator(BaseImageGenerator):
             HTTPException: If generation fails
         """
         try:
-            # Generate the image using Gemini with text only
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=[prompt],
-            )
+            async with self.client.aio as aclient:
+                response = await aclient.models.generate_content(
+                    model=self.model,
+                    contents=[prompt],
+                )
             
             # Process the response and return image data
             if response.candidates and len(response.candidates) > 0:
@@ -256,9 +257,9 @@ class GeminiImageGenerator(BaseImageGenerator):
                 detail=error_message
             )
     
-    def generate_from_multiple_images_and_text(self, image_files: list, prompt: str) -> Tuple[bytes, str]:
+    async def generate_from_multiple_images_and_text(self, image_files: list, prompt: str) -> Tuple[bytes, str]:
         """
-        Generate an image using multiple reference images and text prompt
+        Generate an image using multiple reference images and text prompt (async, non-blocking).
         
         Args:
             image_files: List of uploaded image files (mandatory)
@@ -279,14 +280,14 @@ class GeminiImageGenerator(BaseImageGenerator):
                 reference_image = Image.open(BytesIO(image_content))
                 reference_images.append(reference_image)
             
-            # Generate the image using Gemini with multiple images
             contents = reference_images + [prompt]
             logger.info(f"Generating image with {len(reference_images)} reference images and prompt: {prompt[:100]}...")
             
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=contents,
-            )
+            async with self.client.aio as aclient:
+                response = await aclient.models.generate_content(
+                    model=self.model,
+                    contents=contents,
+                )
 
             # Log response structure for debugging
             logger.info(f"Response received. Has candidates: {hasattr(response, 'candidates') and response.candidates is not None}")
