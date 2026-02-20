@@ -1,40 +1,61 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ImageGroupingForm from '@/components/ImageGroupingForm'
 import GeneratedImages from '@/components/GeneratedImages'
-import { getPrompt } from '@/services/api'
+import { getPrompt, getPromptThumbnail } from '@/services/api'
 
 export default function GroupingPageClient() {
   const [images, setImages] = useState<any[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [initialPrompt, setInitialPrompt] = useState('')
   const [promptId, setPromptId] = useState<number | undefined>(undefined)
+  const [promptThumbnailUrl, setPromptThumbnailUrl] = useState<string | null>(null)
+  const thumbnailUrlRef = useRef<string | null>(null)
   const searchParams = useSearchParams()
 
-  // Read prompt ID and prompt text from URL parameters
+  useEffect(() => {
+    const prev = thumbnailUrlRef.current
+    if (prev && prev !== promptThumbnailUrl) {
+      URL.revokeObjectURL(prev)
+    }
+    thumbnailUrlRef.current = promptThumbnailUrl
+    return () => {
+      if (thumbnailUrlRef.current) {
+        URL.revokeObjectURL(thumbnailUrlRef.current)
+        thumbnailUrlRef.current = null
+      }
+    }
+  }, [promptThumbnailUrl])
+
+  // Read prompt ID and prompt text from URL parameters; fetch thumbnail if prompt has one
   useEffect(() => {
     const promptIdParam = searchParams.get('promptId')
     const promptParam = searchParams.get('prompt')
-    
+
     if (promptIdParam) {
       const id = parseInt(promptIdParam, 10)
       if (!isNaN(id)) {
         setPromptId(id)
-        // Fetch prompt text from API to populate the form
+        setPromptThumbnailUrl(null)
         getPrompt(id)
           .then((prompt) => {
             setInitialPrompt(prompt.prompt_text)
+            if (prompt.thumbnail_mime) {
+              return getPromptThumbnail(id).then((url) => {
+                setPromptThumbnailUrl(url)
+              })
+            }
           })
           .catch((err) => {
             console.error('Failed to fetch prompt:', err)
           })
       }
     } else if (promptParam) {
-      // Fallback to old prompt parameter for backward compatibility
       setInitialPrompt(decodeURIComponent(promptParam))
       setPromptId(undefined)
+      setPromptThumbnailUrl(null)
     }
   }, [searchParams])
 
@@ -62,6 +83,7 @@ export default function GroupingPageClient() {
               setIsGenerating={setIsGenerating}
               initialPrompt={initialPrompt}
               initialPromptId={promptId}
+              promptThumbnailUrl={promptThumbnailUrl}
             />
           </div>
           

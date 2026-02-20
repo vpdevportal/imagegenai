@@ -12,6 +12,7 @@ interface ImageGroupingFormProps {
   setIsGenerating: (value: boolean) => void
   initialPrompt?: string
   initialPromptId?: number
+  promptThumbnailUrl?: string | null
 }
 
 export default function ImageGroupingForm({ 
@@ -19,7 +20,8 @@ export default function ImageGroupingForm({
   isGenerating, 
   setIsGenerating,
   initialPrompt = '',
-  initialPromptId
+  initialPromptId,
+  promptThumbnailUrl = null
 }: ImageGroupingFormProps) {
   const { provider } = useProvider()
   const { addToast } = useToast()
@@ -326,9 +328,21 @@ export default function ImageGroupingForm({
 
         {/* Prompt Input */}
         <div>
-          <label htmlFor="prompt" className="block text-sm font-medium text-gray-300 mb-2">
-            Describe how you want to use these person images
-          </label>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <label htmlFor="prompt" className="text-sm font-medium text-gray-300">
+              Describe how you want to use these person images
+            </label>
+            {promptThumbnailUrl && (
+              <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-[#2a3441] bg-[#0a1929]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={promptThumbnailUrl}
+                  alt="Prompt thumbnail"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+          </div>
           <textarea
             id="prompt"
             value={prompt}
